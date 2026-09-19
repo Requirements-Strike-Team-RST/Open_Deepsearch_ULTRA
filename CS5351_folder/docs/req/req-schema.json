@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CS5351 Requirements Schema",
+  "type": "object",
+  "required": ["project", "version", "features"],
+  "properties": {
+    "project": { "type": "string" },
+    "version": { "type": "string" },
+    "d1_date": { "type": "string", "format": "date" },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "priority"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "priority": { "enum": ["high", "medium", "low"] }
+        }
+      }
+    },
+    "non_functional": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "measure": { "type": "string" }
+        }
+      }
+    },
+    "constraints": { "type": "array", "items": { "type": "string" } }
+  }
+}

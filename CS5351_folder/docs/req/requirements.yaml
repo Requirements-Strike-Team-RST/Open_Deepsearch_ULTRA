@@ -1,0 +1,21 @@
+# Machine-readable PRD (D1)
+# Format per docs/req/req-schema.json
+
+project: <team-app>
+version: 0.1.0
+d1_date: YYYY-MM-DD
+
+features:
+  - id: FR-001
+    title: <feature title>
+    description: <what the feature does>
+    priority: high|medium|low
+
+non_functional:
+  - id: NFR-001
+    title: <performance/security/usability>
+    description: <requirement statement>
+    measure: <how it is measured>
+
+constraints:
+  - <constraint statement>
