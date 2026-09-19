@@ -8,4 +8,6 @@
 学习了Commit提交规范, 更改了分支名为chore/, 那么这个分支就专门用来搞'项目结构' & '改配置文件'就好了
 在requirements.yaml中尝试写了第一个'context丢失'的问题描述, 补充了相关属性字段的说明
 将CS5351_folder的内容全部放到了根目录, 完成了合并
+创建了'latest_context_missing'修复分支, 先把对应的requirement.yaml完善一下, 随后自己想点做法
+我草, 不小心把一个关键的json文件给删了, 火速加回来
 2026.09.19
