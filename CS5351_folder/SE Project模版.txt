@@ -1,0 +1,46 @@
+<team-app>/
+├── README.md                         ← 项目简介（D7）
+├── AGENTS.md                         ← 编码 Agent 治理入口（D3）
+├── architecture-blueprint.md         ← 主约束文档（D2.1）
+├── Prompt.md                         ← 静态启动 prompt（D9）
+├── Report.md                         ← 流程报告 + 个人反思（D6）
+├── docs/
+│   ├── req/
+│   │   ├── requirements.yaml         ← 机器可读 PRD（D1）
+│   │   └── req-schema.json           ← CI 校验 schema（D1）
+│   ├── architecture/                 ← 11 类制品（D2）
+│   │   ├── adr/001-<choice>.md       ← 架构决策记录
+│   │   ├── invariants.md             ← 不变量登记表
+│   │   ├── trace-matrix.md           ← 需求追溯矩阵
+│   │   ├── memory-design.md          ← 记忆/状态设计
+│   │   ├── option-ledger.md          ← 备选方案账本（可选）
+│   │   ├── permission-model.md       ← 权限模型
+│   │   ├── evaluation-logbook.md     ← 评估日志（可选）
+│   │   ├── risk-list.md              ← 风险清单（可选）
+│   │   ├── evaluation-table.md       ← 候选方案对比表
+│   │   └── runtime-policy-catalog.md ← 运行时策略目录
+│   ├── code-governance/              ← （D3, D4）
+│   │   ├── structural-constraints.md
+│   │   ├── verification-constraints.md
+│   │   └── mcp-tool-manifest.md
+│   ├── ai-use-log.yaml               ← AI 使用日志（D1，必交且须实时更新）
+│   ├── review-memo.md                ← 每个 PR 的评审记录（D4）
+│   ├── debt-register.md              ← 技术债登记（D4）
+│   └── bug-diary.md                  ← Bug 日记（D4）
+├── .opencode/
+│   ├── permissions.jsonc             ← 机器可读权限（D3）
+│   └── rules.md                      ← 始终生效的行为规则（D3，人工专属）
+├── .agent/
+│   └── rules.md                      ← 项目契约（D3）
+├── .github/workflows/
+│   └── ci.yml                        ← blocking gates（D4/D7）
+├── prompts/
+│   ├── prompt_v1.0.yaml              ← 版本化运行时 prompt
+│   └── prompt_v1.1.yaml
+├── src/                              ← 完整源码（D8）
+├── test/
+│   ├── offline/                      ← 确定性测试（D4/D8）
+│   └── live/                         ← 依赖 API 的测试
+└── transcripts/
+    ├── <student-id>-<student-name>.md ← 学生标注的会话记录（D5）
+    └── ...
