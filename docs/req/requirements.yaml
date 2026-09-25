@@ -1,0 +1,31 @@
+# Machine-readable PRD (D1)
+# Format per docs/req/req-schema.json
+
+# Tips: 一些关键属性的定义 (如status) 见 >> ./关键属性声明.txt, 后续引入了别的attribute也可以在.txt文件中进行补充
+
+project: open_deepsearch_ULTRA
+version: 0.1.0
+date: 2026/09/19
+
+# ------------------------------------------------------------
+# Functional Requirements
+# ------------------------------------------------------------
+functional_requirements:
+  - id: FR-001
+    title: "Latest Context Missing"
+    description: "During multiple conversations with agent, the agent may forget / lost the lastest context message."
+    fit_criterion: "Agent should always remember the latest message and the oldest context can be dropped."
+    status: pending
+    links: no
+
+# ------------------------------------------------------------
+# Non-Functional Requirements
+# ------------------------------------------------------------
+non_functional_requirements:
+  - id: NFR-001
+    title: <performance/security/usability>
+    description: <requirement statement>
+    measure: <how it is measured>
+
+constraints:
+  - <constraint statement>
