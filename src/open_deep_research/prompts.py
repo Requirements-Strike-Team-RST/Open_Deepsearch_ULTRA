@@ -196,8 +196,8 @@ Only these fully comprehensive cleaned findings are going to be returned to the 
 <Guidelines>
 1. Your output findings should be fully comprehensive and include ALL of the information and sources that the researcher has gathered from tool calls and web searches. It is expected that you repeat key information verbatim.
 2. This report can be as long as necessary to return ALL of the information that the researcher has gathered.
-3. In your report, you should return inline citations for each source that the researcher found.
-4. You should include a "Sources" section at the end of the report that lists all of the sources the researcher found with corresponding citations, cited against statements in the report.
+3. In your report, you should cite each source using the citation style described in the Citation Rules below.
+4. You should include a "Sources" section at the end of the report that lists all of the sources the researcher found, using the citation style described in the Citation Rules below, cited against statements in the report.
 5. Make sure to include ALL of the sources that the researcher gathered in the report, and how they were used to answer the question!
 6. It's really important not to lose any sources. A later LLM will be used to merge this report with others, so having all of the sources is critical.
 </Guidelines>
@@ -210,12 +210,11 @@ The report should be structured like this:
 </Output Format>
 
 <Citation Rules>
-- Assign each unique URL a single citation number in your text
-- End with ### Sources that lists each source with corresponding numbers
-- IMPORTANT: Number sources sequentially without gaps (1,2,3,4...) in the final list regardless of which sources you choose
-- Example format:
-  [1] Source Title: URL
-  [2] Source Title: URL
+- Use a single, consistent citation style throughout the report. Either of the two styles below is valid; do not mix them.
+- Style A (numbered): Assign each unique URL a single citation number in your text (e.g. [1]), then end with a ### Sources section that lists each source one per line in the same numbered order. Number sources sequentially without gaps (1,2,3,4...).
+- Style B (inline links): In the body, reference each source using inline [Title](URL) Markdown links, then end with a ### Sources section that lists each referenced source using the same Title and URL, one per line, so that in Markdown it is rendered as a list. No numbering or numeric anchors are needed.
+- Whichever style you use, make sure the ### Sources section and the in-text references match exactly.
+- Citations are extremely important. Make sure to include these, and pay a lot of attention to getting these right. Users will often use these citations to look into more information.
 </Citation Rules>
 
 Critical Reminder: It is extremely important that any information that is even remotely relevant to the user's research topic is preserved verbatim (e.g. don't rewrite it, don't summarize it, don't paraphrase it).
@@ -248,7 +247,7 @@ Here are the findings from the research that you conducted:
 Please create a detailed answer to the overall research brief that:
 1. Is well-organized with proper headings (# for title, ## for sections, ### for subsections)
 2. Includes specific facts and insights from the research
-3. References relevant sources using [Title](URL) format
+3. References relevant sources using a consistent citation style (see Citation Rules below)
 4. Provides a balanced, thorough analysis. Be as comprehensive as possible, and include all information that is relevant to the overall research question. People are using you for deep research and will expect detailed, comprehensive answers.
 5. Includes a "Sources" section at the end with all referenced links
 
@@ -296,13 +295,10 @@ Make sure the final answer report is in the SAME language as the human messages 
 Format the report in clear markdown with proper structure and include source references where appropriate.
 
 <Citation Rules>
-- Assign each unique URL a single citation number in your text
-- End with ### Sources that lists each source with corresponding numbers
-- IMPORTANT: Number sources sequentially without gaps (1,2,3,4...) in the final list regardless of which sources you choose
-- Each source should be a separate line item in a list, so that in markdown it is rendered as a list.
-- Example format:
-  [1] Source Title: URL
-  [2] Source Title: URL
+- Use a single, consistent citation style throughout the report. Either of the two styles below is valid; do not mix them.
+- Style A (numbered): Assign each unique URL a single citation number in your text (e.g. [1]), then end with a ### Sources section that lists each source one per line in the same numbered order. Number sources sequentially without gaps (1,2,3,4...).
+- Style B (inline links): In the body, reference each source using inline [Title](URL) Markdown links, then end with a ### Sources section that lists each referenced source using the same Title and URL, one per line, so that in Markdown it is rendered as a list. No numbering or numeric anchors are needed.
+- Whichever style you use, make sure the ### Sources section and the in-text references match exactly.
 - Citations are extremely important. Make sure to include these, and pay a lot of attention to getting these right. Users will often use these citations to look into more information.
 </Citation Rules>
 """
