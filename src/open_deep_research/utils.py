@@ -565,7 +565,89 @@ async def get_search_tool(search_api: SearchAPI):
         
     # Default fallback for unknown search API types
     return []
-    
+
+
+async def _resolve_fallback_search_tool(
+    search_tool_order: list[str],
+    mcp_tools: list[BaseTool],
+) -> BaseTool:
+    """Build a composite 'web_search' tool that tries providers in order.
+
+    In fallback mode the researcher model is exposed to a single composite tool
+    named 'web_search'. Each provider listed in ``search_tool_order`` is invoked
+    sequentially; the first provider whose ``ainvoke`` completes without raising
+    an exception provides the result. Native OpenAI/Anthropic web search tools
+    are not executable client-side tools and are rejected by the caller before
+    this helper is reached.
+
+    Args:
+        search_tool_order: Ordered list of search tool names to try.
+        mcp_tools: MCP tools available to participate in the fallback chain.
+
+    Returns:
+        A single composite tool named 'web_search'.
+    """
+    provider_by_name: dict[str, BaseTool] = {"tavily_search": tavily_search}
+    for mcp_tool in mcp_tools:
+        provider_by_name.setdefault(mcp_tool.name, mcp_tool)
+
+    unknown_names = [name for name in search_tool_order if name not in provider_by_name]
+    if unknown_names:
+        raise ValueError(
+            "search_tool_order contains tool names that are not available as "
+            "search providers: " + ", ".join(unknown_names)
+        )
+
+    async def _run_fallback_search(
+        queries: List[str],
+        config: RunnableConfig = None,
+    ) -> str:
+        errors = []
+        for name in search_tool_order:
+            provider = provider_by_name.get(name)
+            try:
+                return await provider.ainvoke({"queries": queries}, config=config)
+            except Exception as e:
+                errors.append(f"{name}: {e}")
+        raise ToolException(
+            "All search providers failed. Errors:\n" + "\n".join(errors)
+        )
+
+    return tool(
+        "web_search",
+        description=TAVILY_SEARCH_DESCRIPTION,
+    )(_run_fallback_search)
+
+
+def _validate_fallback_config(
+    configurable: Configuration,
+    search_tool_order: list[str] | None,
+) -> None:
+    """Validate the fallback search configuration.
+
+    Args:
+        configurable: The resolved configuration.
+        search_tool_order: The ordered list of search tool names.
+
+    Raises:
+        ValueError: If the configuration is invalid for fallback mode.
+    """
+    if search_tool_order is None or len(search_tool_order) == 0:
+        raise ValueError(
+            "search_mode='fallback' requires an explicit non-empty "
+            "search_tool_order."
+        )
+
+    if configurable.search_api in (SearchAPI.OPENAI, SearchAPI.ANTHROPIC):
+        raise ValueError(
+            "search_mode='fallback' does not support native OpenAI or Anthropic "
+            "web search. Native web search is model-side and cannot participate "
+            "in the client-side fallback chain. Set search_api to a client-side "
+            "provider such as Tavily, or configure the fallback chain with "
+            "executable tools."
+        )
+
+
 async def get_all_tools(config: RunnableConfig):
     """Assemble complete toolkit including research, search, and MCP tools.
     
@@ -577,23 +659,42 @@ async def get_all_tools(config: RunnableConfig):
     """
     # Start with core research tools
     tools = [tool(ResearchComplete), think_tool]
-    
+
     # Add configured search tools
     configurable = Configuration.from_runnable_config(config)
+    if configurable.search_mode == "fallback":
+        search_tool_order = configurable.search_tool_order
+        _validate_fallback_config(configurable, search_tool_order)
+
+        # Load MCP tools first, excluding conflicts with core tools or the
+        # composite 'web_search' tool name.
+        mcp_tools = await load_mcp_tools(config, {"ResearchComplete", "think_tool", "web_search"})
+        search_tool = await _resolve_fallback_search_tool(search_tool_order, mcp_tools)
+        tools.append(search_tool)
+
+        # MCP tools named in the fallback order are represented by the composite
+        # tool and must be hidden from the model. Other MCP tools stay exposed.
+        participating = set(search_tool_order)
+        mcp_tools_to_expose = [
+            mcp_tool for mcp_tool in mcp_tools if mcp_tool.name not in participating
+        ]
+        tools.extend(mcp_tools_to_expose)
+        return tools
+
     search_api = SearchAPI(get_config_value(configurable.search_api))
     search_tools = await get_search_tool(search_api)
     tools.extend(search_tools)
-    
+
     # Track existing tool names to prevent conflicts
     existing_tool_names = {
-        tool.name if hasattr(tool, "name") else tool.get("name", "web_search") 
+        tool.name if hasattr(tool, "name") else tool.get("name", "web_search")
         for tool in tools
     }
-    
+
     # Add MCP tools if configured
     mcp_tools = await load_mcp_tools(config, existing_tool_names)
     tools.extend(mcp_tools)
-    
+
     return tools
 
 def get_notes_from_tool_calls(messages: list[MessageLikeRepresentation]):

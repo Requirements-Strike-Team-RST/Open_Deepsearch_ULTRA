@@ -2,7 +2,7 @@
 
 import os
 from enum import Enum
-from typing import Any, List, Optional
+from typing import Any, List, Literal, Optional
 
 from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
@@ -88,6 +88,30 @@ class Configuration(BaseModel):
                     {"label": "Anthropic Native Web Search", "value": SearchAPI.ANTHROPIC.value},
                     {"label": "None", "value": SearchAPI.NONE.value}
                 ]
+            }
+        }
+    )
+    search_mode: Literal["agent", "fallback"] = Field(
+        default="agent",
+        metadata={
+            "x_oap_ui_config": {
+                "type": "select",
+                "default": "agent",
+                "description": "How search results are obtained. 'agent' lets the researcher model decide which search tool to call. 'fallback' exposes a single composite 'web_search' tool that tries the configured providers in order, returning the first successful result.",
+                "options": [
+                    {"label": "Agent", "value": "agent"},
+                    {"label": "Fallback", "value": "fallback"}
+                ]
+            }
+        }
+    )
+    search_tool_order: list[str] | None = Field(
+        default=None,
+        optional=True,
+        metadata={
+            "x_oap_ui_config": {
+                "type": "text",
+                "description": "Ordered list of search tool names to try when search_mode='fallback'. Each entry must be an executable search tool (e.g. 'tavily_search' or an MCP search tool). Native OpenAI/Anthropic web search cannot participate and will be rejected."
             }
         }
     )
