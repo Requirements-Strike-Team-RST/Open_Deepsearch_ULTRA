@@ -1,0 +1,14 @@
+# AI-use log: one entry per AI-assisted activity (course deliverable D1, kept up to date).
+# Maintained by humans; agents draft entries in their build reports.
+#
+# Entry fields:
+#   id:          AIU-NNN, never reused
+#   date:        YYYY-MM-DD
+#   member:      team member who supervised the activity (owner nickname)
+#   tool:        tool and model, e.g. "Claude Code (claude-opus-5-5)"
+#   purpose:     what the AI was asked to do
+#   requirements: [REQ-NNN, ...] or []
+#   artifacts:   files or PRs produced or changed
+#   supervision: how the human checked or corrected the output
+#   transcript:  path under transcripts/, or null
+entries: []
