@@ -33,7 +33,7 @@ Tests and implementation are written by different roles: Test Author writes the 
 ```mermaid
 flowchart LR
   R["Requirements"] --> ASR["ASR"] --> ADD["ADD<br/>2–3 candidates"] --> ADR["ADR"]
-  ADR --> M["Module sections<br/>on own branch"] --> MR{"Module review"}
+  ADR --> M["Module sections<br/>on own branch"] --> MR{"Module review<br/>in a draft PR"}
   MR -->|"changes needed"| M
   MR -->|ok| I["Integration<br/>Blueprint + constraints"] --> G1{{"GATE 1<br/>SA Review"}}
   G1 --> T["Test Author<br/>tests fail on baseline"] --> G2{{"GATE 2<br/>tests approved"}}
@@ -47,8 +47,8 @@ flowchart LR
 | # | Step | Who | Output |
 |---|---|---|---|
 | 1 | ASR, ADD, ADR, module sections | Each module owner, optionally with the Plan agent | EVAL entry, ADR, module sections on the branch `docs/sa-<module>` (§3) |
-| 2 | Module review | The integrator | Findings fixed by the owner on their branch until none remain (§4) |
-| 3 | Integration | The integrator | One integration branch: integrated documents and blueprint (§4) |
+| 2 | Module review | Reviewers named in the module's draft PR | Findings fixed by the owner on their branch until none remain; the draft PR is never merged (§4) |
+| 3 | Integration | The integrator, assisted by AI | One integration branch that merges every module branch: integrated documents and blueprint (§4) |
 | 4 | SA Review — **Gate 1** | Whole team | `SA-NNN` record in `docs/review-memo.md`; ADRs *Accepted*; integration merged into `main` |
 | 5 | Test authoring | Test Author | Tests; baseline run in `docs/test-reports/<RID>.md` |
 | 6 | Test approval — **Gate 2** | Human reviewer | Approved test commit in `docs/approvals/<RID>.md` |
@@ -58,7 +58,7 @@ flowchart LR
 
 ## 3. Phase 1 — Software Architecture (per module)
 
-Each module owner works on the module listed for their requirements in `architecture-blueprint.md` §4, on a branch `docs/sa-<module>` created from `main`. The Plan agent may draft; the owner decides. When done, the owner pushes the branch and does not open a pull request or merge: every module edits the same shared documents, so the integrator merges them once (§4).
+Each module owner works on the module listed for their requirements in `architecture-blueprint.md` §4, on a branch `docs/sa-<module>` created from `main`. The Plan agent may draft; the owner decides. When done, the owner pushes the branch and opens a **draft** pull request to `main` for review only, naming at least one reviewer. The draft PR is never merged: every module edits the same shared documents, so the integrator merges all module branches at once (§4).
 
 1. **ASR.** From `docs/req/requirements.yaml`, pick the requirements of the module that shape the architecture and the acceptance criteria (C-/M-) that matter.
 2. **ADD.** Propose 2–3 candidate solutions and compare pros, cons, complexity and offline testability in a new entry of `docs/architecture/evaluation-table.md`.
@@ -76,11 +76,9 @@ Each module owner works on the module listed for their requirements in `architec
 
 ## 4. Module Review, Integration and SA Review — Gate 1
 
-One member, the integrator, coordinates this step.
-
-1. **Module review.** The integrator reviews each pushed module branch: the ADR is complete and implementable, every acceptance criterion and invariant has a test case, and the module stays within its responsibility. Findings go back to the owner, who fixes them on the same branch; the review repeats until no finding remains.
-2. **Integration.** The integrator merges the reviewed module branches into one integration branch, resolves conflicts, unifies IDs (EVAL, ADR, INV, POL), and checks across modules for overlapping responsibilities, dependencies outside `structural-constraints.md` §5, state fields written by two modules, and criteria or invariants without a test case. The architecture blueprint is then written from the ADRs: components, interfaces, dependencies, data flow and deterministic boundaries.
-3. **SA Review.** The whole team reviews the integrated result. It is recorded as `SA-NNN` in `docs/review-memo.md`; accepted ADRs change status to *Accepted*; the integration branch is merged into `main` through one pull request; for each requirement that passes, the human records Gate 1 in `docs/approvals/<RID>.md` with the SA-NNN reference.
+1. **Module review.** Reviewers comment in the module's draft PR: the ADR is complete and implementable, every acceptance criterion and invariant has a test case, and the module stays within its responsibility. The owner fixes findings on the same branch, which updates the draft PR, until no finding remains.
+2. **Integration.** When every module has been reviewed, one member, the integrator, creates an integration branch from `main` and merges each module branch into it with `git merge`, so every member's commits stay in the history. AI may resolve the merge conflicts and draft the integrated sections; the integrator checks the result: unified IDs (EVAL, ADR, INV, POL), no overlapping responsibilities, no dependency outside `structural-constraints.md` §5, no state field written by two modules, and no criterion or invariant without a test case. The architecture blueprint is then written from the ADRs: components, interfaces, dependencies, data flow and deterministic boundaries.
+3. **SA Review.** The integration branch is opened as one pull request to `main`, and the whole team reviews it. The result is recorded as `SA-NNN` in `docs/review-memo.md`; accepted ADRs change status to *Accepted*; the pull request is merged; each module's draft PR is closed with a link to it; and for each requirement that passes, the human records Gate 1 in `docs/approvals/<RID>.md` with the SA-NNN reference.
 
 No agent performs or forges a gate.
 
