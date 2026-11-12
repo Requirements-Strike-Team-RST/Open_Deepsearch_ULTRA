@@ -3,12 +3,162 @@
 #
 # Entry fields:
 #   id:          AIU-NNN, never reused
-#   date:        YYYY-MM-DD
+#   date:        YYYY-MM-DD, or the first and last day of the activity
 #   member:      team member who supervised the activity (owner nickname)
-#   tool:        tool and model, e.g. "Claude Code (claude-opus-5-5)"
 #   purpose:     what the AI was asked to do
+#   prompt:      the main instruction given to the AI, lightly edited for clarity
 #   requirements: [REQ-NNN, ...] or []
 #   artifacts:   files or PRs produced or changed
 #   supervision: how the human checked or corrected the output
 #   transcript:  path under transcripts/, or null
-entries: []
+entries:
+  - id: AIU-001
+    date: "2026-11-10"
+    member: AlchemyHAN
+    purpose: >-
+      Check whether the reported problem exists in our code base and draft requirements for it.
+    prompt: >-
+      Our team is improving Open Deep Research. My assignment is the problem that some sub-agent
+      failures are not reported and the run goes straight to "research complete" (upstream issues
+      #283 and #284). Confirm whether this problem exists and is reasonable to address, design the
+      requirement, and write it as YAML that follows req-schema.json.
+    requirements: [REQ-002, REQ-004]
+    artifacts:
+      - docs/req/requirements.yaml
+    supervision: >-
+      The AI reproduced the defect with offline probes against the current code. The member
+      reviewed the draft, compared it with teammates' requirements to find overlaps, and decided
+      how responsibilities were split.
+    transcript: null
+
+  - id: AIU-002
+    date: "2026-11-11"
+    member: AlchemyHAN
+    purpose: >-
+      Consolidate the team's merged requirements into one consistent, schema-valid set.
+    prompt: >-
+      We have merged the team's requirements.yaml, but it still contains conflicts,
+      inconsistencies, formatting problems and uneven levels of detail; some parts are imprecise
+      or incomplete and others are redundant. Revise it as a whole: remove redundancy, split or
+      merge coupled requirements, resolve conflicts, and renumber the requirements from REQ-001.
+    requirements: [REQ-001, REQ-002, REQ-003, REQ-004, REQ-005, REQ-006, REQ-007, REQ-008, REQ-009, REQ-010]
+    artifacts:
+      - docs/req/requirements.yaml
+      - docs/req/req-schema.json
+    supervision: >-
+      Claims in each requirement were checked against the source code and upstream issues. The
+      member supplied the owners' nicknames, reviewed the result, removed revision-history notes,
+      and approved all ten requirements for the team.
+    transcript: null
+
+  - id: AIU-003
+    date: "2026-11-11"
+    member: AlchemyHAN
+    purpose: >-
+      Place the team's governance documents in the repository and turn them into one consistent
+      set of instructions for coding agents.
+    prompt: >-
+      Move the remaining requirements-engineering documents into their places in the project.
+      Then review them as a coding agent would read them: find inconsistencies, duplication and
+      conflicts, and improve and standardise these harness files. Use Python 3.12. We are still in
+      requirements engineering, so leave invariants and architecture content mostly empty and only
+      unify the format for later; move the architecture blueprint under docs/architecture.
+    requirements: []
+    artifacts:
+      - AGENTS.md
+      - Prompt.md
+      - .opencode/rules.md
+      - .agent/rules.md
+      - docs/architecture/
+      - docs/code-governance/
+      - README.md
+      - langgraph.json
+    supervision: >-
+      The member reviewed every change, decided which open items and placeholder notes to keep,
+      and asked for redundant text to be removed.
+    transcript: null
+
+  - id: AIU-004
+    date: "2026-11-11"
+    member: AlchemyHAN
+    purpose: >-
+      Add requirement validation to CI and shared editor settings.
+    prompt: >-
+      Make CI run validate_requirements.py, and add an .editorconfig that enforces Unix line
+      endings and sets the indentation.
+    requirements: []
+    artifacts:
+      - scripts/validate_requirements.py
+      - .github/workflows/ci.yml
+      - .github/dependabot.yml
+      - .python-version
+      - .editorconfig
+      - .gitattributes
+    supervision: >-
+      Every CI job was run locally with the same commands before the push, and the member
+      confirmed the result on GitHub.
+    transcript: null
+
+  - id: AIU-005
+    date: "2026-11-11/2026-11-12"
+    member: AlchemyHAN
+    purpose: >-
+      Design the coding-agent permission model and the OpenCode configuration that enforces it.
+    prompt: >-
+      Decide how the permissions are put into practice. Keep them practical rather than overly
+      strict: Build and Test must be able to run commands and commit, users may ask the agent to
+      push, reset or rebase, and models should be able to use read-only web tools and the Context7
+      MCP server. Add a separate role that only writes tests, so that Build only writes the
+      implementation.
+    requirements: []
+    artifacts:
+      - .opencode/permissions.jsonc
+      - .opencode/opencode.jsonc
+      - docs/architecture/permission-model.md
+      - docs/code-governance/mcp-tool-manifest.md
+    supervision: >-
+      The configuration was loaded with OpenCode 2.2.7 and the resolved rules were checked against
+      an acceptance matrix (83/83 cases). The member set the policy for each tier and reviewed the
+      role split.
+    transcript: null
+
+  - id: AIU-006
+    date: "2026-11-12"
+    member: AlchemyHAN
+    purpose: >-
+      Align the workflow with the team's software-architecture process and prepare templates for
+      every member's module sections.
+    prompt: >-
+      We are entering the SA phase: ASR, ADD with 2–3 candidate architectures per module, ADRs,
+      each member's module sections in the shared architecture and constraint documents,
+      integration into one blueprint, SA Review, then tests, implementation by a coding agent and
+      verification. Update the existing documents to follow this process, and provide templates
+      with one example entry each so that members can add their own content and we can integrate
+      it later.
+    requirements: []
+    artifacts:
+      - Prompt.md
+      - docs/architecture/
+      - docs/code-governance/structural-constraints.md
+      - docs/code-governance/verification-constraints.md
+      - docs/review-memo.md
+    supervision: >-
+      The member defined the process and reviewed the templates, keeping them free of
+      pre-assigned owners and of architecture content that belongs to the SA phase.
+    transcript: null
+
+  - id: AIU-007
+    date: "2026-11-12"
+    member: AlchemyHAN
+    purpose: >-
+      Draft team announcements and open the pull request for the changes above.
+    prompt: >-
+      Write a short notice for the team explaining what each member needs to do in the SA phase.
+      Then open a pull request and push the changes.
+    requirements: []
+    artifacts:
+      - https://github.com/Requirements-Strike-Team-RST/Open_Deepsearch_ULTRA/pull/4
+    supervision: >-
+      The member edited the announcement before sending it, and reviewed the commits and the PR
+      description; merging waits for two other members' approvals.
+    transcript: null
