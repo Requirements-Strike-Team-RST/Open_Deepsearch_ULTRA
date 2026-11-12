@@ -2,7 +2,7 @@
 
 > **Purpose:** What the research agent does at runtime when something goes wrong: exceptions, retries, degradation and failure paths.
 > **Authoritative for:** runtime handling policies. Each policy traces to a requirement or invariant.
-> **Maintained by:** owners of modules with exception, retry, degradation or failure handling write a module section (§2); §1 is integrated from those sections after SA Review. Modules without such handling add nothing.
+> **Maintained by:** owners of modules with exception, retry, degradation or failure handling write a module section (§2); §1 is integrated from those sections before SA Review. Modules without such handling add nothing.
 > **Last updated:** 2026-11-12
 
 ## 1. Policies

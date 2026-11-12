@@ -2,7 +2,7 @@
 
 > **Purpose:** Properties of the research agent (the product) that no change may violate, each traced to a requirement, an enforcing component, a test and a fallback. Rules for coding agents belong in `docs/architecture/permission-model.md` and `.opencode/rules.md`, not here.
 > **Authoritative for:** the detailed rule behind each `invariant`-type or safety-relevant requirement. Where an entry here differs from `docs/req/requirements.yaml`, the requirement wins and the difference must be reported.
-> **Maintained by:** each module owner adds the entries for their module; they are integrated and renumbered after SA Review.
+> **Maintained by:** each module owner adds the entries for their module; they are integrated and renumbered before SA Review.
 > **Status:** All entries are *Proposed* until SA Review. Enforcing components are responsibility assignments, not implemented code.
 > **Last updated:** 2026-11-12
 

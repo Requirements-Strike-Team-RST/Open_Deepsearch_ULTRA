@@ -2,8 +2,8 @@
 
 > **Purpose:** The system-level SA Blueprint (course deliverable D2.1): components and their responsibilities, interfaces, dependencies, data flow and deterministic boundaries.
 > **Authoritative for:** architecture, the module list (§4), dependency exceptions and deterministic boundaries. Changed only through an accepted ADR.
-> **Maintained by:** the integrator, from the accepted ADRs and module sections after SA Review (`Prompt.md` §4).
-> **Status:** Skeleton. *TBD* sections are integrated after SA Review; items marked *Proposed* are not binding.
+> **Maintained by:** the integrator, from the ADRs and module sections, before SA Review (`Prompt.md` §4).
+> **Status:** Skeleton. *TBD* sections are filled at integration; items marked *Proposed* are not binding.
 > **Last updated:** 2026-11-12
 
 ## 1. Goals and Non-Goals

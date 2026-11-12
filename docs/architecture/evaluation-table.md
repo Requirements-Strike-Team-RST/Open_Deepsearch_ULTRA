@@ -2,7 +2,7 @@
 
 > **Purpose:** ADD results: for each architectural question, 2–3 candidate solutions compared on pros, cons, complexity and testability, and the choice made.
 > **Authoritative for:** option comparisons. The decision itself is recorded in the ADR named in the entry.
-> **Maintained by:** each module owner adds the entries for their module; entries are integrated after SA Review.
+> **Maintained by:** each module owner adds the entries for their module; entries are integrated before SA Review (`Prompt.md` §4).
 > **Last updated:** 2026-11-12
 
 ## How to Add an Entry

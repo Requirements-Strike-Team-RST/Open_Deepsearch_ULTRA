@@ -2,7 +2,7 @@
 
 > **Purpose:** How the research agent stores, passes and discards state and memory: state structure, ownership and lifecycle.
 > **Authoritative for:** state and memory design. Graph state types live in `src/open_deep_research/state.py`.
-> **Maintained by:** owners of modules that add or change state write a module section (§5); §1–§4 are integrated from those sections after SA Review. Modules that do not touch state add nothing.
+> **Maintained by:** owners of modules that add or change state write a module section (§5); §1–§4 are integrated from those sections before SA Review. Modules that do not touch state add nothing.
 > **Last updated:** 2026-11-12
 
 ## 1. State Model

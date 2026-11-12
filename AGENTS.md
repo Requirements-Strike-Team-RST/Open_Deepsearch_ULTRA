@@ -33,11 +33,11 @@ Each concern has exactly one authoritative document. Other documents refer to it
 | Task workflow, phases, human gates | `Prompt.md` | humans |
 | Always-on agent behaviour rules | `.opencode/rules.md` (`.agent/rules.md` only points to it) | humans |
 | Roles, readable and writable paths, tools, approval delegation | `docs/architecture/permission-model.md`, enforced through `.opencode/permissions.jsonc` | humans |
-| Architecture, module list, deterministic boundaries | `docs/architecture/architecture-blueprint.md` and `docs/architecture/adr/` | module owners (ADRs), integrated after SA Review |
-| Invariants | `docs/architecture/invariants.md` | module owners, integrated after SA Review |
+| Architecture, module list, deterministic boundaries | `docs/architecture/architecture-blueprint.md` and `docs/architecture/adr/` | module owners (ADRs), integrated before SA Review |
+| Invariants | `docs/architecture/invariants.md` | module owners, integrated before SA Review |
 | Requirement traceability | `docs/architecture/trace-matrix.md` | module owners |
-| State and memory design | `docs/architecture/memory-design.md` | module owners, integrated after SA Review |
-| Runtime exception, degradation and failure policies | `docs/architecture/runtime-policy-catalog.md` | module owners, integrated after SA Review |
+| State and memory design | `docs/architecture/memory-design.md` | module owners, integrated before SA Review |
+| Runtime exception, degradation and failure policies | `docs/architecture/runtime-policy-catalog.md` | module owners, integrated before SA Review |
 | ADD: candidate solutions and their comparison | `docs/architecture/evaluation-table.md` | module owners |
 | Code structure and change rules | `docs/code-governance/structural-constraints.md` | humans; module owners add their module sections |
 | Verification layers, test conventions, CI gates, Definition of Done | `docs/code-governance/verification-constraints.md` | humans; module owners add their module sections |

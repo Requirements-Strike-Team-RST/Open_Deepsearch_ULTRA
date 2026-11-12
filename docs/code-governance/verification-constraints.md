@@ -2,7 +2,7 @@
 
 > **Purpose:** One shared way to decide that a requirement is really done.
 > **Authoritative for:** verification layers, test conventions, commands, CI gates, verdicts and evidence, module test requirements and the Definition of Done.
-> **Maintained by:** humans for §1–§6 and §8; each module owner writes their module's test requirements in §7, integrated after SA Review.
+> **Maintained by:** humans for §1–§6 and §8; each module owner writes their module's test requirements in §7, integrated before SA Review.
 > **Last updated:** 2026-11-12
 
 ## 1. Three Verification Layers
