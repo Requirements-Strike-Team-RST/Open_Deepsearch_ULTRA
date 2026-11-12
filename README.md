@@ -44,7 +44,7 @@ cp .env.example .env
 
 ```bash
 # Install dependencies and start the LangGraph server
-uvx --refresh --from "langgraph-cli[inmem]" --with-editable . --python 3.11 langgraph dev --allow-blocking
+uvx --refresh --from "langgraph-cli[inmem]" --with-editable . --python 3.12 langgraph dev --allow-blocking
 ```
 
 This will open the LangGraph Studio UI in your browser.
@@ -134,16 +134,4 @@ You can also deploy your own instance of OAP, and make your own custom agents (l
 
 ### Legacy Implementations 🏛️
 
-The `src/legacy/` folder contains two earlier implementations that provide alternative approaches to automated research. They are less performant than the current implementation, but provide alternative ideas understanding the different approaches to deep research.
-
-#### 1. Workflow Implementation (`legacy/graph.py`)
-- **Plan-and-Execute**: Structured workflow with human-in-the-loop planning
-- **Sequential Processing**: Creates sections one by one with reflection
-- **Interactive Control**: Allows feedback and approval of report plans
-- **Quality Focused**: Emphasizes accuracy through iterative refinement
-
-#### 2. Multi-Agent Implementation (`legacy/multi_agent.py`)  
-- **Supervisor-Researcher Architecture**: Coordinated multi-agent system
-- **Parallel Processing**: Multiple researchers work simultaneously
-- **Speed Optimized**: Faster report generation through concurrency
-- **MCP Support**: Extensive Model Context Protocol integration
+The upstream `src/legacy/` implementations (`graph.py`, `multi_agent.py`) were removed from this fork in commit `a4d557a`. See the [upstream repository](https://github.com/langchain-ai/open_deep_research) for them.
