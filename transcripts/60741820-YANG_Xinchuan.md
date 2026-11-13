@@ -8,31 +8,31 @@
 
 ## Record scope
 
-按事件顺序保留 OpenCode 会话中的用户消息、公开回复及工具调用输入和结果。内部推理和系统消息不列入记录，凭据模式统一脱敏，行尾空白已清理。工具输出保留其原有截断标记。H-01 至 H-06 标注实际人工干预及其理由。
+This English translation preserves the chronological OpenCode user messages, public responses, and tool inputs and results. Internal reasoning and system messages are excluded. Credential patterns are redacted and trailing whitespace is removed. Original tool-output truncation markers are retained. H-01 through H-06 annotate actual human interventions and their rationale. Chinese-language prose has been translated, including text embedded in tool records; commands, interfaces, identifiers and reported outcomes retain their original meaning. Non-English filenames in tool outputs use JSON Unicode escapes to preserve their exact identity.
 Student: YANG Xinchuan (60741820).
 
 ## Session record
 
 ### Event 0 — User
 
-按 AGENTS.md 的阅读顺序和 Prompt.md Phase 1，为 evaluation 模块完成 SA 设计草案。
+Follow the reading order in AGENTS.md and Phase 1 of Prompt.md to draft the SA design for the evaluation module.
 
-任务为 docs/req/requirements.yaml 中已 approved 的 REQ-009 v1.1 和 REQ-010 v1.1，负责人 DopplerXD。模块路径按蓝图为 test/evaluation/。
+The tasks are the approved REQ-009 v1.1 and REQ-010 v1.1 in docs/req/requirements.yaml, owned by DopplerXD. The blueprint assigns the module to test/evaluation/.
 
-先核对角色、分支、工作区和权限。读取需求、蓝图、规则、权限文件、结构与验证约束、现有 ADR 和模板。分析 test/evaluators.py、test/prompts.py、test/run_evaluate.py 及调用方，核对评分输入、范围校验、空 claims、异常传播和导入副作用，引用当前代码位置。
+First verify the role, branch, working tree and permissions. Read the requirements, blueprint, rules, permission model, structural and verification constraints, existing ADRs and templates. Analyse test/evaluators.py, test/prompts.py, test/run_evaluate.py and their callers. Check evaluation inputs, rating bounds, empty claims, exception propagation and import side effects, citing current code locations.
 
-1. 识别影响架构的需求，映射 REQ-009 的 C-001—C-004/M-001，以及 REQ-010 的 C-001—C-003。
-2. 用 ADD 比较 2—3 个候选方案，在 evaluation-table.md 添加模块条目。比较正确性、复用、耦合、基准入口兼容性、离线可测性和复杂度，给出推荐及待人工决定事项。
-3. 从模板创建 Proposed ADR，填写全部九节，明确组件、公共接口、输入输出、评分状态、严格整数校验、失败隔离、文件评估入口，以及逐文件实现步骤。
-4. 补充 evaluation 模块的 invariants、runtime-policy-catalog、trace-matrix、structural-constraints §10 和 verification-constraints §7。涉及状态变化时补 memory-design §5。
-5. 每个验收项列出测试输入、预期结果和计划测试位置，覆盖正常、异常、边界和回归。REQ-010-C-003 保留为人工操作检查。
+1. Identify architecturally significant requirements and map REQ-009 C-001 through C-004/M-001 and REQ-010 C-001 through C-003.
+2. Use ADD to compare two or three candidates in evaluation-table.md. Compare correctness, reuse, coupling, benchmark-entry compatibility, offline testability and complexity. Provide a recommendation and decisions for human review.
+3. Create a Proposed ADR from the template and complete all nine sections, including components, public interfaces, inputs and outputs, metric statuses, strict integer validation, failure isolation, a report-file evaluation entry and file-by-file implementation steps.
+4. Add the evaluation module sections to invariants, runtime-policy-catalog, trace-matrix, structural-constraints section 10 and verification-constraints section 7. Update memory-design section 5 if state changes are involved.
+5. Specify the input, expected outcome and planned test location for every acceptance criterion, covering normal, exception, boundary and regression cases. Keep REQ-010-C-003 as a human usability check.
 
-遵守 plan 权限，仅编写架构文档与测试用例清单，完成后停在人工 SA 评审前。禁止编写源码、测试代码或审批记录，禁止提交或推送。
+Follow Plan permissions and write architecture documents and a test-case list only, stopping before human SA Review. Do not write source code, test code or approval records, and do not commit or push.
 
-在聊天中提供本次实际操作对应的 AI 使用日志建议条目，供我核对填写。最后报告改动文件、验收覆盖、检查结果及待人工决策事项。
+Provide an AI-use log suggestion in chat based on the actual activity for me to verify and enter. Finish with changed files, acceptance coverage, check results and outstanding human decisions.
 
 > **H-01 Scope and phase**
-> 限定 REQ-009、REQ-010 的 SA 范围，要求比较方案并保留源码、测试和审批门禁。
+> Restricted the work to SA for REQ-009 and REQ-010, required candidate comparison, and retained the source-code, test and approval gates.
 
 ### Event 1 — OpenCode (plan)
 
@@ -64,7 +64,7 @@ I'll start by verifying the environment and reading the required governance docu
   "output": [
     {
       "type": "text",
-      "text": "total 2112\ndrwxr-xr-x  29 doppler  staff     928 Nov 13 18:42 .\ndrwxr-xr-x@ 17 doppler  staff     544 Nov 10 14:29 ..\n-rw-r--r--@  1 doppler  staff    6148 Oct 12 14:44 .DS_Store\ndrwxr-xr-x@  3 doppler  staff      96 Nov 13 18:42 .agent\n-rw-r--r--@  1 doppler  staff     562 Nov 13 18:42 .editorconfig\n-rw-r--r--   1 doppler  staff     365 Sep 21 15:09 .env.example\ndrwxr-xr-x  15 doppler  staff     480 Nov 13 21:37 .git\n-rw-r--r--@  1 doppler  staff     228 Nov 13 18:42 .gitattributes\ndrwxr-xr-x   4 doppler  staff     128 Nov 13 18:42 .github\n-rw-r--r--   1 doppler  staff     616 Sep 21 15:09 .gitignore\ndrwxr-xr-x@  9 doppler  staff     288 Nov 13 21:31 .opencode\n-rw-r--r--@  1 doppler  staff       5 Nov 13 18:42 .python-version\n-rw-r--r--@  1 doppler  staff    9175 Nov 13 18:42 AGENTS.md\n-rw-r--r--   1 doppler  staff    1065 Sep 21 15:09 LICENSE\n-rw-r--r--@  1 doppler  staff   12124 Nov 13 18:42 Prompt.md\n-rw-r--r--@  1 doppler  staff    9528 Nov 13 18:42 README.md\n-rw-r--r--@  1 doppler  staff     210 Sep 27 18:40 Report.md\n-rw-r--r--@  1 doppler  staff    2805 Sep 27 18:40 SE Project 文件Reference.txt\n-rw-r--r--@  1 doppler  staff    1151 Sep 27 18:40 change_log.txt\ndrwxr-xr-x@ 10 doppler  staff     320 Nov 13 18:42 docs\ndrwxr-xr-x   6 doppler  staff     192 Sep 21 15:09 examples\n-rw-r--r--@  1 doppler  staff     295 Nov 13 18:42 langgraph.json\ndrwxr-xr-x@  3 doppler  staff      96 Sep 27 18:40 prompts\n-rw-r--r--@  1 doppler  staff    1982 Sep 27 18:40 pyproject.toml\ndrwxr-xr-x@  3 doppler  staff      96 Nov 13 18:42 scripts\ndrwxr-xr-x   4 doppler  staff     128 Sep 27 18:40 src\ndrwxr-xr-x@ 11 doppler  staff     352 Sep 27 18:40 test\ndrwxr-xr-x@  4 doppler  staff     128 Sep 27 18:40 transcripts\n-rw-r--r--   1 doppler  staff  988217 Sep 21 15:09 uv.lock\n---\nai-use-log.yaml\narchitecture\nbug-diary.md\ncode-governance\ndebt-register.md\nreq\nreview-memo.md\n---\nadr\narchitecture-blueprint.md\nevaluation-table.md\ninvariants.md\nmemory-design.md\npermission-model.md\nruntime-policy-catalog.md\ntrace-matrix.md\n---\n000-template.md\n---\n__init__.py\nevaluators.py\nextract_langsmith_data.py\nlive\noffline\npairwise_evaluation.py\nprompts.py\nrun_evaluate.py\nsupervisor_parallel_evaluation.py\n"
+      "text": "total 2112\ndrwxr-xr-x  29 doppler  staff     928 Nov 13 18:42 .\ndrwxr-xr-x@ 17 doppler  staff     544 Nov 10 14:29 ..\n-rw-r--r--@  1 doppler  staff    6148 Oct 12 14:44 .DS_Store\ndrwxr-xr-x@  3 doppler  staff      96 Nov 13 18:42 .agent\n-rw-r--r--@  1 doppler  staff     562 Nov 13 18:42 .editorconfig\n-rw-r--r--   1 doppler  staff     365 Sep 21 15:09 .env.example\ndrwxr-xr-x  15 doppler  staff     480 Nov 13 21:37 .git\n-rw-r--r--@  1 doppler  staff     228 Nov 13 18:42 .gitattributes\ndrwxr-xr-x   4 doppler  staff     128 Nov 13 18:42 .github\n-rw-r--r--   1 doppler  staff     616 Sep 21 15:09 .gitignore\ndrwxr-xr-x@  9 doppler  staff     288 Nov 13 21:31 .opencode\n-rw-r--r--@  1 doppler  staff       5 Nov 13 18:42 .python-version\n-rw-r--r--@  1 doppler  staff    9175 Nov 13 18:42 AGENTS.md\n-rw-r--r--   1 doppler  staff    1065 Sep 21 15:09 LICENSE\n-rw-r--r--@  1 doppler  staff   12124 Nov 13 18:42 Prompt.md\n-rw-r--r--@  1 doppler  staff    9528 Nov 13 18:42 README.md\n-rw-r--r--@  1 doppler  staff     210 Sep 27 18:40 Report.md\n-rw-r--r--@  1 doppler  staff    2805 Sep 27 18:40 SE Project \u6587\u4ef6Reference.txt\n-rw-r--r--@  1 doppler  staff    1151 Sep 27 18:40 change_log.txt\ndrwxr-xr-x@ 10 doppler  staff     320 Nov 13 18:42 docs\ndrwxr-xr-x   6 doppler  staff     192 Sep 21 15:09 examples\n-rw-r--r--@  1 doppler  staff     295 Nov 13 18:42 langgraph.json\ndrwxr-xr-x@  3 doppler  staff      96 Sep 27 18:40 prompts\n-rw-r--r--@  1 doppler  staff    1982 Sep 27 18:40 pyproject.toml\ndrwxr-xr-x@  3 doppler  staff      96 Nov 13 18:42 scripts\ndrwxr-xr-x   4 doppler  staff     128 Sep 27 18:40 src\ndrwxr-xr-x@ 11 doppler  staff     352 Sep 27 18:40 test\ndrwxr-xr-x@  4 doppler  staff     128 Sep 27 18:40 transcripts\n-rw-r--r--   1 doppler  staff  988217 Sep 21 15:09 uv.lock\n---\nai-use-log.yaml\narchitecture\nbug-diary.md\ncode-governance\ndebt-register.md\nreq\nreview-memo.md\n---\nadr\narchitecture-blueprint.md\nevaluation-table.md\ninvariants.md\nmemory-design.md\npermission-model.md\nruntime-policy-catalog.md\ntrace-matrix.md\n---\n000-template.md\n---\n__init__.py\nevaluators.py\nextract_langsmith_data.py\nlive\noffline\npairwise_evaluation.py\nprompts.py\nrun_evaluate.py\nsupervisor_parallel_evaluation.py\n"
     }
   ]
 }
@@ -354,7 +354,7 @@ I'll start by verifying the environment and reading the required governance docu
   "output": [
     {
       "type": "text",
-      "text": "test/__init__.py\ntest/evaluators.py\ntest/extract_langsmith_data.py\ntest/live/占位文件(可删)\ntest/offline/占位文件(可删)\ntest/pairwise_evaluation.py\ntest/prompts.py\ntest/run_evaluate.py\ntest/supervisor_parallel_evaluation.py\n=====INIT=====\n\"\"\"Evaluation scripts and coursework tests.\"\"\"\n=====EXTRACT=====\n#!/usr/bin/env python3\n\"\"\"Extract data from LangSmith and save to JSONL file with configurable dataset.\"\"\"\n\nimport os\nimport json\nimport argparse\nfrom langsmith import Client\nfrom dotenv import load_dotenv\n\nload_dotenv()\n\n\ndef extract_langsmith_data(project_name, model_name, dataset_name, api_key):\n    \"\"\"Extract data from LangSmith and save to JSONL file.\"\"\"\n    print(f\"Extracting data from LangSmith project: {project_name}\")\n    print(f\"Using dataset: {dataset_name}\")\n    \n    client = Client(api_key=api_key)\n    \n    # Read project to get reference dataset id\n    project_data = client.read_project(project_name=project_name)\n    \n    # Read reference dataset to get examples\n    examples_gen = client.list_examples(dataset_id=project_data.reference_dataset_id)\n    examples = []\n    for example in examples_gen:\n        examples.append(example)\n    examples_dict = {example.id: example for example in examples}\n    \n    # Read project runs to get runs inputs and outputs and reference_example_ids\n    output_runs = client.list_runs(\n        project_name=project_name,\n        is_root=True\n    )\n    \n    runs = []\n    for run in output_runs:\n        if run.outputs is not None and run.outputs.get(\"final_report\") is not None:\n            runs.append(run)\n    \n    output_jsonl = [\n        {\n            \"id\": examples_dict[run.reference_example_id].metadata[\"id\"],\n            \"prompt\": run.inputs[\"inputs\"][\"messages\"][0][\"content\"],\n            \"article\": run.outputs[\"final_report\"],\n        } for run in runs\n    ]\n    \n    # Write output_jsonl to JSONL file in test/expt_results directory\n    output_file_path = f\"test/expt_results/{dataset_name}_{model_name}.jsonl\"\n    os.makedirs(os.path.dirname(output_file_path), exist_ok=True)\n    with open(output_file_path, 'w', encoding='utf-8') as f:\n        for item in output_jsonl:\n            f.write(json.dumps(item, ensure_ascii=False) + '\\n')\n    \n    print(f\"Data written to {output_file_path}\")\n    print(f\"Total records: {len(output_jsonl)}\")\n    return output_file_path\n\n\ndef main():\n    parser = argparse.ArgumentParser(description='Extract data from LangSmith project')\n    parser.add_argument('--project-name', required=True, help='LangSmith project name')\n    parser.add_argument('--model-name', required=True, help='Model name for output filename')\n    parser.add_argument('--dataset-name', required=True, help='Dataset name for output filename')\n    parser.add_argument('--api-key', help='LangSmith API key (defaults to LANGSMITH_API_KEY env var)')\n    \n    args = parser.parse_args()\n    \n    api_key = args.api_key or os.getenv('LANGSMITH_API_KEY')\n    if not api_key:\n        raise ValueError(\"API key must be provided via --api-key or LANGSMITH_API_KEY environment variable\")\n    \n    extract_langsmith_data(\n        project_name=args.project_name,\n        model_name=args.model_name,\n        dataset_name=args.dataset_name,\n        api_key=api_key\n    )\n\n\nif __name__ == \"__main__\":\n    main()\n"
+      "text": "test/__init__.py\ntest/evaluators.py\ntest/extract_langsmith_data.py\ntest/live/\u5360\u4f4d\u6587\u4ef6(\u53ef\u5220)\ntest/offline/\u5360\u4f4d\u6587\u4ef6(\u53ef\u5220)\ntest/pairwise_evaluation.py\ntest/prompts.py\ntest/run_evaluate.py\ntest/supervisor_parallel_evaluation.py\n=====INIT=====\n\"\"\"Evaluation scripts and coursework tests.\"\"\"\n=====EXTRACT=====\n#!/usr/bin/env python3\n\"\"\"Extract data from LangSmith and save to JSONL file with configurable dataset.\"\"\"\n\nimport os\nimport json\nimport argparse\nfrom langsmith import Client\nfrom dotenv import load_dotenv\n\nload_dotenv()\n\n\ndef extract_langsmith_data(project_name, model_name, dataset_name, api_key):\n    \"\"\"Extract data from LangSmith and save to JSONL file.\"\"\"\n    print(f\"Extracting data from LangSmith project: {project_name}\")\n    print(f\"Using dataset: {dataset_name}\")\n    \n    client = Client(api_key=api_key)\n    \n    # Read project to get reference dataset id\n    project_data = client.read_project(project_name=project_name)\n    \n    # Read reference dataset to get examples\n    examples_gen = client.list_examples(dataset_id=project_data.reference_dataset_id)\n    examples = []\n    for example in examples_gen:\n        examples.append(example)\n    examples_dict = {example.id: example for example in examples}\n    \n    # Read project runs to get runs inputs and outputs and reference_example_ids\n    output_runs = client.list_runs(\n        project_name=project_name,\n        is_root=True\n    )\n    \n    runs = []\n    for run in output_runs:\n        if run.outputs is not None and run.outputs.get(\"final_report\") is not None:\n            runs.append(run)\n    \n    output_jsonl = [\n        {\n            \"id\": examples_dict[run.reference_example_id].metadata[\"id\"],\n            \"prompt\": run.inputs[\"inputs\"][\"messages\"][0][\"content\"],\n            \"article\": run.outputs[\"final_report\"],\n        } for run in runs\n    ]\n    \n    # Write output_jsonl to JSONL file in test/expt_results directory\n    output_file_path = f\"test/expt_results/{dataset_name}_{model_name}.jsonl\"\n    os.makedirs(os.path.dirname(output_file_path), exist_ok=True)\n    with open(output_file_path, 'w', encoding='utf-8') as f:\n        for item in output_jsonl:\n            f.write(json.dumps(item, ensure_ascii=False) + '\\n')\n    \n    print(f\"Data written to {output_file_path}\")\n    print(f\"Total records: {len(output_jsonl)}\")\n    return output_file_path\n\n\ndef main():\n    parser = argparse.ArgumentParser(description='Extract data from LangSmith project')\n    parser.add_argument('--project-name', required=True, help='LangSmith project name')\n    parser.add_argument('--model-name', required=True, help='Model name for output filename')\n    parser.add_argument('--dataset-name', required=True, help='Dataset name for output filename')\n    parser.add_argument('--api-key', help='LangSmith API key (defaults to LANGSMITH_API_KEY env var)')\n    \n    args = parser.parse_args()\n    \n    api_key = args.api_key or os.getenv('LANGSMITH_API_KEY')\n    if not api_key:\n        raise ValueError(\"API key must be provided via --api-key or LANGSMITH_API_KEY environment variable\")\n    \n    extract_langsmith_data(\n        project_name=args.project_name,\n        model_name=args.model_name,\n        dataset_name=args.dataset_name,\n        api_key=api_key\n    )\n\n\nif __name__ == \"__main__\":\n    main()\n"
     }
   ]
 }
@@ -566,75 +566,75 @@ I'll start by verifying the environment and reading the required governance docu
 
 ### Event 17 — OpenCode (plan)
 
-## 0. 执行状态说明
+## 0. Execution status
 
-当前会话处于 **Plan mode（只读）**，系统禁止任何文件修改。因此本轮**未写入任何文件、未创建 ADR/EVAL/测试、未提交或推送**。下面是可直接执行的 Phase 1 SA 草案计划；切换到 Build 模式后可逐项落盘。
+This session is in **Plan mode (read-only)**, and system instructions prohibit file changes. **No files, ADR/EVAL entries or tests were written, and nothing was committed or pushed.** The following Phase 1 SA draft can be written to the repository after switching to Build mode.
 
-## 1. 角色、分支、工作区与权限核对
+## 1. Role, branch, working tree and permissions
 
-| 项 | 核对结果 |
+| Item | Finding |
 |---|---|
-| 角色 | Plan；只写 SA 文档，不写源码/测试/审批记录 |
-| 分支 | `docs/sa-evaluation`，工作区干净，包含 `main` |
-| 模块路径 | 按蓝图 §4：`test/evaluation/` |
-| 需求状态 | REQ-009 v1.1、REQ-010 v1.1 均为 `approved`，owner `DopplerXD` |
-| Plan 可写 | `docs/architecture/*`（除 `permission-model.md`）、`structural-constraints.md`、`verification-constraints.md` |
-| Plan 不可写 | `src/*`、`test/*`、`scripts/*`、`docs/approvals/*`、`.opencode/*` |
-| 待人工处理 | README 文档与 `docs/ai-use-log.yaml` 属于人类/Build 阶段；本轮只在聊天给建议条目 |
+| Role | Plan; architecture documents only, no source code, tests or approval records |
+| Branch | `docs/sa-evaluation`, clean working tree, includes `main` |
+| Module path | `test/evaluation/`, according to blueprint section 4 |
+| Requirement status | REQ-009 v1.1 and REQ-010 v1.1 are `approved`, owner `DopplerXD` |
+| Plan may edit | `docs/architecture/*` except `permission-model.md`, plus `structural-constraints.md` and `verification-constraints.md` |
+| Plan may not edit | `src/*`, `test/*`, `scripts/*`, `docs/approvals/*`, `.opencode/*` |
+| Human follow-up | README documentation and `docs/ai-use-log.yaml` belong to human/Build-stage work; this round provides suggestions in chat only |
 
-发现的文档措辞问题（不阻塞，但需集成时确认）：`structural-constraints.md` §1 把顶层 `test/` 标为“新工作不放这里”，而蓝图 §4 明确 evaluation 模块路径为 `test/evaluation/`。建议 §10 明确 `test/evaluation/` 是例外，`test/` 下其余基线脚本不新增逻辑。
+A wording conflict was found, recorded as non-blocking but requiring integration review. Section 1 of `structural-constraints.md` says no new work belongs under top-level `test/`, while blueprint section 4 assigns the evaluation module to `test/evaluation/`. Section 10 should explicitly identify that exception, keeping new logic out of the other baseline scripts under `test/`.
 
-## 2. 基线代码核对（引用当前代码位置）
+## 2. Baseline code findings
 
-| 问题 | 位置 | 结论 |
+| Issue | Location | Finding |
 |---|---|---|
-| 导入副作用 | `test/evaluators.py:17-19` | 模块导入即构造 `ChatOpenAI(model="gpt-4.1")`；无 key/无网络时导入行为不可控 |
-| correctness 输入丢失 | `test/prompts.py:95-104`；`test/evaluators.py:199-201` | `CORRECTNESS_PROMPT` 完全没有 `{user_question}`/`{report}`/`{answer}` 占位符，`format()` 的实参被静默忽略 |
-| 评分未校验 | `test/evaluators.py:90-98, 140, 179, 219, 312` | 整数评分直接 `/5`，0/6/布尔/字符串/分数会得到越界或非法分数 |
-| groundedness 除零 | `test/evaluators.py:265-270` | `len(grounded)/len(claims)`，空 claims 触发 `ZeroDivisionError` |
-| 缺输入直接抛异常 | `test/evaluators.py:196-198, 239-244, 286-293` | 缺 `reference_outputs["answer"]`、`raw_notes`、`research_brief` 时抛 `KeyError` |
-| 单指标异常中断整体 | `test/evaluators.py` 各 `eval_*` 无隔离 | 一个指标异常会中断该 evaluator，无法返回“其余指标仍被评估” |
-| 只跑研究图 | `test/run_evaluate.py:32-61, 64-67` | `target()` 编译并调用完整 research graph；`aevaluate` 只接受数据集 |
-| 入口导入副作用 | `test/run_evaluate.py:9-11` | `load_dotenv("../.env")`、`Client()` 在导入时执行；离线测试不得导入此模块 |
-| 相邻脚本 | `test/pairwise_evaluation.py`、`test/supervisor_parallel_evaluation.py`、`test/extract_langsmith_data.py` | 不在 REQ-009/010 范围，本次不改 |
+| Import side effect | `test/evaluators.py:17-19` | Import constructs `ChatOpenAI(model="gpt-4.1")`; behaviour without a key/network is not controlled |
+| Missing correctness inputs | `test/prompts.py:95-104`; `test/evaluators.py:199-201` | `CORRECTNESS_PROMPT` has no `{user_question}`, `{report}` or `{answer}` placeholders, so `format()` silently ignores its arguments |
+| Unvalidated ratings | `test/evaluators.py:90-98, 140, 179, 219, 312` | Integer ratings are divided by five directly; 0, 6, booleans, strings or fractional ratings can produce out-of-range or invalid scores |
+| Groundedness division by zero | `test/evaluators.py:265-270` | `len(grounded)/len(claims)` raises `ZeroDivisionError` for empty claims |
+| Missing inputs raise | `test/evaluators.py:196-198, 239-244, 286-293` | Missing `reference_outputs["answer"]`, `raw_notes` or `research_brief` raises `KeyError` |
+| Single-metric failure interrupts evaluation | The `eval_*` functions in `test/evaluators.py` lack isolation | An exception interrupts that evaluator instead of reporting a result while other metrics continue |
+| Research graph always runs | `test/run_evaluate.py:32-61, 64-67` | `target()` compiles and invokes the full research graph; `aevaluate` receives a dataset |
+| Entry import side effects | `test/run_evaluate.py:9-11` | `load_dotenv("../.env")` and `Client()` run at import; offline tests must avoid importing this module |
+| Adjacent scripts | `test/pairwise_evaluation.py`, `test/supervisor_parallel_evaluation.py`, `test/extract_langsmith_data.py` | Outside REQ-009/010 scope; no changes planned |
 
-## 3. ASR 映射
+## 3. ASR mapping
 
 **REQ-009（invariant, safety_relevant）**
 
-| 准则 | 架构含义 |
+| Criterion | Architectural implication |
 |---|---|
-| C-001 | 每个指标必须把其定义域输入完整送入 judge；correctness 必须修占位符 |
-| C-002 | 评分必须是严格整数 1–5；`1→0.2`、`5→1.0`；非法值 → `not_evaluable`, `score=None` |
-| C-003 | 缺 reference/brief/evidence 只影响依赖该输入的指标 |
-| C-004 | 空 claims → `not_evaluable`；单指标异常隔离；2/4 grounded → 0.5 |
-| M-001 | 任何结果 score 不得越界；`out_of_range_score_count == 0` |
+| C-001 | Every metric must send all inputs in its domain to the judge; correctness placeholders need repair |
+| C-002 | Ratings must be strict integers from 1 to 5; `1 -> 0.2`, `5 -> 1.0`; invalid ratings produce `not_evaluable`, `score=None` |
+| C-003 | Missing reference/brief/evidence affects only metrics requiring that input |
+| C-004 | Empty claims produce `not_evaluable`; metric errors are isolated; two of four grounded claims produce 0.5 |
+| M-001 | No score may be out of range; `out_of_range_score_count == 0` |
 
 **REQ-010（functional）**
 
-| 准则 | 架构含义 |
+| Criterion | Architectural implication |
 |---|---|
-| C-001 | 评估入口只读 question/report，不导入/调用 research graph、search provider；结果标识原报告 |
-| C-002 | 空白 report/question 在调用任何 evaluator 前拒绝 |
-| C-003 | README 可用性为人工检查，证据进 `docs/review-memo.md` |
+| C-001 | The entry evaluates the supplied question/report without importing or invoking the research graph or search provider; the result identifies the original report |
+| C-002 | Blank question/report is rejected before any evaluator runs |
+| C-003 | README usability is checked by a human, with evidence in `docs/review-memo.md` |
 
-## 4. ADD 方案比较（计划写入 `evaluation-table.md` 的 EVAL-001）
+## 4. ADD candidate comparison (planned EVAL-001 in `evaluation-table.md`)
 
-| 选项 | 方案 | 正确性 | 复用 | 耦合 | 基准入口兼容 | 离线可测 | 复杂度 |
+| Option | Design | Correctness | Reuse | Coupling | Benchmark compatibility | Offline testability | Complexity |
 |---|---|---|---|---|---|---|---|
-| A | 原地加固 `test/evaluators.py`，新增 `test/evaluate_report.py` | 中 | 高 | 高 | 高 | 中 | 低 |
-| **B（推荐）** | 新建 `test/evaluation/` 核心包 + `test/evaluators.py` 兼容适配器；`run_evaluate.py` 不改 | 高 | 高 | 低 | 高 | 高 | 中 |
-| C | 新建独立评估服务并复制 evaluator 逻辑，基线条目不动 | 低（REQ-009 修不到基准链路） | 低 | 低 | 低 | 高 | 高 |
+| A | Harden `test/evaluators.py` in place and add `test/evaluate_report.py` | Medium | High | High | High | Medium | Low |
+| **B (recommended)** | Add a `test/evaluation/` core package and a compatibility adapter in `test/evaluators.py`; retain `run_evaluate.py` | High | High | Low | High | High | Medium |
+| C | Add an independent evaluation service with duplicated evaluator logic; retain baseline entries | Low (REQ-009 is not fixed on the benchmark path) | Low | Low | Low | High | High |
 
-**推荐 B**：核心逻辑与 LangSmith 适配分离；`test/evaluators.py` 保留同名函数作为薄适配器，`test/run_evaluate.py` 无需改动；judge 惰性构造，可注入 fake judge，完全离线可测；满足蓝图模块边界。
+**Recommendation B** separates core logic from LangSmith adaptation. The existing function names remain as thin adapters in `test/evaluators.py`; `test/run_evaluate.py` needs no change. Lazy judge creation and an injectable fake judge enable offline tests while respecting the blueprint's module boundary.
 
-**待人工决定**：见第 9 节。
+**Human decisions pending:** see section 9.
 
-## 5. Proposed ADR-001 结构与接口
+## 5. Proposed ADR-001 structure and interfaces
 
-文件：`docs/architecture/adr/001-evaluation-module.md`，状态 `Proposed`，EVAL-001，Owner `DopplerXD`。
+File: `docs/architecture/adr/001-evaluation-module.md`, status `Proposed`, EVAL-001, owner DopplerXD.
 
-**建议包结构**
+**Proposed package layout**
 
 ```text
 test/evaluation/
@@ -645,10 +645,10 @@ test/evaluation/
   metrics.py        # per-metric deterministic evaluation with isolation
   entry.py          # evaluate_existing_report(...)
   evaluate_report.py# CLI main()
-test/evaluators.py  # 兼容适配器，保留基线函数名
+test/evaluators.py  # compatibility adapter preserving baseline function names
 ```
 
-**公共接口（ADR §5）**
+**Public interface (ADR section 5)**
 
 ```python
 class MetricStatus(str, Enum):
@@ -681,76 +681,76 @@ def evaluate_existing_report(
 ) -> EvaluationResult: ...
 ```
 
-`Judge` 协议：`invoke(messages, schema) -> BaseModel`。`default_judge()` 在调用时才构造 `ChatOpenAI`，模块导入不构造客户端、不读 key。
+`Judge` protocol: `invoke(messages, schema) -> BaseModel`. `default_judge()` constructs `ChatOpenAI` on demand. Importing the module neither constructs a client nor reads a key.
 
-**严格评分校验**
+**Strict rating validation**
 
-- 仅接受 `type(value) is int` 且 `1 <= value <= 5`；显式拒绝 `bool`、`float`（含 `4.0`）、`str`、`Decimal`、`NaN`/`inf`、`None`。
-- 合法：`score = value / 5`；非法：`status=NOT_EVALUABLE`, `score=None`, `reason="invalid_rating:<value>"`。
-- groundedness：claims 为空或非 list → `NOT_EVALUABLE`, `reason="no_claims"`；否则 `grounded_count / total`。
+- Accept only `type(value) is int` and `1 <= value <= 5`. Explicitly reject `bool`, `float` (including `4.0`), `str`, `Decimal`, `NaN`/`inf` and `None`.
+- Valid: `score = value / 5`. Invalid: `status=NOT_EVALUABLE`, `score=None`, `reason="invalid_rating:<value>"`.
+- Groundedness: empty or non-list claims produce `NOT_EVALUABLE`, `reason="no_claims"`; otherwise return `grounded_count / total`.
 
-**失败隔离**
+**Failure isolation**
 
-按 evaluator 分组隔离：overall quality 的 6 个维度在一次 judge 调用内独立校验，一个维度非法不影响其余；任一 evaluator 抛 `Exception` 时，仅该组指标变为 `not_evaluable`，其余组继续。不得吞掉 `BaseException`。
+Isolate evaluator groups. Validate the six overall-quality dimensions independently within one judge call, so one invalid dimension does not affect the others. An evaluator `Exception` makes only its group's metrics `not_evaluable`; other groups continue. Do not catch `BaseException`.
 
-**REQ-010 入口**
+**REQ-010 entry**
 
-- 先校验 `question.strip()`、`report.strip()` 非空；否则抛 `EvaluationInputError`，judge 调用次数为 0。
-- 入口模块不导入 `open_deep_research.deep_researcher`、不导入 search/provider、不调用 `utils.get_search_tool`。
-- `report_id` 未提供时使用报告文本的 SHA-256；始终返回 `report_sha256`。
-- CLI：`python -m test.evaluation.evaluate_report --report <file> --question <text> [...]`，输出 JSON。
+- Validate non-blank `question.strip()` and `report.strip()` first; otherwise raise `EvaluationInputError` with zero judge calls.
+- The entry imports neither `open_deep_research.deep_researcher` nor search/provider modules, and does not call `utils.get_search_tool`.
+- Use the report text's SHA-256 when `report_id` is absent; always return `report_sha256`.
+- CLI: `python -m test.evaluation.evaluate_report --report <file> --question <text> [...]`, returning JSON.
 
-**兼容适配器（`test/evaluators.py`）**
+**Compatibility adapter (`test/evaluators.py`)**
 
-保留 `eval_overall_quality`、`eval_relevance`、`eval_structure`、`eval_correctness`、`eval_groundedness`、`eval_completeness` 名称与调用签名，内部调用核心包；返回字段保留基线 `key`/`score`/`comment`，并增加 `status`、`reason`。overall quality 仍返回 6 元素 list，其余返回 dict。这样 `test/run_evaluate.py:2,15` 无需改动。
+Preserve the names and signatures of `eval_overall_quality`, `eval_relevance`, `eval_structure`, `eval_correctness`, `eval_groundedness` and `eval_completeness`, delegating internally to the core package. Preserve `key`/`score`/`comment` and add `status`/`reason`. Overall quality still returns a six-item list and other evaluators return a dictionary, retaining compatibility with `test/run_evaluate.py:2,15`.
 
-## 6. 模块文档改动计划
+## 6. Module-document change plan
 
-| 文件 | 计划内容 |
+| File | Planned content |
 |---|---|
-| `docs/architecture/evaluation-table.md` | 新增 `EVAL-001`，包含 ASR、A/B/C 比较、Choice、Rejected |
-| `docs/architecture/adr/001-evaluation-module.md` | 从模板创建，填满九节；§6 引用 INV/POL，§9 逐文件步骤 |
-| `docs/architecture/invariants.md` | 新增 `INV-006`（评分有效性）、`INV-007`（评估入口不触发研究/搜索） |
-| `docs/architecture/runtime-policy-catalog.md` | §1 增行，§2 增 evaluation 模块；POL-002…POL-006（集成时统一编号） |
-| `docs/architecture/trace-matrix.md` | 更新 REQ-009/010 两行：ADR-001、INV-006/007、`test/evaluation/`、计划测试、监控指标 |
-| `docs/code-governance/structural-constraints.md` §10 | 新增 evaluation 表：路径、职责、接口、调用方、允许/禁止依赖、共享契约、无配置开关 |
-| `docs/code-governance/verification-constraints.md` §7 | 新增 evaluation 用例表、回归套件、人工检查 |
-| `docs/architecture/memory-design.md` §5 | **不新增**：评估模块不改变 graph state；报告中注明 N/A 及理由 |
+| `docs/architecture/evaluation-table.md` | Add `EVAL-001` with ASRs, A/B/C comparison, choice and rejection reasons |
+| `docs/architecture/adr/001-evaluation-module.md` | Create from the template, complete nine sections, reference INV/POL in section 6 and give file-by-file steps in section 9 |
+| `docs/architecture/invariants.md` | Add INV-006 (valid scores) and INV-007 (evaluation entry never triggers research/search) |
+| `docs/architecture/runtime-policy-catalog.md` | Add a section 1 row and a section 2 evaluation module with POL-002 through POL-006; renumber at integration |
+| `docs/architecture/trace-matrix.md` | Update REQ-009/010 with ADR-001, INV-006/007, `test/evaluation/`, planned tests and monitoring metrics |
+| `docs/code-governance/structural-constraints.md` section 10 | Add evaluation path, responsibilities, interfaces, callers, dependency rules, shared contracts and absence of a configuration switch |
+| `docs/code-governance/verification-constraints.md` section 7 | Add evaluation cases, regression suite and human checks |
+| `docs/architecture/memory-design.md` section 5 | **No addition**; graph state is unchanged. Record N/A and its rationale in the report |
 
-**POL 草案**
+**Draft policies**
 
-| ID | 触发 | 行为 |
+| ID | Trigger | Action |
 |---|---|---|
-| POL-002 | question/report 空白（入口） | 抛 `EvaluationInputError`，不调用 judge |
-| POL-003 | 缺 reference/brief/evidence | 依赖指标 `not_evaluable`，其余继续 |
-| POL-004 | judge 返回非法评分 | 该指标 `not_evaluable`、score=None |
-| POL-005 | claims 为空 | groundedness `not_evaluable` |
-| POL-006 | evaluator/judge 抛异常 | 该组指标 `not_evaluable`，其余继续 |
+| POL-002 | Blank question/report at entry | Raise `EvaluationInputError`; no judge calls |
+| POL-003 | Missing reference/brief/evidence | Dependent metrics become `not_evaluable`; others continue |
+| POL-004 | Invalid judge rating | Affected metric becomes `not_evaluable`, score=None |
+| POL-005 | Empty claims | Groundedness becomes `not_evaluable` |
+| POL-006 | Evaluator/judge exception | Affected group becomes `not_evaluable`; others continue |
 
-## 7. 验收覆盖与计划测试位置
+## 7. Acceptance coverage and planned test locations
 
-测试文件与需求中的 `verification` 路径完全一致。
+Test paths match the requirements' `verification` paths.
 
-| Case | 覆盖 | 类型 | 输入 | 预期结果 | 计划位置 |
+| Case | Coverage | Type | Input | Expected result | Planned location |
 |---|---|---|---|---|---|
-| TC-EVAL-001 | REQ-009 C-001 | normal | question/report/answer/brief/evidence 标记 | 各 judge 请求包含对应原文 | `test/offline/test_evaluator_validity.py::test_evaluators_receive_their_inputs` |
+| TC-EVAL-001 | REQ-009 C-001 | normal | question/report/answer/brief/evidence markers | Each judge request contains the corresponding original input | `test/offline/test_evaluator_validity.py::test_evaluators_receive_their_inputs` |
 | TC-EVAL-002 | REQ-009 C-002 | boundary | rating 1、5 | 0.2、1.0 | `::test_ratings_are_validated` |
 | TC-EVAL-003 | REQ-009 C-002 | exception | 0、6、True、`"4"`、4.5、NaN、inf、None | `not_evaluable`，score=None | `::test_ratings_are_validated` |
-| TC-EVAL-004 | REQ-009 C-003 | exception | 缺 reference/brief/evidence | 对应指标不可评估，其余已评分 | `::test_missing_input_is_not_evaluable` |
+| TC-EVAL-004 | REQ-009 C-003 | exception | Missing reference/brief/evidence | Dependent metrics are unavailable; others are scored | `::test_missing_input_is_not_evaluable` |
 | TC-EVAL-005 | REQ-009 C-004 | boundary | claims=[] | groundedness `not_evaluable` | `::test_groundedness_and_errors` |
 | TC-EVAL-006 | REQ-009 C-004 | normal | 4 claims，2 grounded | groundedness=0.5 | `::test_groundedness_and_errors` |
-| TC-EVAL-007 | REQ-009 C-004 | exception | 一个 evaluator 抛异常 | 仅该组不可评估，其余评分 | `::test_one_metric_error_does_not_abort_others` |
-| TC-EVAL-008 | REQ-009 M-001 | boundary | 全评分扫描 | 越界 score 数为 0 | `::test_ratings_are_validated` |
-| TC-EVAL-009 | INV-006 | regression | 无 key/无网络导入 `test.evaluators`，调用适配器 | 导入无副作用，基线 key/shape 保持 | `::test_adapter_contract_and_import_is_side_effect_free` |
-| TC-EVAL-010 | REQ-010 C-001 | normal | 报告/问题标记 + fake judge；patch graph/search 为失败 | judge 收到原文，graph/search 调用为 0，结果标识原报告 | `test/offline/test_report_evaluation_entry.py::test_entry_scores_supplied_report_without_research` |
-| TC-EVAL-011 | INV-007 | regression | 子进程导入入口 | `open_deep_research.deep_researcher` 不在 `sys.modules` | `::test_entry_does_not_import_research_graph` |
-| TC-EVAL-012 | REQ-010 C-002 | exception | 空/纯空白 report 或 question | `EvaluationInputError`，judge 调用 0 | `::test_blank_input_rejected` |
-| TC-EVAL-013 | REQ-010 C-001 | boundary | 无 `report_id` | 稳定 SHA-256；同一报告同 id | `::test_entry_identifies_report` |
-| TC-EVAL-014 | REQ-010 C-003 | manual | 按 README 评估报告文件 | 可读 per-metric 结果 | `docs/review-memo.md` 的 REVIEW-NNN |
+| TC-EVAL-007 | REQ-009 C-004 | exception | One evaluator raises | Only that group unavailable; others scored | `::test_one_metric_error_does_not_abort_others` |
+| TC-EVAL-008 | REQ-009 M-001 | boundary | Sweep all scores | Zero out-of-range scores | `::test_ratings_are_validated` |
+| TC-EVAL-009 | INV-006 | regression | Import `test.evaluators` without a key/network, then call adapters | No import side effects; baseline keys and shapes preserved | `::test_adapter_contract_and_import_is_side_effect_free` |
+| TC-EVAL-010 | REQ-010 C-001 | normal | Report/question markers and fake judge; patch graph/search to fail | Judge receives original text; zero graph/search calls; result identifies original report | `test/offline/test_report_evaluation_entry.py::test_entry_scores_supplied_report_without_research` |
+| TC-EVAL-011 | INV-007 | regression | Import entry in a subprocess | `open_deep_research.deep_researcher` absent from `sys.modules` | `::test_entry_does_not_import_research_graph` |
+| TC-EVAL-012 | REQ-010 C-002 | exception | Empty/whitespace-only report or question | `EvaluationInputError`, zero judge calls | `::test_blank_input_rejected` |
+| TC-EVAL-013 | REQ-010 C-001 | boundary | No `report_id` | Stable SHA-256; identical reports have identical IDs | `::test_entry_identifies_report` |
+| TC-EVAL-014 | REQ-010 C-003 | manual | Evaluate a report file following README | Readable per-metric results | REVIEW-NNN in `docs/review-memo.md` |
 
-**回归**：`uv run pytest test/offline`；新增测试的 docstring 首行写 RID；`test/evaluators.py` 适配器契约测试；不改 `test/run_evaluate.py`。
+**Regression:** `uv run pytest test/offline`; start new test docstrings with the RID; adapter-contract tests for `test/evaluators.py`; retain `test/run_evaluate.py`.
 
-## 8. AI 使用日志建议条目（供人工核对填写）
+## 8. Suggested AI-use log entry (for human verification and entry)
 
 ```yaml
 - id: AIU-NNN
@@ -779,52 +779,52 @@ def evaluate_existing_report(
   transcript: null
 ```
 
-## 9. 待人工决定事项
+## 9. Pending human decisions
 
-1. `overall_quality` 粒度：推荐 6 个独立指标结果，而非 1 个聚合结果。
-2. `status` 取值：推荐 `scored` / `not_evaluable`。
-3. 空白输入行为：推荐抛 `EvaluationInputError`（而非返回带 error 的结果）。
-4. `report_id`：推荐可选 `report_id` + 始终返回 `report_sha256`。
-5. 严格整数：推荐拒绝 `4.0` 等 float，即使数值等于整数。
-6. judge 配置：推荐保留默认 `gpt-4.1` 但改为惰性构造、可注入；judge 选择本身不在本需求范围。
-7. 打包：`test/evaluation/` 需加入 `pyproject.toml` 的 `[tool.setuptools] packages`；这是依赖文件变更，Build 阶段需人工确认。
-8. 是否接受 `INV-007`（REQ-010 的“入口不触发研究/搜索”）作为新增 invariant。
-9. `POL-002…006` 为模块临时编号，集成时由集成者统一重编号。
+1. `overall_quality` granularity: recommend six independent metric results instead of one aggregate.
+2. `status` values: recommend `scored` and `not_evaluable`.
+3. Blank input: recommend raising `EvaluationInputError` instead of returning an error-bearing result.
+4. `report_id`: recommend an optional caller ID and an always-present `report_sha256`.
+5. Strict integers: recommend rejecting floats such as `4.0`, even if mathematically integral.
+6. Judge configuration: retain default `gpt-4.1` with lazy creation and injection; judge selection is outside the requirement scope.
+7. Packaging: add `test/evaluation/` to `[tool.setuptools] packages` in `pyproject.toml`; this dependency-file change needs human confirmation during Build.
+8. Decide whether to accept INV-007, REQ-010's no-research/no-search boundary, as an additional invariant.
+9. POL-002 through POL-006 are provisional module IDs, to be renumbered by the integrator.
 
-## 10. 检查结果（本轮实际执行）
+## 10. Checks actually performed this round
 
-| 检查 | 结果 |
+| Check | Result |
 |---|---|
-| 阅读顺序与文档核对 | PASS（只读） |
-| 分支/工作区/权限核对 | PASS |
-| 基线代码定位 | PASS（引用见第 2 节） |
-| 文件修改 | N/A（Plan mode 禁止） |
-| 测试/ruff/requirements 校验 | NOT_RUN（SA 阶段尚未写测试；未改代码/需求） |
-| 提交/推送 | N/A（明确禁止） |
+| Reading-order and document checks | PASS (read-only) |
+| Branch/working-tree/permission checks | PASS |
+| Baseline code locations | PASS (see section 2) |
+| File edits | N/A (prohibited by Plan mode) |
+| Tests/Ruff/requirement validation | NOT_RUN (SA tests not yet written; no code or requirement changes) |
+| Commit/push | N/A (explicitly prohibited) |
 
-请切换到 **Build 模式**（或允许 Plan 写盘）后，我按上述文件清单落盘，并在完成后停在人工 SA 评审前。
+Switch to **Build mode**, or permit Plan to write, and I will write the listed documents and stop before human SA Review.
 
 ### Event 18 — User
 
-允许Plan模式编辑架构文档。
-第4节决定：选择B方案。
-第9节决定：
-1、2、3、5、6、8、9接受。
-第3项补充CLI错误提示和非零退出的状态；
-第4项首版简化为用原报告内容的SHA-256标识报告；
-第7项先检查现有打包配置与运行方式，提供必要性依据后再决定。
-另请核实LangSmith评估返回契约，明确内部MetricResult如何
-转换为兼容结果，特别说明not_evaluable和null score的处理。
+Permit Plan mode to edit architecture documents.
+Section 4 decision: choose option B.
+Section 9 decisions:
+Accept items 1, 2, 3, 5, 6, 8 and 9.
+For item 3, add CLI error messages and a nonzero exit status.
+For item 4, use the original report content's SHA-256 as the report identifier in the first version.
+For item 7, inspect current packaging and execution modes and provide necessity evidence before deciding.
+Also check the LangSmith evaluator return contract and explain how the internal MetricResult
+maps to compatible results, especially not_evaluable and null scores.
 
-以上是设计方向确认。
-以上是设计方向确认，若无其他冲突，就将架构草案写入相应文档与模块章节，完成后保持在 SA 阶段，提交文件差异和验收覆盖清单供我审阅
+These are confirmations of the design direction.
+These are confirmations of the design direction. If there are no further conflicts, write the architecture draft into the corresponding documents and module sections. Remain in SA and provide a diff and acceptance-coverage list for my review.
 
 > **H-02 Candidate and interface decisions**
-> 选择 B 方案，简化报告标识，要求核实 LangSmith 返回契约与打包必要性，使后续实现有明确依据。
+> Selected option B, simplified report identity, and requested evidence for LangSmith compatibility and packaging necessity to guide implementation.
 
 ### Event 19 — OpenCode (plan)
 
-理解。系统 Plan mode 仍强制只读，因此我**不能落盘**；我先完成你要求的两项核实（打包必要性、LangSmith 返回契约），再把可直接执行的最终草案与差异清单交给你。
+Understood. System Plan mode still enforces read-only operation, so I **cannot write the files**. I will first check the two requested issues, packaging necessity and the LangSmith return contract, then provide the final executable draft and change list.
 
 #### Tool bash — completed
 
@@ -1231,39 +1231,39 @@ def evaluate_existing_report(
 
 ### Event 35 — OpenCode (plan)
 
-## 执行限制说明
+## Execution constraint
 
-系统 Plan mode 仍强制**只读**，即使你已允许编辑，我也不能落盘。因此下面是最终可执行草案、拟修改差异与验收覆盖清单；**未修改任何受跟踪文件、未写测试/审批、未提交/推送**。检查过程中 `uv run` 自动生成了被 `.venv/.gitignore` 忽略的本地环境，`git status` 无变化。
+System Plan mode still enforces **read-only** operation despite your editing permission. The following is the final executable draft, proposed changes and acceptance coverage. **No tracked files, tests or approvals were changed, and nothing was committed or pushed.** During inspection, `uv run` created a local environment ignored by `.venv/.gitignore`; `git status` remained unchanged.
 
-## 已确认并纳入的设计决定
+## Confirmed design decisions incorporated
 
-- 选择 **B 方案**：`test/evaluation/` 核心包 + `test/evaluators.py` 兼容适配器，`test/run_evaluate.py` 不改。
-- 接受决定 1、2、3、5、6、8、9。
-- 第 3 项补充：CLI 错误写 stderr、非零退出。
-- 第 4 项简化：`report_id` 直接使用原报告内容的 SHA-256，不引入调用方自定义 ID。
-- 第 7 项：先给打包必要性依据，结论见下。
-- LangSmith 契约：见下，`not_evaluable` 映射为 **null score + `value="not_evaluable"` + metadata/comment**，绝不映射为 0。
+- Choose **option B**: `test/evaluation/` core package and `test/evaluators.py` compatibility adapter; retain `test/run_evaluate.py`.
+- Accept decisions 1, 2, 3, 5, 6, 8 and 9.
+- Item 3 addition: send CLI errors to stderr and exit nonzero.
+- Item 4 simplification: derive `report_id` directly from the original report content's SHA-256, with no caller-defined ID.
+- Item 7: establish packaging necessity first; findings follow.
+- LangSmith contract: map `not_evaluable` to **null score, `value="not_evaluable"` and metadata/comment**, never to zero.
 
-## 1. 打包配置核实与必要性
+## 1. Packaging configuration and necessity
 
-现有配置：
+Existing configuration:
 
-- `pyproject.toml`：`[tool.setuptools] packages = ["open_deep_research", "test"]`，`package-dir` 把 `test` 指向仓库根 `test/`。
-- README 运行方式：`uv sync`、`uvx --with-editable .`、`python test/run_evaluate.py`；CI 使用 `uv run pytest test/offline`。
-- `uv sync` 生成 setuptools **editable finder**：`MAPPING = {'open_deep_research': ..., 'test': ...}`；`test` 的直接子模块通过 `PathFinder.find_spec(..., path=[<test 目录>])` 解析，更深层由父包 `__path__` 自动解析。因此 `test/evaluation/` 在 editable/仓库根运行方式下**无需**加入 `packages` 也可导入。
-- 非 editable 安装（`pip install .`/wheel）使用显式 `packages` 列表，会包含 `test` 但不包含 `test/evaluation`；此时 `test.evaluators` 已安装却无法导入 `test.evaluation`，形成不一致。
+- `pyproject.toml`: `[tool.setuptools] packages = ["open_deep_research", "test"]`; `package-dir` maps `test` to the repository's top-level `test/`.
+- README execution modes include `uv sync`, `uvx --with-editable .` and `python test/run_evaluate.py`; CI uses `uv run pytest test/offline`.
+- `uv sync` creates a setuptools **editable finder**, with `MAPPING = {'open_deep_research': ..., 'test': ...}`. Direct children of `test` resolve through `PathFinder.find_spec(..., path=[<test directory>])`, and deeper children resolve through their parent's `__path__`. Consequently `test/evaluation/` can be imported in editable or repository-root execution without adding it to `packages`.
+- Non-editable installations (`pip install .`/wheel) use the explicit `packages` list, including `test` but excluding `test/evaluation`. The installed `test.evaluators` would then be unable to import `test.evaluation`.
 
-**结论/建议**：当前支持的 editable、CI、`python test/...` 方式并非硬依赖打包改动；但既然 `test` 已被打包，建议在 `pyproject.toml` 增加 `"test.evaluation"`，避免非 editable 安装断裂。代价是一行变更并需要人工确认依赖文件。若本 PR 不纳入，ADR §9 记录为“条件步骤：仅在支持非 editable 安装时添加；否则明确 evaluation 工具仅支持仓库内 editable 运行”。
+**Conclusion/recommendation:** the current editable, CI and `python test/...` execution modes do not strictly require the packaging change. Since `test` is packaged already, add `"test.evaluation"` to `pyproject.toml` to preserve non-editable installations. This is a one-line dependency-file change requiring human confirmation. If omitted from this PR, ADR section 9 should make it conditional on supporting non-editable installations; otherwise explicitly document repository-local editable execution as the only supported mode.
 
-## 2. LangSmith 评估返回契约核实
+## 2. LangSmith evaluator return contract
 
-已核对 installed `langsmith 0.9.2` 源码与官方文档：
+Checked the installed `langsmith 0.9.2` source and official documentation:
 
-- 自定义 evaluator 可返回 `dict`、`list[dict]`、`EvaluationResult`、`EvaluationResults`；字段为 `key`、`score`（数值）或 `value`（分类）、可选 `comment`，以及可选的 `metadata`、`correction` 等。
-- `langsmith.evaluation.EvaluationResult.score` 类型为 `SCORE_TYPE = Union[StrictBool, StrictInt, StrictFloat, None]`，**允许 `None`**；`create_feedback(score=None)` 也是默认值。
-- 官方文档把 `score` 描述为数值、`value` 描述为分类值；因此 null score 在 SDK 类型层面合法，UI/汇总不应把它当作 0。已用本地模型验证 `EvaluationResult(key=..., score=None, value="not_evaluable", metadata=...)` 可正常校验。
+- Custom evaluators can return `dict`, `list[dict]`, `EvaluationResult` or `EvaluationResults`. Fields include `key`, numeric `score` or categorical `value`, optional `comment`, and optional `metadata`, `correction`, etc.
+- `langsmith.evaluation.EvaluationResult.score` uses `SCORE_TYPE = Union[StrictBool, StrictInt, StrictFloat, None]`, which **permits `None`**. `create_feedback(score=None)` also uses that default.
+- Official documentation describes `score` as numeric and `value` as categorical. A null score is therefore valid at the SDK type level and should not be treated as zero in the UI/aggregation. Local validation accepted `EvaluationResult(key=..., score=None, value="not_evaluable", metadata=...)`.
 
-**内部 `MetricResult` → LangSmith 兼容结果**
+**Internal `MetricResult` to LangSmith-compatible result**
 
 ```python
 # SCORED
@@ -1284,26 +1284,26 @@ def evaluate_existing_report(
 }
 ```
 
-- `overall_quality` 仍返回 **6 个 dict 的 list**；其余 evaluator 返回单个 dict。这样 `test/run_evaluate.py:2,15` 的现有调用契约不变。
-- `not_evaluable` **不得**转换为 `score=0`；null score 使该反馈不参与数值平均，`value`/`metadata`/`comment` 保留状态与原因。
-- 每个 evaluator 内部异常时，把它负责的全部 key 以 `not_evaluable` 返回，保证 LangSmith 仍看到所有 metric key；其余 evaluator 继续。
-- 兼容字段：保留基线 `key`、`score`、`comment`；新增 `value`/`metadata` 不破坏 LangSmith 契约。
+- `overall_quality` still returns **a list of six dictionaries**; other evaluators return one dictionary, preserving the calls in `test/run_evaluate.py:2,15`.
+- `not_evaluable` **must not** become `score=0`; a null score is excluded from numeric averaging, while `value`, `metadata` and `comment` preserve the status and reason.
+- An internal evaluator failure returns every key owned by that evaluator as `not_evaluable`, so LangSmith still sees all metric keys while other evaluators continue.
+- Preserve baseline `key`, `score` and `comment`; additional `value` and `metadata` fields fit the LangSmith contract.
 
-**CLI 行为（拟写入 ADR §3）**
+**CLI behaviour (proposed ADR section 3)**
 
-| 情况 | 输出 | 退出码 |
+| Condition | Output | Exit code |
 |---|---|---|
-| 完成评估，至少一个 metric 为 `scored` | stdout 输出 JSON | 0 |
-| 完成评估，但全部 metric 为 `not_evaluable` | stdout 输出 JSON，stderr 提示无可用评分 | 1 |
-| 空白 question/report、文件读取失败、参数错误 | stderr `error: <message>`，不调用 judge | 2 |
+| Evaluation completes with at least one `scored` metric | JSON on stdout | 0 |
+| Evaluation completes with all metrics `not_evaluable` | JSON on stdout; stderr indicates no usable scores | 1 |
+| Blank question/report, report-file failure or argument error | stderr `error: <message>`; no judge calls | 2 |
 
-## 3. 最终文档草案要点
+## 3. Final architecture draft outline
 
-**EVAL-001**：ASR 覆盖 REQ-009 C-001—C-004/M-001 与 REQ-010 C-001—C-003；候选 A/B/C；Choice B；记录 A、C 拒绝理由。
+**EVAL-001:** ASRs cover REQ-009 C-001 through C-004/M-001 and REQ-010 C-001 through C-003; candidates A/B/C; choice B; rejection reasons for A/C.
 
 **ADR-001**（`docs/architecture/adr/001-evaluation-module.md`，Proposed）：
 
-- §3：B 方案、核心类型、严格整数校验、失败隔离、SHA-256 `report_id`、CLI 退出码、适配器映射。
+- Section 3: option B, core types, strict rating validation, failure isolation, SHA-256 `report_id`, CLI exit codes and adapter mapping.
 - §5：
 
 ```python
@@ -1336,87 +1336,87 @@ def evaluate_existing_report(
 ) -> EvaluationResult: ...
 ```
 
-- §6：状态 none；POL-002—POL-006；INV-006/INV-007；确定性边界为评分校验、归一化、输入完整性、claims 比例和异常隔离。
-- §9：逐文件步骤（types → validation → judge → metrics → entry → CLI → `test/evaluators.py` 适配器 → `test/prompts.py` 占位符 → README；pyproject 条件步骤）。
+- Section 6: no state changes; POL-002 through POL-006; INV-006/INV-007; deterministic rating validation, normalisation, input completeness, claim ratios and exception isolation.
+- Section 9: file-by-file steps (types, validation, judge, metrics, entry, CLI, `test/evaluators.py` adapter, `test/prompts.py` placeholders, README and conditional pyproject change).
 
-**INV-006**：评估结果只能是合法 `scored`（0—1）或 `not_evaluable`（null score），非法评分/缺输入/空 claims/异常不得产生分数。
+**INV-006:** metric results are valid `scored` values in 0 to 1, or `not_evaluable` with null score. Invalid ratings, missing input, empty claims and exceptions must not produce scores.
 
-**INV-007**：评估入口只评估给定报告，不导入或调用 research graph/search，不生成替代报告。
+**INV-007:** the entry evaluates only the supplied report, never imports or invokes the research graph/search, and generates no replacement report.
 
-**POL（临时编号）**：
+**Policies (provisional IDs)**
 
-| ID | 触发 | 行为 |
+| ID | Trigger | Action |
 |---|---|---|
-| POL-002 | 入口 question/report 空白 | 抛 `EvaluationInputError`；CLI stderr + exit 2；judge 0 次 |
-| POL-003 | 缺 reference/brief/evidence | 依赖指标 `not_evaluable`，其余继续 |
-| POL-004 | judge 返回非法评分 | 该指标 `not_evaluable`，null score |
-| POL-005 | claims 为空 | groundedness `not_evaluable` |
-| POL-006 | evaluator/judge 异常 | 该组指标 `not_evaluable`，其余继续 |
+| POL-002 | Blank question/report at entry | Raise `EvaluationInputError`; CLI stderr and exit 2; zero judge calls |
+| POL-003 | Missing reference/brief/evidence | Dependent metrics become `not_evaluable`; others continue |
+| POL-004 | Invalid judge rating | Affected metric becomes `not_evaluable`, null score |
+| POL-005 | Empty claims | Groundedness becomes `not_evaluable` |
+| POL-006 | Evaluator/judge exception | Affected group becomes `not_evaluable`; others continue |
 
-**trace-matrix**：REQ-009 → ADR-001/INV-006、`test/evaluation/`、`test/offline/test_evaluator_validity.py`、`out_of_range_score_count`；REQ-010 → ADR-001/INV-007、`test/evaluation/entry.py`、`test/offline/test_report_evaluation_entry.py`、监控 N/A（由 INV-007 结构测试覆盖）。
+**trace-matrix:** REQ-009 maps to ADR-001/INV-006, `test/evaluation/`, `test/offline/test_evaluator_validity.py` and `out_of_range_score_count`; REQ-010 maps to ADR-001/INV-007, `test/evaluation/entry.py`, `test/offline/test_report_evaluation_entry.py`; monitoring N/A (covered by INV-007 structural tests).
 
-**structural-constraints §10**：路径 `test/evaluation/`；职责为评估有效性与既有报告评估入口；调用方 `test/evaluators.py`、CLI；可依赖 `test/prompts.py`、`open_deep_research.utils.get_today_str`；禁止依赖 `deep_researcher.py`、research graph、search/provider、导入时构造模型客户端；共享契约 none；无配置开关。
+**structural-constraints section 10:** path `test/evaluation/`; responsibilities include valid evaluation and the existing-report entry; callers are `test/evaluators.py` and CLI. Allowed dependencies are `test/prompts.py` and `open_deep_research.utils.get_today_str`. Prohibit `deep_researcher.py`, research graph, search/provider and model-client construction at import. No shared contract changes or configuration switch.
 
-**memory-design §5**：不新增，报告注明 N/A（不改变 graph state）。
+**memory-design section 5:** no addition; report N/A because graph state is unchanged.
 
-## 4. 验收覆盖清单
+## 4. Acceptance coverage
 
-| Case | 覆盖 | 类型 | 输入/场景 | 预期 | 计划测试位置 |
+| Case | Coverage | Type | Input/scenario | Expected outcome | Planned test location |
 |---|---|---|---|---|---|
-| TC-EVAL-001 | REQ-009 C-001 | normal | 各输入标记 | 各 judge 请求包含对应原文 | `test/offline/test_evaluator_validity.py::test_evaluators_receive_their_inputs` |
+| TC-EVAL-001 | REQ-009 C-001 | normal | Distinct input markers | Judge requests contain the corresponding original input | `test/offline/test_evaluator_validity.py::test_evaluators_receive_their_inputs` |
 | TC-EVAL-002 | REQ-009 C-002 | boundary | rating 1、5 | 0.2、1.0 | `::test_ratings_are_validated` |
 | TC-EVAL-003 | REQ-009 C-002 | exception | 0、6、True、`"4"`、4.5、NaN、inf、None | `not_evaluable`、null score | `::test_ratings_are_validated` |
-| TC-EVAL-004 | REQ-009 C-003 | exception | 缺 reference/brief/evidence | 依赖指标不可评估，其余已评分 | `::test_missing_input_is_not_evaluable` |
+| TC-EVAL-004 | REQ-009 C-003 | exception | Missing reference/brief/evidence | Dependent metrics unavailable; others scored | `::test_missing_input_is_not_evaluable` |
 | TC-EVAL-005 | REQ-009 C-004 | boundary | claims=[] | groundedness `not_evaluable` | `::test_groundedness_and_errors` |
 | TC-EVAL-006 | REQ-009 C-004 | normal | 4 claims，2 grounded | groundedness=0.5 | `::test_groundedness_and_errors` |
-| TC-EVAL-007 | REQ-009 C-004 | exception | 一个 evaluator 抛异常 | 仅该组不可评估，其余评分 | `::test_one_metric_error_does_not_abort_others` |
-| TC-EVAL-008 | REQ-009 M-001 | boundary | 全评分扫描 | 越界 score 数为 0 | `::test_ratings_are_validated` |
-| TC-EVAL-009 | INV-006 | regression | 无 key/无网络导入；适配器映射 | 导入无副作用；`not_evaluable` 为 null score + value/metadata，基线 key/shape 保持 | `::test_adapter_contract_and_import_is_side_effect_free` |
-| TC-EVAL-010 | REQ-010 C-001 | normal | 报告/问题标记；patch graph/search 为失败 | judge 收到原文；graph/search 调用 0；`report_id` 为报告 SHA-256 | `test/offline/test_report_evaluation_entry.py::test_entry_scores_supplied_report_without_research` |
-| TC-EVAL-011 | INV-007 | regression | 子进程导入入口 | `open_deep_research.deep_researcher` 不在 `sys.modules` | `::test_entry_does_not_import_research_graph` |
-| TC-EVAL-012 | REQ-010 C-002 | exception | 空/纯空白 report 或 question | `EvaluationInputError`；judge 0 次 | `::test_blank_input_rejected` |
-| TC-EVAL-013 | REQ-010 C-001 | boundary | 无自定义 ID | `report_id == sha256(report)`，稳定 | `::test_entry_identifies_report` |
-| TC-EVAL-014 | REQ-010 C-003 | manual | 按 README 评估文件 | 可读 per-metric 结果 | `docs/review-memo.md` REVIEW-NNN |
-| TC-EVAL-015 | REQ-010 C-002 / CLI | exception | CLI 空白输入 | stderr `error:`，exit 2，judge 0 次 | `::test_cli_blank_input_exit_code` |
-| TC-EVAL-016 | REQ-010 CLI | boundary | 全部不可评估 / 部分可评估 | exit 1 / exit 0，stdout 为 JSON | `::test_cli_exit_codes` |
+| TC-EVAL-007 | REQ-009 C-004 | exception | One evaluator raises | Only that group unavailable; others scored | `::test_one_metric_error_does_not_abort_others` |
+| TC-EVAL-008 | REQ-009 M-001 | boundary | Sweep all scores | Zero out-of-range scores | `::test_ratings_are_validated` |
+| TC-EVAL-009 | INV-006 | regression | Import without key/network; exercise adapter mapping | No import side effects; `not_evaluable` maps to null score, value/metadata; baseline keys/shapes preserved | `::test_adapter_contract_and_import_is_side_effect_free` |
+| TC-EVAL-010 | REQ-010 C-001 | normal | Report/question markers; patch graph/search to fail | Judge receives original input; zero graph/search calls; `report_id` is report SHA-256 | `test/offline/test_report_evaluation_entry.py::test_entry_scores_supplied_report_without_research` |
+| TC-EVAL-011 | INV-007 | regression | Import entry in a subprocess | `open_deep_research.deep_researcher` absent from `sys.modules` | `::test_entry_does_not_import_research_graph` |
+| TC-EVAL-012 | REQ-010 C-002 | exception | Empty/whitespace-only report or question | `EvaluationInputError`; zero judge calls | `::test_blank_input_rejected` |
+| TC-EVAL-013 | REQ-010 C-001 | boundary | No custom ID | Stable `report_id == sha256(report)` | `::test_entry_identifies_report` |
+| TC-EVAL-014 | REQ-010 C-003 | manual | Evaluate a file following README | Readable per-metric results | REVIEW-NNN in `docs/review-memo.md` |
+| TC-EVAL-015 | REQ-010 C-002 / CLI | exception | Blank CLI input | stderr `error:`, exit 2, zero judge calls | `::test_cli_blank_input_exit_code` |
+| TC-EVAL-016 | REQ-010 CLI | boundary | All metrics unavailable / some scored | Exit 1 / exit 0; JSON stdout | `::test_cli_exit_codes` |
 
-**回归**：`uv run pytest test/offline`；`test/evaluators.py` 适配器契约；`test/run_evaluate.py` 导入面不变。
+**Regression:** `uv run pytest test/offline`; adapter contract in `test/evaluators.py`; unchanged import surface of `test/run_evaluate.py`.
 
-## 5. 拟修改文件（待你切换到可写模式后执行）
+## 5. Proposed file changes (after switching to a writable role)
 
-| 文件 | 操作 |
+| File | Action |
 |---|---|
-| `docs/architecture/evaluation-table.md` | 追加 `EVAL-001` |
-| `docs/architecture/adr/001-evaluation-module.md` | 新建，九节完整 |
-| `docs/architecture/invariants.md` | 追加 `INV-006`、`INV-007` |
-| `docs/architecture/runtime-policy-catalog.md` | §1 增行，§2 增 evaluation 模块 |
-| `docs/architecture/trace-matrix.md` | 更新 REQ-009/010 两行 |
-| `docs/code-governance/structural-constraints.md` | 追加 §10 evaluation 表 |
-| `docs/code-governance/verification-constraints.md` | 追加 §7 evaluation 用例表 |
-| `docs/architecture/memory-design.md` | 不修改（N/A） |
-| `pyproject.toml` | 条件步骤，待你决定是否纳入 |
-| `test/evaluation/*`、`test/evaluators.py`、`test/prompts.py`、`README.md` | 属于 Build/Test Author 后续阶段，本轮不写 |
+| `docs/architecture/evaluation-table.md` | Append `EVAL-001` |
+| `docs/architecture/adr/001-evaluation-module.md` | Create with nine complete sections |
+| `docs/architecture/invariants.md` | Append `INV-006` and `INV-007` |
+| `docs/architecture/runtime-policy-catalog.md` | Add a section 1 row and section 2 evaluation module |
+| `docs/architecture/trace-matrix.md` | Update REQ-009/010 rows |
+| `docs/code-governance/structural-constraints.md` | Append evaluation table to section 10 |
+| `docs/code-governance/verification-constraints.md` | Append evaluation cases to section 7 |
+| `docs/architecture/memory-design.md` | No change (N/A) |
+| `pyproject.toml` | Conditional step pending your decision |
+| `test/evaluation/*`, `test/evaluators.py`, `test/prompts.py`, `README.md` | Later Build/Test Author stages; no edits this round |
 
-## 6. 检查结果
+## 6. Check results
 
-| 检查 | 结果 |
+| Check | Result |
 |---|---|
-| 分支/工作区 | `docs/sa-evaluation`，无受跟踪文件变化 |
-| 权限 | Plan 可写目标文档；本轮受 Plan mode 只读限制 |
-| 基线代码定位 | PASS（引用见上一轮与 ADR §2 计划） |
-| 打包核实 | PASS（editable 下无需强制加入；非 editable 下建议加入） |
-| LangSmith 契约核实 | PASS（SDK 0.9.2 类型允许 null score；适配器映射已定） |
-| 文档落盘 | NOT_RUN（只读限制） |
-| 测试/ruff/requirements 校验 | NOT_RUN（SA 阶段，未写测试/代码） |
-| 提交/推送 | N/A（明确禁止） |
+| Branch/working tree | `docs/sa-evaluation`; no tracked-file changes |
+| Permissions | Plan permits target documents; current session restricted by read-only Plan mode |
+| Baseline code locations | PASS (previous round and planned ADR section 2) |
+| Packaging | PASS (not required for editable use; recommended for non-editable installs) |
+| LangSmith contract | PASS (SDK 0.9.2 permits null score; adapter mapping determined) |
+| Document writing | NOT_RUN (read-only restriction) |
+| Tests/Ruff/requirement validation | NOT_RUN (SA stage, no test/code changes) |
+| Commit/push | N/A (explicitly prohibited) |
 
-## 7. 仍需你决定
+## 7. Remaining human decisions
 
-1. `pyproject.toml` 是否在本 PR 加入 `"test.evaluation"`：建议加入；当前 editable/CI 流程非硬依赖。
-2. CLI 退出码方案（0/1/2）是否按上表固定。
-3. POL-002—006 临时编号、INV-007 作为正式 invariant，是否接受集成时统一重编号。
+1. Whether to add `"test.evaluation"` to `pyproject.toml` in this PR: recommended, though not essential for current editable/CI use.
+2. Whether to fix CLI exit codes at 0/1/2 as above.
+3. Whether to accept provisional POL-002 through POL-006 and INV-007, with renumbering at integration.
 
-## 8. AI 使用日志建议条目（已按本轮更新）
+## 8. Updated suggested AI-use log entry
 
 ```yaml
 - id: AIU-NNN
@@ -1446,16 +1446,16 @@ def evaluate_existing_report(
   transcript: null
 ```
 
-请切换到可写模式（或取消 Plan mode 只读限制）。我将按第 5 节写入文档，完成后停在 Gate 1 前，并提交实际 `git diff` 与最终验收覆盖清单。
+Switch to a writable role or remove the read-only Plan restriction. I will write the section 5 documents, stop before Gate 1 and provide the actual `git diff` and final acceptance coverage.
 
 ### Event 40 — User
 
-第7节确认项：1、2、3均接受建议。
+For the three confirmation items in section 7, I accept all recommendations.
 
-Plan模式已能够进行写入，继续工作
+Plan mode can now write; continue working.
 
 > **H-03 Remaining design decisions**
-> 确认打包步骤、命令行退出码和临时编号。这是设计方向确认，整体 SA Review 尚待进行。
+> Confirmed packaging, CLI exit codes and provisional numbering. These are design-direction decisions; integrated SA Review is still pending.
 
 ### Event 46 — model-switched
 
@@ -1479,36 +1479,36 @@ Plan模式已能够进行写入，继续工作
 
 ### Event 50 — User
 
-第7节确认项：1、2、3均接受建议。
+For the three confirmation items in section 7, I accept all recommendations.
 
-Plan模式已能够进行写入，继续工作
+Plan mode can now write; continue working.
 
 ### Event 59 — User
 
-第7节确认项：1、2、3均接受建议。
+For the three confirmation items in section 7, I accept all recommendations.
 
-Plan模式已能够进行写入，继续工作
+Plan mode can now write; continue working.
 
 ### Event 70 — User
 
-第7节确认项：1、2、3均接受建议。
+For the three confirmation items in section 7, I accept all recommendations.
 
-Plan模式已能够进行写入，继续工作
+Plan mode can now write; continue working.
 
 ### Event 71 — OpenCode (plan)
 
-当前仍是 **Plan mode**。系统限制只允许写 `/Users/doppler/.opencode/plan`，**不能修改仓库内的架构文档**；即使权限配置允许，Plan mode harness 仍会阻止落盘。因此我无法继续执行第 5 节的文档写入。
+The session is still in **Plan mode**. System instructions permit writing only under `/Users/doppler/.opencode/plan`, **not repository architecture documents**. The Plan harness prevents writing even if permission configuration allows it, so I cannot carry out the section 5 document edits.
 
-请切换到 **Build agent**（或任何非 Plan 的写入角色），我会立即按已确认方案执行：
+Please switch to **Build agent**, or another writable non-Plan role, and I will apply the confirmed design:
 
-- 确认项 1：`pyproject.toml` 加入 `"test.evaluation"`
-- 确认项 2：CLI 退出码 `0`（有可用评分）/ `1`（全部 `not_evaluable`）/ `2`（输入或参数错误）
-- 确认项 3：接受 `INV-007`，`POL-002—006` 为临时编号，集成时统一
-- 写入 `EVAL-001`、`ADR-001`、INV/POL/trace-matrix/structural §10/verification §7
-- 不修改 `memory-design.md`（无状态变化）
-- 完成后停在 Gate 1 前，提交实际 `git diff` 与验收覆盖清单
+- Confirmed item 1: add `"test.evaluation"` to `pyproject.toml`.
+- Confirmed item 2: CLI exit 0 for usable scores, 1 when all metrics are `not_evaluable`, and 2 for input/argument errors.
+- Confirmed item 3: accept INV-007; POL-002 through POL-006 remain provisional pending integration.
+- Write `EVAL-001`, `ADR-001`, INV/POL/trace-matrix, structural section 10 and verification section 7.
+- Keep `memory-design.md` unchanged because graph state is unchanged.
+- Stop before Gate 1 and provide the actual diff and acceptance coverage.
 
-目前仓库**没有任何受跟踪文件改动**，也未提交或推送。
+There are **no tracked-file changes**, commits or pushes.
 
 ### Event 80 — agent-switched
 
@@ -1524,34 +1524,34 @@ Plan模式已能够进行写入，继续工作
 
 ### Event 85 — User
 
-由于内置 Plan 模式禁止写入仓库文档，我明确授权本次使用
-Build 角色，将当前会话中已确认的 SA 设计整理到文档。
-这是针对文档编辑的临时角色例外，当前阶段仍为 SA。
+Because built-in Plan mode prohibits repository document edits, I explicitly authorise
+the Build role to write the confirmed SA design from this conversation into documents.
+This is a temporary role exception for document editing; the phase remains SA.
 
-请先读取 AGENTS.md、Prompt.md、权限文件和当前分支，
-复核本会话已确认的 B 方案及后续决定。
+First read AGENTS.md, Prompt.md, the permission model and current branch,
+then verify option B and the subsequent decisions confirmed in this conversation.
 
-只允许修改以下 evaluation 模块文档：
+Only these evaluation module documents may be changed:
 - docs/architecture/evaluation-table.md
-- 新建 docs/architecture/adr/<可用编号>-evaluation-module.md
+- Create docs/architecture/adr/<available-number>-evaluation-module.md
 - docs/architecture/invariants.md
 - docs/architecture/runtime-policy-catalog.md
 - docs/architecture/trace-matrix.md
-- docs/code-governance/structural-constraints.md 的模块章节
-- docs/code-governance/verification-constraints.md 的模块章节
+- The module section of docs/code-governance/structural-constraints.md
+- The module section of docs/code-governance/verification-constraints.md
 
-保留其他模块内容，ADR 状态为 Proposed。
-pyproject.toml 的调整只写入 ADR 后续实现步骤。
+Preserve other modules and keep the ADR Proposed.
+Record the pyproject.toml change only in the ADR's later implementation steps.
 
-禁止修改源码、测试代码、依赖配置、权限和审批记录。
-禁止提交、推送或进入功能实现。
-若有文档编辑权限询问，等待我确认。
+Do not modify source code, test code, dependency configuration, permissions or approval records.
+Do not commit, push or enter implementation.
+If document editing requires permission, wait for my confirmation.
 
-完成后给出实际文件差异、验收覆盖和未解决事项。
-在聊天中提供真实的 AI 日志建议条目。
+Finish with actual file differences, acceptance coverage and unresolved items.
+Provide a suggested AI-use log entry based on actual events in chat.
 
 > **H-04 Documentation-only role exception**
-> 内置 Plan 限制阻止文档写入，人工限定 Build 仅整理七份 SA 文档，保留源码、测试和审批记录边界。
+> Built-in Plan restrictions blocked document writing. The member explicitly limited Build to seven SA documents while retaining source, test and approval boundaries.
 
 ### Event 86 — OpenCode (build)
 
@@ -2375,64 +2375,64 @@ pyproject.toml 的调整只写入 ADR 后续实现步骤。
 
 ### Event 388 — OpenCode (build)
 
-## 完成情况
+## Completion status
 
-已按临时授权的 Build 角色完成 evaluation 模块的 **SA 文档草案**。仅修改/新建以下 7 个文档；未修改源码、测试代码、`pyproject.toml`、权限或审批记录；未提交、未推送、未进入功能实现。ADR 状态保持 **Proposed**。
+The evaluation module **SA draft** has been written under the temporary documentation-only Build authorisation. Only the seven documents below were changed or created. Source, tests, `pyproject.toml`, permissions and approvals were unchanged; no commit, push or implementation was performed. The ADR remains **Proposed**.
 
-## 1. 实际文件差异
+## 1. Actual file differences
 
-| 文件 | 状态 | 差异 |
+| File | Status | Difference |
 |---|---|---|
-| `docs/architecture/evaluation-table.md` | 修改 | 新增 `EVAL-001`：ASR、A/B/C 三方案比较、选择 B、拒绝 A/C 的理由（+28 行） |
-| `docs/architecture/adr/001-evaluation-module.md` | 新建 | 192 行；从模板填写全部九节，含组件、接口、状态、严格整数校验、失败隔离、CLI、LangSmith 适配、逐文件实现步骤 |
-| `docs/architecture/invariants.md` | 修改 | 新增 `INV-006`（评分有效或 `not_evaluable`）与 `INV-007`（评估入口不触发研究/搜索）（+20 行） |
-| `docs/architecture/runtime-policy-catalog.md` | 修改 | §2 新增 evaluation 模块 `POL-002`—`POL-008`（+12 行） |
-| `docs/architecture/trace-matrix.md` | 修改 | 更新 REQ-009、REQ-010 两行（+2/−2） |
-| `docs/code-governance/structural-constraints.md` | 修改 | §10 新增 evaluation 模块约束表（+15 行） |
-| `docs/code-governance/verification-constraints.md` | 修改 | §7 新增 evaluation 用例表 `TC-EVAL-001`—`016`（+24 行） |
+| `docs/architecture/evaluation-table.md` | Modified | Add `EVAL-001`: ASRs, three candidates, choice B and rejection reasons for A/C (+28 lines) |
+| `docs/architecture/adr/001-evaluation-module.md` | New | 192 lines; all nine template sections, components, interfaces, statuses, strict rating validation, failure isolation, CLI, LangSmith adaptation and file-by-file implementation steps |
+| `docs/architecture/invariants.md` | Modified | Add INV-006 (valid or unavailable scores) and INV-007 (no research/search from entry), +20 lines |
+| `docs/architecture/runtime-policy-catalog.md` | Modified | Add evaluation section with POL-002 through POL-008 in section 2, +12 lines |
+| `docs/architecture/trace-matrix.md` | Modified | Update REQ-009/010 rows, +2/-2 lines |
+| `docs/code-governance/structural-constraints.md` | Modified | Add evaluation module constraints in section 10, +15 lines |
+| `docs/code-governance/verification-constraints.md` | Modified | Add TC-EVAL-001 through TC-EVAL-016 in section 7, +24 lines |
 
-`git diff --stat`：6 个已跟踪文件，`101 insertions(+), 2 deletions(-)`；ADR 为新增未跟踪文件。
+`git diff --stat`: six tracked files, `101 insertions(+), 2 deletions(-)`; the new ADR is untracked.
 
-## 2. 验收覆盖清单
+## 2. Acceptance coverage
 
-| 需求/准则 | 覆盖用例 |
+| Requirement/criterion | Covered cases |
 |---|---|
-| REQ-009 C-001 | TC-EVAL-001：各指标 judge 请求包含 question/report/reference/brief/evidence |
-| REQ-009 C-002 | TC-EVAL-002（1→0.2、5→1.0）、TC-EVAL-003（0/6/布尔/字符串/4.5/NaN/inf/None → `not_evaluable`, null score） |
-| REQ-009 C-003 | TC-EVAL-004：缺 reference/brief/evidence 仅影响依赖指标 |
-| REQ-009 C-004 | TC-EVAL-005（空 claims）、006（2/4→0.5）、007（单指标异常隔离） |
+| REQ-009 C-001 | TC-EVAL-001: each judge request contains its question/report/reference/brief/evidence inputs |
+| REQ-009 C-002 | TC-EVAL-002 (1 -> 0.2, 5 -> 1.0), TC-EVAL-003 (0/6/boolean/string/4.5/NaN/inf/None -> `not_evaluable`, null score) |
+| REQ-009 C-003 | TC-EVAL-004: missing reference/brief/evidence affects dependent metrics only |
+| REQ-009 C-004 | TC-EVAL-005 (empty claims), 006 (two of four -> 0.5), 007 (metric failure isolation) |
 | REQ-009 M-001 | TC-EVAL-008：`out_of_range_score_count == 0` |
-| INV-006 | TC-EVAL-002—009，重点 TC-009 适配器契约 |
-| REQ-010 C-001 | TC-EVAL-010（零 research/search 调用）、TC-EVAL-013（SHA-256 报告标识） |
-| REQ-010 C-002 | TC-EVAL-012（空白输入拒绝）、TC-EVAL-015（CLI stderr + exit 2） |
-| REQ-010 C-003 | TC-EVAL-014：README 人工检查，证据进 `docs/review-memo.md` 的 `REVIEW-NNN` |
-| INV-007 | TC-EVAL-010、011、012、015，重点 TC-011 子进程导入边界 |
-| CLI 策略 | TC-EVAL-015（exit 2）、TC-EVAL-016（exit 1/0） |
-| 回归 | `uv run pytest test/offline`；`test/evaluators.py` 适配器契约；`test/run_evaluate.py` 六个 evaluator 名称与签名不变 |
+| INV-006 | TC-EVAL-002 through TC-EVAL-009, especially adapter contract TC-009 |
+| REQ-010 C-001 | TC-EVAL-010 (zero research/search calls), TC-EVAL-013 (SHA-256 report identity) |
+| REQ-010 C-002 | TC-EVAL-012 (blank input rejected), TC-EVAL-015 (CLI stderr and exit 2) |
+| REQ-010 C-003 | TC-EVAL-014: human README check; evidence in `docs/review-memo.md` as `REVIEW-NNN` |
+| INV-007 | TC-EVAL-010, 011, 012 and 015, especially subprocess import boundary TC-011 |
+| CLI policy | TC-EVAL-015 (exit 2), TC-EVAL-016 (exit 1/0) |
+| Regression | `uv run pytest test/offline`; `test/evaluators.py` adapter contract; unchanged six evaluator names and signatures in `test/run_evaluate.py` |
 
-## 3. 检查结果
+## 3. Check results
 
-| 检查 | 结果 |
+| Check | Result |
 |---|---|
 | `git diff --check` | **PASS** |
 | `uv run python scripts/validate_requirements.py` | **PASS**：`10 requirements valid` |
-| 改动范围核对 | **PASS**：仅上述 7 个文档；无 `src/`、`test/`、`pyproject.toml`、`docs/approvals/` 改动 |
-| `uv run pytest test/offline` | **NOT_RUN**：SA 阶段尚未编写测试，`test/offline/` 仅有占位文件 |
-| `uv run ruff check` | **NOT_RUN**：本轮无代码改动 |
-| 提交/推送 | **N/A**：明确禁止 |
+| Change-scope check | **PASS**: only the seven documents; no changes to `src/`, `test/`, `pyproject.toml` or `docs/approvals/` |
+| `uv run pytest test/offline` | **NOT_RUN**: SA tests are not yet authored; `test/offline/` contains only a placeholder |
+| `uv run ruff check` | **NOT_RUN**: no code changes |
+| Commit/push | **N/A**: explicitly prohibited |
 
-## 4. 未解决事项
+## 4. Outstanding items
 
-1. **SA Review / Gate 1 未执行**：ADR-001 仍为 `Proposed`，`SA-NNN` 待评审后分配。
-2. **测试尚未编写**：`TC-EVAL-001`—`016` 由 Test Author 在 Gate 1 后编写，并在 baseline 上确认失败原因。
-3. **实现步骤未执行**：ADR §9 的 `test/evaluation/` 实现、`test/prompts.py` 占位符修复、`test/evaluators.py` 适配器、README 与 CLI 均属 Gate 2 之后。
-4. **`pyproject.toml` 未改**：按你的要求，仅在 ADR §9 第 11 步记录 `"test.evaluation"` 的打包调整；实际变更留给实现 PR。
-5. **POL 编号为临时编号**：`POL-002`—`008` 集成时可能统一重编号。
-6. **`structural-constraints.md` §1 措辞**：§1 仍写顶层 `test/` 不放新工作；§10 已明确 `test/evaluation/` 是 evaluation 模块路径，建议集成时由集成者确认这一例外。
-7. **LangSmith null-score 的线上表现**：已核对 installed `langsmith 0.9.2` 的 `EvaluationResult`/`SCORE_TYPE` 与官方返回契约，`score=None` 类型合法；但未连接真实 LangSmith 服务验证 UI/汇总展示。设计上明确不把 `not_evaluable` 计为 0。
-8. **`test/run_evaluate.py` 导入副作用仍在**：`load_dotenv("../.env")`、`Client()` 位于该基线脚本；本轮按“基准入口兼容”未改动，评估入口通过独立模块避开它。
+1. **SA Review / Gate 1 pending:** ADR-001 remains `Proposed`; assign SA-NNN after review.
+2. **Tests not written:** Test Author writes TC-EVAL-001 through TC-EVAL-016 after Gate 1 and confirms expected baseline failure reasons.
+3. **Implementation steps pending:** ADR section 9 covers `test/evaluation/`, the `test/prompts.py` placeholders, the `test/evaluators.py` adapter, README and CLI after Gate 2.
+4. **`pyproject.toml` unchanged:** as requested, `"test.evaluation"` packaging is recorded only in ADR section 9, step 11, for the implementation PR.
+5. **Provisional policy IDs:** POL-002 through POL-008 may be renumbered at integration.
+6. **Structural section 1 wording:** it still prohibits new work in top-level `test/`; section 10 identifies `test/evaluation/`. The integrator should confirm this exception.
+7. **Live LangSmith null-score behaviour:** installed `langsmith 0.9.2` `EvaluationResult`/`SCORE_TYPE` and the official contract permit `score=None`; no live LangSmith UI/aggregation verification was performed. The design excludes `not_evaluable` from zero scores.
+8. **`test/run_evaluate.py` import side effects remain:** `load_dotenv("../.env")` and `Client()` remain in the compatible benchmark entry; the independent evaluation module avoids importing it.
 
-## 5. AI 使用日志建议条目
+## 5. Suggested AI-use log entry
 
 ```yaml
 - id: AIU-NNN
@@ -2480,28 +2480,28 @@ pyproject.toml 的调整只写入 ADR 后续实现步骤。
 
 ### Event 402 — User
 
-进入本次 SA 草稿提交前的检查。
+Perform the pre-submission check of this SA draft.
 
-1. 对照 REQ-009、REQ-010 和仓库模板检查已生成的7个文档，
-   检查接口、编号、交叉引用和全部验收项是否一致。
-2. 明确评分原始类型必须在Pydantic类型转换前校验，
-   并在测试清单补充4.0必须被拒绝。
-3. 将结构约束§1与test/evaluation/路径的冲突，
-   作为待模块评审确认的问题列出。
-4. 区分LangSmith类型兼容性检查和实际线上验证，
-   已执行检查应记录依据，尚未执行的保持NOT_RUN。
-5. 检查AI日志建议条目，只保留真实发生的人工决定，
-   不得写成已完成SA Review或测试验收。
+1. Check the seven generated documents against REQ-009, REQ-010 and repository templates,
+   verifying interfaces, IDs, cross-references and every acceptance criterion.
+2. Require validation of the original rating type before Pydantic conversion,
+   and add explicit rejection of 4.0 to the test-case list.
+3. Record the conflict between structural section 1 and test/evaluation/
+   as an issue for module review.
+4. Distinguish LangSmith type-contract checks from live verification,
+   recording evidence for completed checks and keeping unperformed checks NOT_RUN.
+5. Keep only actual human decisions in the AI-use log suggestion,
+   without claiming SA Review or test acceptance has occurred.
 
-仅检查、修订本模块SA文档，给出最终差异摘要和
-待评审问题。暂不提交、推送。
+Only check and revise this module's SA documents, then provide the final diff summary and
+issues for review. Do not commit or push yet.
 
 > **H-05 Pre-submission corrections**
-> 要求在类型转换前检查评分，补充 4.0 用例，记录路径冲突，并区分类型契约检查与真实线上验证。
+> Required pre-coercion rating validation, the 4.0 rejection case, explicit path-conflict reporting, and a distinction between type checks and live verification.
 
 ### Event 403 — OpenCode (plan)
 
-我回到 Plan mode，只能做只读检查；本轮不会修改仓库文件。下面是逐项核对结果和可直接应用的修订建议。
+I am back in Plan mode and can perform read-only checks only; no repository files will be changed this round. The findings and directly applicable revisions follow.
 
 #### Tool shell — completed
 
@@ -2571,72 +2571,72 @@ pyproject.toml 的调整只写入 ADR 后续实现步骤。
 
 ### Event 431 — OpenCode (plan)
 
-当前仍是 **Plan mode（只读）**，因此本轮已完成只读核对，但**未修改仓库文件**。下面给出核对结论、需要修订的精确位置、最终差异摘要和待评审问题；切换到可写角色后可直接应用。
+The session remains in **read-only Plan mode**, so the checks are complete but **repository files are unchanged**. Findings, exact revisions, the diff summary and review questions follow; they can be applied after switching to a writable role.
 
-## 1. 对照检查结论
+## 1. Cross-check results
 
-| 检查项 | 结果 | 说明 |
+| Check | Result | Details |
 |---|---|---|
-| ADR 九节完整性 | **PASS** | `ADR-001` 含 §1—§9，状态 `Proposed`，`SA-NNN` 未伪造 |
-| EVAL 模板字段 | **PASS** | Module、Owner、Decision、Status、ASR、Candidates、Choice、Rejected 齐全 |
-| 编号唯一性 | **PASS** | `EVAL-001`、`ADR-001`、`INV-006/007`、`POL-002—008`、`TC-EVAL-001—016` 无冲突 |
-| 交叉引用 | **基本 PASS** | ADR/EVAL/INV/POL/TC 互相引用可解析；唯一问题是 `structural-constraints.md` §1 与 `test/evaluation/` 路径冲突，见第 3 节 |
-| 验收项覆盖 | **PASS** | REQ-009 C-001—C-004/M-001、REQ-010 C-001—C-003 均有对应用例；C-003 保持人工检查 |
-| 接口一致性 | **需修订** | “评分原始类型必须在 Pydantic 转换前校验”尚未写成强制约束；当前 `validate_rating(value)` 可能拿到已被 Pydantic 宽松转换的 `int` |
-| LangSmith 验证区分 | **需修订** | 只写了类型兼容结论，未明确区分 SDK 类型检查与实际线上验证 |
-| AI 日志措辞 | **需修订** | 现有建议条目含“will review the ADR”等未来动作，不应写成已评审 |
+| Nine ADR sections | **PASS** | ADR-001 contains sections 1 through 9, remains Proposed, and does not fabricate SA-NNN |
+| EVAL template fields | **PASS** | Module, Owner, Decision, Status, ASRs, Candidates, Choice and Rejected fields present |
+| Unique IDs | **PASS** | No conflict among EVAL-001, ADR-001, INV-006/007, POL-002 through POL-008, TC-EVAL-001 through TC-EVAL-016 |
+| Cross-references | **Mostly PASS** | ADR/EVAL/INV/POL/TC links resolve; the structural section 1 path conflict remains, see section 3 |
+| Acceptance coverage | **PASS** | REQ-009 C-001 through C-004/M-001 and REQ-010 C-001 through C-003 mapped to cases; C-003 remains a human check |
+| Interface consistency | **REVISION NEEDED** | Pre-Pydantic validation is not yet mandatory; `validate_rating(value)` may receive a coerced `int` |
+| LangSmith verification scope | **REVISION NEEDED** | Type compatibility is stated without separating SDK checks from live verification |
+| AI-use log wording | **REVISION NEEDED** | Suggested text includes future work such as reviewing the ADR; it must not claim completed review |
 
-## 2. 必须修订项
+## 2. Required revisions
 
-### 2.1 评分原始类型必须在 Pydantic 转换前校验
+### 2.1 Validate the original rating type before Pydantic conversion
 
-理由：如果 judge 响应 schema 把评分声明为 `int`，Pydantic 默认 lax 模式会把 `4.0`、`"4"` 转成 `4`，后续 `type(value) is int` 会误判为合法。架构上必须让验证函数看到**原始值**。
+Rationale: a judge-response schema declaring ratings as `int` may let Pydantic's lax mode convert `4.0` or `"4"` to `4`, causing a later `type(value) is int` check to accept them. The validator must see the **raw value**.
 
-**建议修改 ADR §3.5 第一段为：**
+**Replace the first paragraph of ADR section 3.5 with:**
 
 > The raw judge rating must be validated before any Pydantic or other type conversion. The judge response schema therefore keeps rating fields as raw values (`Any`, or the raw structured tool-call arguments); it must not declare them as `int`, because Pydantic's default lax mode would coerce `4.0` and `"4"` to `4` and hide an invalid rating. `validation.validate_rating(raw_value)` performs the first check: `type(raw_value) is int` and `1 <= raw_value <= 5`. Booleans, floats including `4.0`, strings, fractions, `None`, `NaN` and infinities are invalid. A valid rating is normalised as `value / 5`. An invalid rating produces `status="not_evaluable"`, `score=None` and `reason_code="invalid_rating"`. Scores are never clamped, rounded, defaulted or replaced by zero.
 
-**同步修改：**
+**Synchronised changes:**
 
-- ADR §3.7：`Judge.invoke(...)` 返回原始结构化字段值，评分在构造 `MetricResult` 前经过 `validate_rating`。
-- ADR §5：`validation.py` 的 `validate_rating(raw_value) -> float` 明确为“对原始值校验，非法时抛 `InvalidRating`”；`judge.py` 的接口改为返回原始 mapping。
-- ADR §9 第 4、5 步：增加“不得把评分字段声明为 `int`；先校验原始值，再构造 `MetricResult`”。
-- `INV-006` 的 Statement 增加“on the raw judge value before any Pydantic/type conversion”。
-- `POL-004` 的 Detection 增加“raw value before Pydantic conversion；`4.0` 必须拒绝”。
-- `verification-constraints.md` 的 `TC-EVAL-003` 输入加入 `4.0`，并补一句：
+- ADR section 3.7: `Judge.invoke(...)` returns raw structured values; validate ratings before constructing `MetricResult`.
+- ADR section 5: `validation.py` exposes `validate_rating(raw_value) -> float`, validating the raw input and raising `InvalidRating` on invalid values; change `judge.py` to return a raw mapping.
+- ADR section 9, steps 4 and 5: prohibit declaring rating fields as `int`; validate raw values before constructing `MetricResult`.
+- Add "on the raw judge value before any Pydantic/type conversion" to INV-006's Statement.
+- POL-004 Detection must specify raw values before Pydantic conversion and explicit rejection of `4.0`.
+- Add `4.0` to TC-EVAL-003 in verification-constraints and add:
 
 > `TC-EVAL-003` deliberately includes `4.0` and `"4"`: a lax `int` schema would coerce both to `4`; the test must observe `not_evaluable` with `invalid_rating`.
 
-### 2.2 `structural-constraints.md` §1 与 `test/evaluation/` 路径冲突列为待评审问题
+### 2.2 Record the structural section 1 and test/evaluation/ conflict for module review
 
-当前 ADR §2 写成“已通过……解决”，但 §1 明确写顶层 `test/` “No”。应改为显式待确认，不静默解决。
+ADR section 2 currently presents the conflict as resolved, while structural section 1 explicitly says "No" for top-level `test/`. Mark the issue as awaiting confirmation instead of resolving it implicitly.
 
-**建议：**
+**Recommended changes:**
 
-- ADR §2 将该句改为：
+- Replace the sentence in ADR section 2 with:
 
 > The blueprint assigns this module to `test/evaluation/`, but `structural-constraints.md` §1 lists top-level `test/` as “No” for new work. This conflict is recorded as a module-review question in §10 and must be confirmed before SA acceptance; it is not silently resolved here.
 
-- `structural-constraints.md` §10 表格后增加：
+- Add after the module table in structural-constraints section 10:
 
 > **Module-review question:** §1 lists top-level `test/` as “No” for new work; blueprint §4 assigns this module to `test/evaluation/`. Confirm this exception at module review/integration; §1 is human-owned and is not edited here.
 
-- ADR §8 增加一段 **Open for module review**，复述该问题。
-- `EVAL-001` 末尾可加一行 **Open for module review**，保证 ADD 记录也可见。
+- Add an **Open for module review** paragraph in ADR section 8 describing the issue.
+- Add **Open for module review** to EVAL-001 so it is visible in the ADD record.
 
-### 2.3 区分 LangSmith 类型兼容与线上验证
+### 2.3 Separate LangSmith type compatibility and live verification
 
-**建议在 ADR §7 表格后增加：**
+**Add after the verification table in ADR section 7:**
 
 > **Verification basis and status.** LangSmith compatibility was checked on 2026-11-13 against the installed `langsmith 0.9.2` source (`EvaluationResult.score` accepts `None`) and the official evaluator-output/feedback documentation. This is a type-contract check only; no live `aevaluate`, experiment run or UI check was performed. The live check and all behavioural tests remain `NOT_RUN`; SA Review and Gate 2 are also not performed.
 
-**建议在 `verification-constraints.md` §7 的 “Live or human checks” 增加：**
+**Add to the module's Live or human checks bullet in verification-constraints section 7:**
 
 > **LangSmith live compatibility:** `NOT_RUN`; only the SDK type contract was checked against `langsmith 0.9.2` and the official docs. A live `aevaluate` run with a `not_evaluable` result and UI rendering must be executed after implementation.
 
-### 2.4 AI 日志建议条目只保留真实人工决定
+### 2.4 Include only actual human decisions in the suggested AI-use log
 
-现有条目不应写“reviewed / will review the ADR”。建议改为：
+Do not claim the member "reviewed / will review the ADR". Suggested replacement:
 
 ```yaml
 - id: AIU-NNN
@@ -2671,44 +2671,44 @@ pyproject.toml 的调整只写入 ADR 后续实现步骤。
   transcript: null
 ```
 
-## 3. 最终差异摘要
+## 3. Final diff summary
 
-当前实际差异（本轮未新增修改）：
+Current changes, with no further edits in this round:
 
-| 文件 | 状态 | 行数 |
+| File | Status | Lines |
 |---|---|---|
-| `docs/architecture/evaluation-table.md` | 修改 | +28 |
-| `docs/architecture/adr/001-evaluation-module.md` | 新建 | 192 |
-| `docs/architecture/invariants.md` | 修改 | +20 |
-| `docs/architecture/runtime-policy-catalog.md` | 修改 | +12 |
-| `docs/architecture/trace-matrix.md` | 修改 | +2/−2 |
-| `docs/code-governance/structural-constraints.md` | 修改 | +15 |
-| `docs/code-governance/verification-constraints.md` | 修改 | +24 |
+| `docs/architecture/evaluation-table.md` | Modified | +28 |
+| `docs/architecture/adr/001-evaluation-module.md` | New | 192 |
+| `docs/architecture/invariants.md` | Modified | +20 |
+| `docs/architecture/runtime-policy-catalog.md` | Modified | +12 |
+| `docs/architecture/trace-matrix.md` | Modified | +2/-2 |
+| `docs/code-governance/structural-constraints.md` | Modified | +15 |
+| `docs/code-governance/verification-constraints.md` | Modified | +24 |
 
-待应用修订涉及：ADR §2、§3.5、§3.7、§5、§7、§8、§9；`INV-006`；`POL-004`；`TC-EVAL-003` 与 §7 live bullet；`structural §10`；`EVAL-001` 的 open-review 行。预计新增约 20—30 行、修改若干句，不改变现有编号。
+Pending revisions affect ADR sections 2, 3.5, 3.7, 5, 7, 8 and 9; INV-006; POL-004; TC-EVAL-003 and the section 7 live-check bullet; structural section 10; and EVAL-001's review question. Estimate 20 to 30 added lines and several sentence edits, retaining current IDs.
 
-## 4. 待模块评审确认的问题
+## 4. Questions for module review
 
-1. **路径冲突**：`structural-constraints.md` §1 的顶层 `test/` “No” 与蓝图 §4 的 `test/evaluation/` 不一致；需模块评审确认例外，§1 由人类维护，本模块不修改。
-2. **原始评分值获取方式**：建议采用“judge 响应保留原始值 + `validate_rating` 手动校验”，而不是依赖 Pydantic 的 `int`/`StrictInt`。需确认该接口选择。
-3. **LangSmith 线上行为**：`score=None` 在 SDK 类型层合法，但线上 `aevaluate`/UI 是否接受并正确展示 `not_evaluable` 尚未验证，保持 `NOT_RUN`。
-4. **POL 编号**：`POL-002—008` 为模块临时编号，集成时可能统一重编号。
-5. **SA Review / Gate 1、测试批准 / Gate 2、实现步骤**均未执行；ADR 仍为 `Proposed`。
-6. **`test/run_evaluate.py` 导入副作用**：`load_dotenv("../.env")`、`Client()` 仍在基线入口；本轮按兼容要求未改动，是否需要后续单列技术债待确认。
+1. **Path conflict:** structural section 1 says "No" for new work under top-level `test/`, while blueprint section 4 assigns `test/evaluation/`. Confirm the exception at module review; section 1 is human-owned and remains unchanged by this module.
+2. **Raw rating access:** propose preserving raw judge values and applying `validate_rating` manually, rather than relying on Pydantic `int`/`StrictInt`. Confirm this interface choice.
+3. **Live LangSmith behaviour:** `score=None` is valid in SDK types; actual `aevaluate`/UI acceptance and display of `not_evaluable` remain NOT_RUN.
+4. **Policy IDs:** POL-002 through POL-008 are provisional and may be renumbered at integration.
+5. **SA Review/Gate 1, test approval/Gate 2 and implementation** remain pending; ADR stays Proposed.
+6. **Benchmark-entry import side effects:** `load_dotenv("../.env")` and `Client()` remain for compatibility in `test/run_evaluate.py`; decide whether to track separate technical debt.
 
-## 5. 检查结果
+## 5. Check results
 
-| 检查 | 结果 |
+| Check | Result |
 |---|---|
 | `git diff --check` | **PASS** |
 | `.venv/bin/python scripts/validate_requirements.py` | **PASS**：`10 requirements valid` |
-| 改动范围 | **PASS**：仅 7 个 evaluation SA 文档；无源码、测试、依赖、权限、审批改动 |
+| Change scope | **PASS**: seven evaluation SA documents only; no source, test, dependency, permission or approval edits |
 | SA Review / Gate 1 | **NOT_RUN** |
-| 测试基线 / Gate 2 | **NOT_RUN** |
-| LangSmith 线上验证 | **NOT_RUN**（仅完成 SDK 类型层检查） |
-| 提交 / 推送 | **N/A**：未执行 |
+| Baseline tests / Gate 2 | **NOT_RUN** |
+| Live LangSmith verification | **NOT_RUN** (SDK type checks only) |
+| Commit/push | **N/A**: not performed |
 
-若要应用上述修订，请切换到可写角色；当前我无法在 Plan mode 修改仓库文档。
+Switch to a writable role to apply these changes; current Plan mode cannot modify repository documents.
 
 ### Event 440 — agent-switched
 
@@ -2724,10 +2724,10 @@ pyproject.toml 的调整只写入 ADR 后续实现步骤。
 
 ### Event 445 — User
 
-应用上述修订
+Apply the revisions above.
 
 > **H-06 Apply the revisions**
-> 授权应用上一轮已列出的文档修订，继续保持 SA 阶段。
+> Authorised the preceding document revisions while remaining in the SA phase.
 
 ### Event 446 — OpenCode (build)
 
@@ -3275,86 +3275,86 @@ pyproject.toml 的调整只写入 ADR 后续实现步骤。
 
 ### Event 661 — OpenCode (build)
 
-已应用上一轮列出的修订。仅修改 evaluation 模块的 SA 文档；未改源码、测试、`pyproject.toml`、权限或审批记录；未提交、未推送。
+Applied the listed revisions to evaluation SA documents only. Source, tests, `pyproject.toml`, permissions and approvals remain unchanged; no commit or push was performed.
 
-## 1. 实际文件差异
+## 1. Actual file differences
 
-| 文件 | 状态 | 差异摘要 |
+| File | Status | Change summary |
 |---|---|---|
-| `docs/architecture/evaluation-table.md` | 修改 | `EVAL-001` 增加 **Open for module review**，记录 `test/` 路径冲突（+30 行） |
-| `docs/architecture/adr/001-evaluation-module.md` | 新建 | 196 行；新增原始评分值校验、LangSmith 类型/线上验证区分、路径冲突待评审项 |
-| `docs/architecture/invariants.md` | 修改 | `INV-006` 明确评分在 Pydantic/类型转换前对原始值校验（+20 行） |
-| `docs/architecture/runtime-policy-catalog.md` | 修改 | `POL-004` 改为对 `raw_value` 校验，显式拒绝 `4.0`（+12 行） |
-| `docs/architecture/trace-matrix.md` | 修改 | REQ-009/010 两行保持与 ADR-001、INV-006/007 一致（+2/−2） |
-| `docs/code-governance/structural-constraints.md` | 修改 | §10 增加 **Module-review question**，明确 §1 路径冲突待确认（+17 行） |
-| `docs/code-governance/verification-constraints.md` | 修改 | `TC-EVAL-003` 加入 `4.0`；增加原始值测试说明、LangSmith 类型检查 PASS 与线上 NOT_RUN（+27 行） |
+| `docs/architecture/evaluation-table.md` | Modified | Add **Open for module review** to EVAL-001, recording the `test/` path conflict (+30 lines) |
+| `docs/architecture/adr/001-evaluation-module.md` | New | 196 lines; add raw rating validation, SDK/live verification distinction and pending path-conflict review |
+| `docs/architecture/invariants.md` | Modified | INV-006 requires raw-value validation before Pydantic/type conversion (+20 lines) |
+| `docs/architecture/runtime-policy-catalog.md` | Modified | POL-004 validates `raw_value`, explicitly rejecting `4.0` (+12 lines) |
+| `docs/architecture/trace-matrix.md` | Modified | REQ-009/010 rows remain consistent with ADR-001 and INV-006/007 (+2/-2 lines) |
+| `docs/code-governance/structural-constraints.md` | Modified | Add **Module-review question** in section 10, leaving the section 1 path conflict for confirmation (+17 lines) |
+| `docs/code-governance/verification-constraints.md` | Modified | Add `4.0` to TC-EVAL-003; explain raw-value testing and SDK type-check PASS versus live NOT_RUN (+27 lines) |
 
-`git diff --stat`：6 个已跟踪文件，`108 insertions(+), 2 deletions(-)`；ADR 为新增未跟踪文件。
+`git diff --stat`: six tracked files, `108 insertions(+), 2 deletions(-)`; the new ADR remains untracked.
 
-## 2. 本轮修订要点
+## 2. Revisions in this round
 
-### 2.1 原始评分类型先于 Pydantic 转换
+### 2.1 Original rating types validated before Pydantic conversion
 
-已在以下位置明确：
+The following now state this explicitly:
 
-- **ADR §3.5**：评分字段保持原始值（`Any` 或 raw structured arguments），不得声明为 `int`；`validate_rating(raw_value)` 先执行 `type(raw_value) is int` 与 `1..5` 范围检查。
-- **ADR §3.7 / §5**：`Judge.invoke(...) -> Mapping[str, object]` 返回原始结构化字段值；`validate_rating(raw_value)` 非法时抛 `InvalidRating`。
-- **ADR §9 第 3—5 步**：先校验原始值，再构造 `MetricResult`；`InvalidRating` 映射为 `not_evaluable` + `invalid_rating`。
-- **INV-006**：评分结果必须来自“在 Pydantic 或其他类型转换前校验的原始 judge 值”。
-- **POL-004**：检测对象改为 `raw_value`，显式说明 `4.0` 会被拒绝。
-- **TC-EVAL-003**：输入加入 `4.0`，并增加说明：宽松 `int` schema 会把 `4.0` 和 `"4"` 转成 `4`，测试必须观察到 `not_evaluable`。
+- **ADR section 3.5:** preserve raw rating values (`Any` or raw structured arguments) instead of declaring them as `int`; `validate_rating(raw_value)` first checks `type(raw_value) is int` and the `1..5` range.
+- **ADR sections 3.7 and 5:** `Judge.invoke(...) -> Mapping[str, object]` returns raw structured values; invalid values cause `validate_rating(raw_value)` to raise `InvalidRating`.
+- **ADR section 9, steps 3 through 5:** validate raw values before creating `MetricResult`; map `InvalidRating` to `not_evaluable` with `invalid_rating`.
+- **INV-006:** scores must derive from raw judge values validated before Pydantic or other type conversion.
+- **POL-004:** detection uses `raw_value` and explicitly rejects `4.0`.
+- **TC-EVAL-003:** add `4.0`; explain that a lax `int` schema can coerce `4.0` and `"4"` to `4`, while the required test outcome is `not_evaluable`.
 
-### 2.2 路径冲突列为待模块评审问题
+### 2.2 Path conflict recorded for module review
 
-已在四处记录，不再写成“已解决”：
+Recorded in four places instead of describing it as resolved:
 
-- ADR §2：明确 `structural-constraints.md` §1 的顶层 `test/` “No” 与蓝图 §4 的 `test/evaluation/` 冲突。
-- ADR §8：新增 **Open for module review**。
-- `structural-constraints.md` §10：新增 **Module-review question**，说明 §1 由人类维护、本模块不修改。
-- `EVAL-001`：新增 **Open for module review**。
+- ADR section 2 explicitly identifies the conflict between structural section 1's "No" for top-level `test/` and blueprint section 4's `test/evaluation/`.
+- ADR section 8 adds **Open for module review**.
+- Structural section 10 adds **Module-review question**, noting that section 1 is human-owned and unchanged by this module.
+- EVAL-001 adds **Open for module review**.
 
-### 2.3 LangSmith 类型兼容与实际线上验证分离
+### 2.3 Separate LangSmith type compatibility from live verification
 
-- **ADR §7**：记录已执行检查的依据——`langsmith 0.9.2` 源码中 `EvaluationResult.score` 接受 `None`，以及官方 evaluator output/feedback 文档；明确这不是线上验证。
+- **ADR section 7:** records the evidence: `langsmith 0.9.2` source permits `None` in `EvaluationResult.score`, plus official evaluator-output/feedback documentation. This is explicitly distinguished from live verification.
 - **`verification-constraints.md` §7**：
-  - `LangSmith type-contract check`: **PASS**（2026-11-13，SDK 类型层）；
-  - `LangSmith live compatibility`: **NOT_RUN**（未执行真实 `aevaluate`/实验/UI 检查）。
+  - `LangSmith type-contract check`: **PASS** (2026-11-13, SDK type level).
+  - `LangSmith live compatibility`: **NOT_RUN** (no actual `aevaluate`, experiment or UI check).
 
-### 2.4 AI 日志建议条目
+### 2.4 Suggested AI-use log entry
 
-未写入 `docs/ai-use-log.yaml`（人类维护）。建议条目见第 5 节，只保留真实发生的决定，不声称已完成 SA Review 或测试验收。
+`docs/ai-use-log.yaml` remains unchanged because it is human-maintained. The suggestion in section 5 records actual decisions without claiming SA Review or test acceptance.
 
-## 3. 验收覆盖复核
+## 3. Acceptance coverage recheck
 
-| 需求/准则 | 覆盖用例 | 状态 |
+| Requirement/criterion | Covered cases | Status |
 |---|---|---|
-| REQ-009 C-001 | TC-EVAL-001 | 已覆盖 |
-| REQ-009 C-002 | TC-EVAL-002、TC-EVAL-003（含 `4.0`） | 已覆盖 |
-| REQ-009 C-003 | TC-EVAL-004 | 已覆盖 |
-| REQ-009 C-004 | TC-EVAL-005、006、007 | 已覆盖 |
-| REQ-009 M-001 | TC-EVAL-008 | 已覆盖 |
-| INV-006 | TC-EVAL-002—009 | 已覆盖 |
-| REQ-010 C-001 | TC-EVAL-010、013 | 已覆盖 |
-| REQ-010 C-002 | TC-EVAL-012、015 | 已覆盖 |
-| REQ-010 C-003 | TC-EVAL-014（人工） | 已覆盖 |
-| INV-007 | TC-EVAL-010、011、012、015 | 已覆盖 |
-| CLI 退出码 | TC-EVAL-015、016 | 已覆盖 |
-| 回归 | `pytest test/offline`；适配器契约；`test/run_evaluate.py` 导入面 | 已列入 |
+| REQ-009 C-001 | TC-EVAL-001 | Covered |
+| REQ-009 C-002 | TC-EVAL-002, TC-EVAL-003 (including `4.0`) | Covered |
+| REQ-009 C-003 | TC-EVAL-004 | Covered |
+| REQ-009 C-004 | TC-EVAL-005, 006, 007 | Covered |
+| REQ-009 M-001 | TC-EVAL-008 | Covered |
+| INV-006 | TC-EVAL-002 through TC-EVAL-009 | Covered |
+| REQ-010 C-001 | TC-EVAL-010, 013 | Covered |
+| REQ-010 C-002 | TC-EVAL-012, 015 | Covered |
+| REQ-010 C-003 | TC-EVAL-014 (human) | Covered |
+| INV-007 | TC-EVAL-010, 011, 012, 015 | Covered |
+| CLI exit codes | TC-EVAL-015, 016 | Covered |
+| Regression | `pytest test/offline`; adapter contract; `test/run_evaluate.py` import surface | Listed |
 
-## 4. 检查结果
+## 4. Check results
 
-| 检查 | 结果 |
+| Check | Result |
 |---|---|
 | `git diff --check` | **PASS** |
 | `.venv/bin/python scripts/validate_requirements.py` | **PASS**：`10 requirements valid` |
-| 改动范围 | **PASS**：仅 7 个 evaluation SA 文档；无源码、测试、依赖、权限、审批改动 |
+| Change scope | **PASS**: seven evaluation SA documents only; no source, test, dependency, permission or approval edits |
 | SA Review / Gate 1 | **NOT_RUN** |
-| 测试基线 / Gate 2 | **NOT_RUN** |
-| LangSmith SDK 类型检查 | **PASS**（`langsmith 0.9.2` 源码与官方文档） |
-| LangSmith 线上验证 | **NOT_RUN** |
-| 提交 / 推送 | **N/A**：未执行 |
+| Baseline tests / Gate 2 | **NOT_RUN** |
+| LangSmith SDK type checks | **PASS** (`langsmith 0.9.2` source and official documentation) |
+| Live LangSmith verification | **NOT_RUN** |
+| Commit/push | **N/A**: not performed |
 
-## 5. AI 使用日志建议条目
+## 5. Suggested AI-use log entry
 
 ```yaml
 - id: AIU-NNN
@@ -3389,11 +3389,11 @@ pyproject.toml 的调整只写入 ADR 后续实现步骤。
   transcript: null
 ```
 
-## 6. 待模块评审确认的问题
+## 6. Questions for module review
 
-1. `structural-constraints.md` §1 的顶层 `test/` “No” 与蓝图 §4 的 `test/evaluation/` 冲突；需模块评审确认例外。
-2. 原始评分值的获取方式：建议采用“保留原始结构化字段值 + 手动校验”，而非依赖 Pydantic `int`/`StrictInt`；需确认接口选择。
-3. LangSmith 线上 `aevaluate`/UI 对 `score=None`、`value="not_evaluable"` 的实际表现仍为 `NOT_RUN`。
-4. `POL-002—008` 为模块临时编号，集成时可能统一重编号。
-5. ADR 仍为 `Proposed`；SA Review、测试批准、实现步骤均未执行。
-6. `test/run_evaluate.py` 的导入副作用（`load_dotenv("../.env")`、`Client()`）仍保留，是否单列技术债待确认。
+1. Structural section 1 prohibits new work under top-level `test/`, conflicting with blueprint section 4's `test/evaluation/`; confirm the exception at module review.
+2. Raw rating access: preserve raw structured values and validate manually, rather than relying on Pydantic `int`/`StrictInt`; confirm the interface choice.
+3. Actual LangSmith `aevaluate`/UI handling of `score=None` and `value="not_evaluable"` remains NOT_RUN.
+4. POL-002 through POL-008 are provisional module IDs, possibly renumbered at integration.
+5. ADR remains Proposed; SA Review, test approval and implementation are pending.
+6. Import side effects in `test/run_evaluate.py` (`load_dotenv("../.env")`, `Client()`) remain; decide whether to record separate technical debt.

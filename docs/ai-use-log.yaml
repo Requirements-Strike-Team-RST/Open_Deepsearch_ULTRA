@@ -191,4 +191,6 @@ entries:
       pre-coercion validation, a 4.0 rejection case and honest verification status. The path
       conflict concerning test/evaluation remains recorded for module review. The ADR remains
       Proposed; module review, integrated SA Review and implementation are pending.
+      The accompanying session record is an English translation with intervention annotations;
+      non-English filenames in tool records retain their identity through Unicode escapes.
     transcript: transcripts/60741820-YANG_Xinchuan.md
