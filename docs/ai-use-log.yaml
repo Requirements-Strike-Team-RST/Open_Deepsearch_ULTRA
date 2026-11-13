@@ -162,3 +162,32 @@ entries:
       The member edited the announcement before sending it, and reviewed the commits and the PR
       description; merging waits for two other members' approvals.
     transcript: null
+
+  - id: AIU-008
+    date: "2026-11-13"
+    member: sszfot
+    purpose: >-
+      Draft the REQ-007 Software Architecture documents: the ADD iteration-2 resolution and the
+      architecture artifacts derived from it.
+    prompt: >-
+      For approved REQ-007 (upstream issue #250), compare three candidate designs for validating
+      search configuration (validation inside the graph entry node, a centralized pure validator,
+      and validation inside tool assembly) against acceptance criteria C-001 to C-005, then, after
+      the human selected the centralized validator, write EVAL-001, ADR-001, the REQ-007 row of
+      the traceability matrix, the search module sections, and a draft AI-use entry. Keep
+      REQ-008 out of scope, change no source or tests, and mark every decision Proposed.
+    requirements: [REQ-007]
+    artifacts:
+      - docs/architecture/adr/001-search-configuration-validation.md
+      - docs/architecture/evaluation-table.md
+      - docs/architecture/trace-matrix.md
+      - docs/architecture/invariants.md
+      - docs/architecture/runtime-policy-catalog.md
+      - docs/code-governance/structural-constraints.md
+      - docs/code-governance/verification-constraints.md
+      - docs/ai-use-log.yaml
+    supervision: >-
+      Pending human review. The member directed the ADD iterations and the design choices, and the
+      output is Proposed until SA Review. No test was run, no review or approval is claimed, and
+      the unresolved decisions U-1 to U-4 in ADR-001 §12 still need the team's decision.
+    transcript: transcripts/AIU-008-REQ-007-opencode.md

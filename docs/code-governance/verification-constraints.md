@@ -78,6 +78,20 @@ Copy the example for your module. Every acceptance criterion (C-/M-) of the modu
 - **Regression:** existing suites to re-run, including `test/offline/test_contracts.py` if a shared contract changes.
 - **Live or human checks:** cases marked `automated: false` in `requirements.yaml`, and where their evidence goes.
 
+### search (REQ-007, ADR-001)
+
+| Case | Covers | Type | Input | Expected result | Test |
+|---|---|---|---|---|---|
+| TC-001 | REQ-007 C-001 | exception | `search_api=anthropic`, `research_model=openai:gpt-4.1` | Validation error names both `search_api` and `research_model`; raised before any model or search call | `test/offline/test_search_configuration.py::test_native_search_model_mismatch_rejected` |
+| TC-002 | REQ-007 C-002 | boundary | `search_api=none`: (a) no MCP, (b) `MCP_DECLARED`, (c) invalid MCP declaration (url set, `tools=[]`) | (a) rejected naming `search_api`/`mcp_config`; (b) accepted; (c) rejected | `test/offline/test_search_configuration.py::test_no_search_tool_rejected` |
+| TC-003 | REQ-007 C-003 | exception | `search_api="bing"`, `""`, `None` | Rejected with an error listing `anthropic, openai, tavily, none` | `test/offline/test_search_configuration.py::test_unsupported_provider_rejected` |
+| TC-004 | REQ-007 C-004 | normal | `search_api=tavily` with any `research_model` | No validation error; assembled tools include `web_search` | `test/offline/test_search_configuration.py::test_valid_tavily_configuration_accepted` |
+| TC-005 | INV-005 | exception | unsupported provider | Rejected before any search call | `test/offline/test_search_configuration.py` |
+| TC-006 | REQ-007 C-005 | human | README provider matrix and MCP recipe | Reviewer configures each provider and an MCP search server from the docs alone | `docs/review-memo.md` (`REVIEW-NNN`), `automated: false` |
+
+- **Regression:** `uv run pytest test/offline`; no shared contract changes, so `test/offline/test_contracts.py` is unaffected.
+- **Live or human checks:** C-005 (TC-006) is human review recorded as `REVIEW-NNN` in `docs/review-memo.md`. Runtime MCP loading failure (ADR-001 §12 U-1) has no case until the team decides its placement.
+
 ## 8. Definition of Done
 
 | # | Condition | Done by |

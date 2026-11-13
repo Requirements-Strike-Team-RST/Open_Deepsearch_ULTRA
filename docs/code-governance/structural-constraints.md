@@ -86,3 +86,18 @@ Copy the example for your module. At integration, check that responsibilities do
 | Must not depend on | e.g. `deep_researcher.py`, other extension modules, model clients in deterministic code |
 | Shared contracts | Types or state fields it reads or writes that other modules also use |
 | Configuration flag | `Configuration` field that switches the behaviour, and its default (§8) |
+
+### search (REQ-007, ADR-001)
+
+| Item | Constraint |
+|---|---|
+| Path | `src/open_deep_research/search/` |
+| Responsibility | Statically decide whether a search configuration is usable before research, without model or network calls; classify MCP capability from configuration only (Proposed, pending SA Review). |
+| Public interface | `validate_search_configuration(configurable: Configuration) -> None` (raises a domain error); `classify_mcp(mcp: MCPConfig \| None) -> MCPStatus`; `model_provider(model: str) -> str` |
+| Called from | `clarify_with_user` and `researcher` in `deep_researcher.py`, as their first statement before any model/search call |
+| May depend on | `configuration.py` (`Configuration`, `SearchAPI`, `MCPConfig`) |
+| Must not depend on | `deep_researcher.py`, `utils.py`, other extension modules, model clients, the MCP client |
+| Shared contracts | None: reads `Configuration`/`MCPConfig`; reads no state field and writes none |
+| Configuration flag | None: baseline behaviour is preserved and no new `Configuration` field is added |
+
+REQ-008 (search fallback) will also live in this module and is designed separately; this section covers REQ-007 only. Runtime MCP loading failure is an open decision (ADR-001 §12 U-1) and is not enforced here.
