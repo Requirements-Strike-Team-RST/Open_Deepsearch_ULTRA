@@ -173,7 +173,7 @@ entries:
     prompt: >-
       I am responsible for REQ-005. Analyse the requirement: is it an ASR? If so, apply the ADD
       seven-step analysis, propose 2-3 candidate solutions and write them into
-      docs/architecture/evaluation-table.md. Then copy the ADR template to 005-contextADR.md and
+      docs/architecture/evaluation-table.md. Then copy the ADR template to 005-context-adr.md and
       fill it in, with concrete implementation steps. Fill in the module sections in
       invariants.md, memory-design.md, runtime-policy-catalog.md, trace-matrix.md,
       structural-constraints.md §10 and verification-constraints.md §7 (test case list only), and
@@ -181,7 +181,7 @@ entries:
     requirements: [REQ-005]
     artifacts:
       - docs/architecture/evaluation-table.md
-      - docs/architecture/adr/005-contextADR.md
+      - docs/architecture/adr/005-context-adr.md
       - docs/architecture/invariants.md
       - docs/architecture/memory-design.md
       - docs/architecture/runtime-policy-catalog.md
@@ -193,7 +193,7 @@ entries:
       - transcripts/61061690-ZHANG_Kaidi.md
     supervision: >-
       The member directed each phase and chose candidate B of EVAL-001, the ADR file name and the
-      rename to 005-contextADR.md, and required English content. Agent claims were checked against
+      rename to 005-context-adr.md, and required English content. Agent claims were checked against
       the source code rather than accepted from the requirement text; the context owner reviewed
       every document. Open for the human: agreement on the token_limit category with the REQ-001
       owner, and ID unification at integration.

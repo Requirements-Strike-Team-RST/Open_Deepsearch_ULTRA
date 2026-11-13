@@ -41,7 +41,7 @@
 
 - **Module:** context
 - **Owner:** BroZhai
-- **Decision recorded in:** ADR-005 (`docs/architecture/adr/005-contextADR.md`)
+- **Decision recorded in:** ADR-005 (`docs/architecture/adr/005-context-adr.md`)
 - **Status:** Open
 
 **ASR**
@@ -69,4 +69,4 @@ The decision has to answer four distinct sub-questions sharing one loop: (a) the
 
 **Rejected and why:** **A**: the fix is correct but puts architectural logic in a graph node, against `structural-constraints.md` §2 and §8, and leaves the protected region untestable on its own; it would have to be moved once a second requirement touches compression. **C**: solves a different problem (avoiding the failed call) rather than REQ-005's problem (recovering correctly after it), needs a tokenizer with no provider-neutral answer and a new dependency, and contradicts REQ-005's stated scope boundary around token-limit configuration; the reactive path it keeps is exactly B, so C is a later extension on top of B, not an alternative to it.
 
-**Ledger:** the rejected options are tracked as OPL-001 (A, Dropped) and OPL-002 (C, Deferred) in `docs/architecture/option-ledger.md`, together with the conditions that would reopen them. Risks this decision carries are RISK-001 to RISK-006 in `docs/architecture/risk-list.md`.
+**Ledger:** the rejected options are tracked as OPL-001 (A, Dropped) and OPL-002 (C, Deferred) in `docs/architecture/option-ledger.md`, together with the conditions that would reopen them. Risks this decision carries are RISK-001 to RISK-007 in `docs/architecture/risk-list.md`.

@@ -23,13 +23,13 @@
 
 ### Baseline behaviour
 
-`compress_research` (`src/open_deep_research/deep_researcher.py` L511-585) is the last node of the researcher subgraph. It has three defects on the token-limit path:
+`compress_research` (`src/open_deep_research/deep_researcher.py` L511-585) is the last node of the researcher subgraph. Defects 1-3 are in the node; defect 4 is at its consumer, `supervisor_tools`:
 
 1. **Wrong direction of removal.** On a token-limit error it calls `remove_up_to_last_ai_message` (L569-571). That helper (`src/open_deep_research/utils.py` L848-866) returns `messages[:i]` for the last index `i` holding an `AIMessage`, so it drops the newest AI turn, every `ToolMessage` after it, and the compression instruction appended at L538. The newest research is lost; the run continues.
 2. **Misleading documentation.** The call-site comment says older messages are removed, while the helper docstring says recent context is removed. Two readings of the same function exist in the repository.
 3. **Wrong model for classification.** The error is classified with `configurable.research_model` (L569) although the call used `configurable.compression_model` (L528). `utils.is_token_limit_exceeded` (L665-701) picks a provider-specific checker from the model-name prefix. With an `openai:*` research model and an Anthropic compression model, an Anthropic `BadRequestError` is handed to `_check_openai_token_limit` (L703-734), which requires an OpenAI exception class and returns `False`; `_check_anthropic_token_limit` (L736-757) is never consulted. The error is therefore unrecognised, the same request is retried unchanged, and after three attempts the node returns the string `"Error synthesizing research report: Maximum retries exceeded"` (L582-585) as the compressed summary.
 
-Downstream, `supervisor_tools` (`deep_researcher.py` L298-330) reads `researcher_output_compressed_research` as normal research notes. The placeholder therefore reaches the final report as if it were a finding.
+4. **A second placeholder at the consumer.** Downstream, `supervisor_tools` (`deep_researcher.py` L298-330) reads the compressed summary as normal research notes, so the placeholder reaches the final report as if it were a finding. Independently of the node, `supervisor_tools` passes the same literal as a default to `dict.get` when it builds the `ConductResearch` tool result: `observation.get("compressed_research", "Error synthesizing research report: Maximum retries exceeded")` (L310). This fires whenever the researcher subgraph returns without the `compressed_research` key — for example when a node raises, or when the output state omits the field — and it converts a missing result into note text with no error. The two literals are duplicate definitions of the same fallback, and fixing only L582-585 leaves L310 able to produce identical text. REQ-005's `in_scope` covers "Task result when the limit cannot be met", so the `token_limit` path must not be able to reach this default; the agent treats L310 as in scope for that reason and narrows it to a non-silent form (step 10 below).
 
 ### Forces and constraints
 
@@ -50,10 +50,10 @@ Implement **option B** of EVAL-001: a dedicated `context` module with a pure tri
 ```
 src/open_deep_research/context/
     __init__.py          # public exports only
-    messages.py          # ResearchTurn, TurnLayout, segment_turns(), extract_tool_source_urls()
-    trimming.py          # plan_trim(), TrimPlan, ProtectedRegion
+    messages.py          # ResearchTurn, TurnLayout, segment_turns()
+    trimming.py          # plan_trim(), TrimPlan
     classification.py    # classify_token_limit()
-    recovery.py          # compress_with_recovery(), TokenLimitExceeded
+    recovery.py          # compress_with_recovery(), CompressionOutcome, TokenLimitExceeded
 ```
 
 ### (a) Unit of removal — a research turn
@@ -77,16 +77,17 @@ The protected region is computed from message types, never from the model's text
 
 ### (c) Classification bound to the invoked model
 
-`classification.classify_token_limit(exc, model_name)` is the only entry point used by the recovery loop, and the loop passes `configurable.compression_model`. It delegates to the existing `utils.is_token_limit_exceeded` so that provider patterns stay in one place, and adds the two cases the baseline misses:
+`classification.classify_token_limit(exc, model_name)` is the only entry point used by the recovery loop, and the loop passes `configurable.compression_model`. It delegates to the existing `utils.is_token_limit_exceeded` so that provider patterns stay in one place.
 
-- the model prefix selects the provider checker; an unknown prefix checks all patterns (baseline behaviour, preserved),
-- an exception that carries provider metadata inconsistent with `model_name` is still recognised when another provider's pattern matches, so a compression call made with a model string of one provider and an exception class of another cannot silently classify as "not a token limit".
+The baseline behaviour that is **preserved** unchanged: the model prefix selects the provider checker, and an unknown prefix checks all three providers' patterns.
 
-`utils.is_token_limit_exceeded` keeps its current signature and behaviour for `final_report_generation`; the new entry point is additive.
+The **one** behaviour this decision adds: when the prefix names a provider but that provider's checker declines the exception, the other providers' patterns are tried before returning `False`. This is what makes a compression call whose model string names one provider and whose exception class belongs to another classify correctly instead of silently returning "not a token limit".
+
+`utils.is_token_limit_exceeded` keeps its current signature and behaviour for `final_report_generation`; the new entry point is additive and wraps it. `final_report_generation` does not adopt the wrapper in this ADR, because that code is REQ-004's.
 
 ### (d) When the history can no longer be reduced
 
-The recovery loop stops when `plan_trim` returns `None`, i.e. no removable turn is left, or when the attempt budget is exhausted. It then raises `TokenLimitExceeded(attempts, removed_turn_ids, last_exception)`; it never returns a string as a summary. The node maps the exception to the REQ-001 task result with status `failed` and category `token_limit`. The placeholder literal `"Error synthesizing research report: Maximum retries exceeded"` is removed.
+The recovery loop stops when `plan_trim` returns `None`, i.e. no removable turn is left, or when the attempt budget is exhausted. It then raises `TokenLimitExceeded(attempts, removed_turn_indices, last_exception)`; it never returns a string as a summary. The node maps the exception to the REQ-001 task result with status `failed` and category `token_limit`. The placeholder literal at L582-585 is removed, and the consumer default at L310 is narrowed as described in step 10, so the `token_limit` path cannot produce placeholder text at either site.
 
 ### Behaviour switch
 
@@ -137,11 +138,12 @@ The full comparison is in EVAL-001.
 | C-002 / M-002 `orphan_tool_message_count == 0` | Property-style over generated histories: every `ToolMessage` in the trimmed list must follow an `AIMessage` whose `tool_calls` contain its `tool_call_id`; count of orphans must be 0. | `test/offline/test_context_compaction.py::test_no_orphan_tool_messages` |
 | C-003 | Fake Anthropic `BadRequestError` ("prompt is too long") with `compression_model="anthropic:..."` and `research_model="openai:..."`: `classify_token_limit(exc, compression_model)` is `True`, the loop trims before the second call, and a fake that fails the same request twice is never retried unchanged. | `test/offline/test_context_compaction.py::test_classification_uses_compression_model` |
 | C-004 | History of preamble + one AI turn + instruction, with a model that always raises a token-limit error: `compress_with_recovery` raises `TokenLimitExceeded`, the node returns status `failed` with category `token_limit`, and no summary contains the placeholder string. | `test/offline/test_context_compaction.py::test_unreducible_history_ends_failed` |
-| INV-001 | The union of the four cases above fails if any invariant clause is broken; the `latest_turn_preservation_rate` and `orphan_tool_message_count` monitors are computed from the same helpers. | `test/offline/test_context_compaction.py` |
+| C-004 at the consumer (defect 4) | `supervisor_tools` is given a researcher output without `compressed_research`: the resulting `ToolMessage` must not equal the placeholder literal and must state that the task returned no result. Grep confirms the literal appears nowhere in `deep_researcher.py` or `utils.py`. | `test/offline/test_context_compaction.py::test_no_placeholder_at_consumer` |
+| INV-001 | The union of the acceptance-criterion cases above (C-001, C-002, C-003, C-004 at both sites) fails if any invariant clause is broken; the `latest_turn_preservation_rate` and `orphan_tool_message_count` monitors are computed from the same helpers. | `test/offline/test_context_compaction.py` |
 | Thin node (`structural-constraints.md` §2) | Static check that `compress_research` contains no trimming or classification logic, only configuration reading, one module call and state mapping. | Reviewed in the PR diff; recorded in `docs/review-memo.md` |
 | Regression | Full offline suite, including `test/offline/test_contracts.py` if the REQ-001 task-result type changes. | `uv run pytest test/offline` |
 
-The module's case table (TC-IDs, input and expected result per case) is written in `verification-constraints.md` §7 at the module-sections step.
+The module's case table (TC-001 to TC-010, with input and expected result per case) is in `verification-constraints.md` §7. The cases listed there and the tests named in the table above are the ones this ADR is verified by; no other test is required for REQ-005.
 
 ## 8. Consequences
 
@@ -170,13 +172,24 @@ The module's case table (TC-IDs, input and expected result per case) is written 
 - *delivery* (REQ-004): gains a clean failure signal, so an outcome of `partial` or `failed` can be derived without parsing text.
 - *evaluation*: unchanged; the compression prompt is untouched, so no prompt version bump.
 
-**Risks and alternatives:** the risks this decision carries are RISK-001 to RISK-006 in `docs/architecture/risk-list.md`; the rejected options and their re-evaluation conditions are OPL-001 and OPL-002 in `docs/architecture/option-ledger.md`.
+**Risks and alternatives:** the risks this decision carries are RISK-001 to RISK-006 in `docs/architecture/risk-list.md`, plus RISK-007 on the `supervisor_tools` default touched in step 10; the rejected options and their re-evaluation conditions are OPL-001 and OPL-002 in `docs/architecture/option-ledger.md`.
 
 ## 9. Implementation Steps
 
-Ordered steps for the coding agent. Each step names the files it changes and the acceptance criterion it serves. Steps 1–7 are new code; step 8 wires the node; step 9 adds the flag; step 10 is regression.
+Ordered steps for the coding agent. Each step names the files it changes and the acceptance criterion it serves.
 
-1. **Create the package.** Add `src/open_deep_research/context/__init__.py` exporting `plan_trim`, `TrimPlan`, `segment_turns`, `TurnLayout`, `ResearchTurn`, `classify_token_limit`, `compress_with_recovery`, `CompressionOutcome`, `TokenLimitExceeded`. Add `open_deep_research.context` to `[tool.setuptools] packages` in `pyproject.toml` (this file needs human confirmation, `permission-model.md` §3). Docstring of `__init__.py` names `REQ-005, ADR-005, INV-001`.
+| Steps | Purpose |
+|---|---|
+| 1–7 | New `context` module code (package, segmentation, trimming, classification, recovery, raw notes, docstrings) |
+| 8 | Make `compress_research` a thin node that calls the module |
+| 9 | Add the `context_trimming` configuration flag, defaulting to the baseline |
+| 10 | Remove the placeholder at both sites (the node literal and the `supervisor_tools` default) |
+| 11 | Run the checks and record them in the build report |
+| 12 | Flip the flag default after REQ-005 is `verified` (separate change) |
+
+1. **Create the package.** Add `src/open_deep_research/context/__init__.py` exporting `plan_trim`, `TrimPlan`, `segment_turns`, `TurnLayout`, `ResearchTurn`, `classify_token_limit`, `compress_with_recovery`, `CompressionOutcome`, `TokenLimitExceeded`. Docstring of `__init__.py` names `REQ-005, ADR-005, INV-001`.
+
+   In `pyproject.toml`, add `"open_deep_research.context"` to `[tool.setuptools] packages` (currently `["open_deep_research", "test"]`, L57). Because `[tool.setuptools.package-dir]` (L59-61) maps the literal package name `open_deep_research` to `src/open_deep_research`, the subpackage must be listed under its dotted name so that setuptools resolves it to `src/open_deep_research/context/`. `pyproject.toml` is a dependency/configuration file and needs human confirmation (`permission-model.md` §3). Verify after the change with `uv sync --extra dev` followed by `uv run python -c "import open_deep_research.context"`, and confirm that a non-editable build (`uv build`) contains `open_deep_research/context/__init__.py` in the wheel — `structural-constraints.md` §1 names this as the failure mode when the entry is missing.
 
 2. **Message segmentation.** Implement `src/open_deep_research/context/messages.py`:
    - `ResearchTurn` dataclass: `index`, `ai_message`, `tool_messages`, `tool_call_ids` (from `ai_message.tool_calls[*]["id"]`), `source_urls` (URLs in tool results, reused later by REQ-001's source check).
@@ -199,14 +212,17 @@ Ordered steps for the coding agent. Each step names the files it changes and the
 8. **Make the node thin.** Rewrite the body of `compress_research` in `src/open_deep_research/deep_researcher.py` (L511-585):
    - read `Configuration` and build `synthesizer_model` exactly as today (L526-532) from `configurable.compression_model`;
    - keep the baseline branch when `configurable.context_trimming` is `False`, unchanged, including the current three-attempt loop;
-   - when `True`: build `researcher_messages` from `state["researcher_messages"]`, append the compression instruction (L538), call `await compress_with_recovery(...)` with `model_name=configurable.compression_model`, `max_attempts=3`, and return `{"compressed_research": outcome.summary, "raw_notes": [outcome.raw_notes]}`;
+   - when `True`: build `researcher_messages` from `state["researcher_messages"]`, append the compression instruction (L538), call `await compress_with_recovery(...)` with `model_name=configurable.compression_model`, `max_attempts=3`, and return `{"compressed_research": outcome.summary, "raw_notes": [outcome.raw_notes]}`. `outcome.raw_notes` is the string computed in step 6; the node wraps it in a one-element list to match the existing `raw_notes` reducer format (`structural-constraints.md` §6: the format seen by `supervisor_tools` does not change);
    - catch `TokenLimitExceeded` and return the REQ-001 `failed` / `token_limit` task result; do not return any placeholder string.
    - The node must not import trimming or classification helpers directly; it imports only the package's public names.
 
 9. **Configuration flag.** Add to `src/open_deep_research/configuration.py`, near the compression fields (after L183): `context_trimming: bool = Field(default=False, metadata={"x_oap_ui_config": {"type": "boolean", "default": False, "description": "REQ-005: remove whole research turns from the oldest end when compression exceeds the model token limit"}})`. Default stays at the baseline behaviour (`structural-constraints.md` §8).
 
-10. **Correct the stale helper and docs.** In `src/open_deep_research/utils.py`, correct the docstring of `remove_up_to_last_ai_message` (L848-857) to state that it removes up to and excluding the last `AIMessage`, add a note that it is not used by the REQ-005 path, and keep the function so no other caller breaks. Do not change its behaviour.
+10. **Remove the placeholder at both sites and correct the stale helper.**
+    - In `src/open_deep_research/deep_researcher.py` `supervisor_tools` (L308-313), replace the silent default `observation.get("compressed_research", "Error synthesizing research report: Maximum retries exceeded")`. When the key is absent, the tool result must state that the research task returned no result and name the task, instead of presenting the placeholder as a finding. Do not change the success path: when `compressed_research` is present, the content is whatever the researcher returned, unchanged. This is the in-scope part of L310 described in ADR-005 §2 defect 4; the wider handling of a researcher exception is REQ-002's and must not be added here.
+    - Confirm that after steps 8-10 no code path in the REQ-005 scope can emit the literal `"Error synthesizing research report: Maximum retries exceeded"`. Grep for the string across `src/` and record the remaining hits: after this step there must be none in `src/open_deep_research/`. Any hit outside `src/` (for example a docstring or an example) is listed and left unchanged.
+    - In `src/open_deep_research/utils.py`, correct the docstring of `remove_up_to_last_ai_message` (L848-857) to state that it removes up to and excluding the last `AIMessage`, and add a note that the REQ-005 path no longer uses it. Keep the function so no other caller breaks; do not change its behaviour.
 
-11. **Checks.** Run `uv run ruff check src/open_deep_research test/offline scripts`, `uv run pytest test/offline`, and `uv run python scripts/validate_requirements.py`; record each command and its result in `docs/build-reports/REQ-005.md` (`permission-model.md` §4, `Prompt.md` §7).
+11. **Checks.** Run `uv run ruff check src/open_deep_research test/offline scripts`, `uv run pytest test/offline`, and `uv run python scripts/validate_requirements.py`; record each command and its result in `docs/build-reports/REQ-005.md` (`permission-model.md` §4, `Prompt.md` §7). Include in the report the grep result from step 10 showing that the placeholder literal no longer appears in `src/open_deep_research/`.
 
 12. **After verification only.** In the PR that marks REQ-005 `verified`, flip `context_trimming`'s default to `True`. This is a separate change from steps 1–11 and needs its own review.

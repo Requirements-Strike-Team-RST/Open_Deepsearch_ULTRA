@@ -25,6 +25,7 @@ Severity: **High** = the requirement's fit criterion can fail without any other 
 | RISK-004 | context | REQ-005 / ADR-005 | A failed `token_limit` result is accepted by the supervisor | High | REQ-001's ADR is accepted with a category vocabulary that lacks `token_limit` | Active |
 | RISK-005 | context | REQ-005 / ADR-005 | Trimming is bounded by the attempt budget | Medium | `TokenLimitExceeded` is raised although `plan_trim` would still return a `TrimPlan` | Active |
 | RISK-006 | context | REQ-005 / ADR-005 | The new behaviour can be A/B-compared through the flag | High | The flag is flipped before `verified`, or stays `False` after the requirement closes | Active |
+| RISK-007 | context | REQ-005 / ADR-005 | The consumer-side default can be fixed without touching REQ-002's exception handling | Medium | Review finds the L310 change also swallows a researcher exception, or REQ-002 changes L310 in the same cycle | Active |
 
 ## RISK-001 — The token limit may not be reachable by removing whole turns
 
@@ -85,6 +86,16 @@ Severity: **High** = the requirement's fit criterion can fail without any other 
 - **Severity:** High — the shipped behaviour would contradict the requirement's `verified` status.
 - **Mitigation:** TC-009 pins the default; the flip is a separate, explicitly numbered step (ADR-005 §9 step 12) with its own review; Definition of Done item 10 keeps the status at `verified` only after the flip.
 - **Re-evaluation condition:** any PR that changes the default without REQ-005 being `verified`, or any release that contains the flag still `False` after the requirement closed. The second case is a defect for `docs/bug-diary.md`, not a new risk.
+
+## RISK-007 — Fixing the consumer default may overlap another module's scope
+
+- **Module:** context
+- **Source:** REQ-005 C-004; ADR-005 §2 defect 4, §9 step 10; INV-002
+- **Assumption:** the `supervisor_tools` default at `deep_researcher.py` L310 can be narrowed to a non-silent no-result message without taking over the handling of researcher exceptions, which REQ-002 (orchestration) owns.
+- **Why it may fail:** L310 sits in the same `try/except` block as the researcher failure branch (L332-342). A broad rewrite of the default can accidentally change what happens when the subgraph raises, and REQ-002 or REQ-004 may edit the same lines in the same integration cycle, producing a merge conflict or two competing policies for one message.
+- **Severity:** Medium — a scope overlap, not a data-loss path; the final report content is affected only when the key is already missing.
+- **Mitigation:** ADR-005 §9 step 10 fixes the wording of the default only and states explicitly that exception handling is out of scope; the success path is required to stay byte-identical; TC-010 asserts both branches.
+- **Re-evaluation condition:** review rejects the L310 change as out of scope, or REQ-002's ADR assigns a different behaviour to a missing `compressed_research`. Then withdraw step 10 and keep only the L582-585 removal, and record the resulting gap as a note for REQ-002's owner.
 
 ## Retired or Accepted Risks
 

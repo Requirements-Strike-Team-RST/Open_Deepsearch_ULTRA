@@ -23,23 +23,23 @@ Produce the software-architecture deliverables for the `context` module of REQ-0
 | Path | Change |
 |---|---|
 | `docs/architecture/evaluation-table.md` | Added `EVAL-001` (ASR table, three candidates, choice, rejected options, ledger cross-reference) |
-| `docs/architecture/adr/005-contextADR.md` | Added ADR-005, *Proposed*, all nine template sections |
-| `docs/architecture/invariants.md` | Refined `INV-001` (enforcing component, verification, decision reference) |
+| `docs/architecture/adr/005-context-adr.md` | Added ADR-005, *Proposed*, all nine template sections |
+| `docs/architecture/invariants.md` | Refined `INV-001` (enforcing component, verification); the ADR reference lives in ADR-005 and the trace matrix |
 | `docs/architecture/memory-design.md` | Added module section `### context (REQ-005, ADR-005)` — no state change |
 | `docs/architecture/runtime-policy-catalog.md` | Added module section with `POL-001`–`POL-003` |
 | `docs/architecture/trace-matrix.md` | Filled the REQ-005 row |
-| `docs/architecture/risk-list.md` | Created; `RISK-001`–`RISK-006` |
+| `docs/architecture/risk-list.md` | Created; `RISK-001`–`RISK-007` |
 | `docs/architecture/option-ledger.md` | Created; `OPL-001`, `OPL-002` |
 | `docs/code-governance/structural-constraints.md` | Added module section `### context (REQ-005, ADR-005)` in §10 |
-| `docs/code-governance/verification-constraints.md` | Added module test requirements in §7 (`TC-001`–`TC-009`) |
+| `docs/code-governance/verification-constraints.md` | Added module test requirements in §7 (`TC-001`–`TC-010`) |
 
 ### Supervision
 
 The member directed every phase and made each design decision; the agent drafted and cross-checked. Specifically, the member:
 - asked for the ADD comparison and the choice of candidate, and confirmed option B;
-- supplied the ADR file name (`005-contextADR.md`) and the requirement for detailed implementation steps;
+- supplied the ADR file name (`005-context-adr.md`) and the requirement for detailed implementation steps;
 - asked for `risk-list.md` and `option-ledger.md` to be added;
-- instructed the rename `005-context_adr.md` → `005-contextADR.md` and had the stale reference corrected;
+- instructed the final rename to `005-context-adr.md` and had the stale reference corrected;
 - required all document content in English.
 
 The agent verified each claim against source code rather than accepting the requirement text at face value; the member remains responsible for the reconciliation with the REQ-001 owner (see *Open items*).
@@ -47,7 +47,7 @@ The agent verified each claim against source code rather than accepting the requ
 ### Open items left for the human
 
 1. `token_limit` as the failure category requires the agreement of the REQ-001 owner (`centay`) — recorded as RISK-004 and as a Gate 1 condition in ADR-005 §5.
-2. The ADR file name `005-contextADR.md` does not follow the `NNN-<short-slug>.md` convention in `adr/000-template.md`; the member chose this name deliberately.
+2. The ADR file name is `005-context-adr.md`, which follows the `NNN-<short-slug>.md` convention in `adr/000-template.md`. It was renamed twice during the session (`005-context_adr.md` → `005-contextADR.md` → `005-context-adr.md`); the final name is the one recorded in this file.
 3. The ADR number `005` and the `EVAL-001`/`RISK-*`/`OPL-*`/`POL-*`/`TC-*` numbers are provisional and are unified by the integrator before SA Review (`Prompt.md` §4).
 4. No commit or push was made; CI gates were not run.
 
@@ -111,7 +111,7 @@ The agent verified each claim against source code rather than accepting the requ
 
 **Result:**
 - §1 lists REQ-005 C-001–C-004 and M-001/M-002, the `out_of_scope` boundary, INV-001 and the REQ-001 dependency.
-- §2 pins the three defects to exact lines and explains the provider-mismatch classification failure.
+- §2 pins the defects to exact lines and explains the provider-mismatch classification failure. (Initially three defects in the node; a fourth, at `supervisor_tools` L310, was added in the review turn.)
 - §3 defines the module layout (`messages.py`, `trimming.py`, `classification.py`, `recovery.py`) and states rules (a)–(d) as implementable constraints.
 - §5 gives concrete signatures for `segment_turns`, `TurnLayout`, `ResearchTurn`, `plan_trim`, `TrimPlan`, `classify_token_limit`, `compress_with_recovery`, `CompressionOutcome`, `TokenLimitExceeded`, plus the error/result contract and the shared-contract approval.
 - §9 has twelve ordered steps naming the files, the configuration field, the docstring correction, the check commands and the deferred default flip.
@@ -125,12 +125,12 @@ The agent verified each claim against source code rather than accepting the requ
 **Member:** Fill in the corresponding content based on the ADR and the requirement: `invariants.md`, `memory-design.md` Module Sections (only if State changes), `runtime-policy-catalog.md` Module Sections (only if exceptions, retries or degradation are involved), `trace-matrix.md` (my requirement's rows), `structural-constraints.md` Module Constraints, `verification-constraints.md` Module Test Requirements (case list only; test code comes later).
 
 **Agent actions:**
-- `invariants.md`: INV-001 already existed but named only a placeholder enforcing component. Refined it with `plan_trim`/`compress_with_recovery`/`segment_turns`, both test names, both monitors, and a `Decision: ADR-005; EVAL-001` line.
+- `invariants.md`: INV-001 already existed but named only a placeholder enforcing component. Refined it with `plan_trim`/`compress_with_recovery`/`segment_turns`, both test names and both monitors.
 - `memory-design.md` §5: added `### context (REQ-005, ADR-005)` stating **no state change**, and explaining *why* none is needed, that removed-turn indices are call-local and not persisted, and that the failure result uses the REQ-001 type.
 - `runtime-policy-catalog.md` §2: added `POL-001` (reducible → trim oldest turn and retry, ≤3 attempts), `POL-002` (unreducible or budget exhausted → `TokenLimitExceeded` → `failed`/`token_limit`, no fallback text), `POL-003` (non-token error → re-raise unchanged, owned by REQ-002/REQ-004).
-- `trace-matrix.md`: replaced the REQ-005 `TBD` cells with the architectural consequence, `ADR-005 / INV-001 (Proposed)`, the three enforcing functions and the nine planned cases.
+- `trace-matrix.md`: replaced the REQ-005 `TBD` cells with the architectural consequence, `ADR-005 / INV-001 (Proposed)`, the three enforcing functions and the planned cases.
 - `structural-constraints.md` §10: added the module constraint table including a **purity rule** row and a **baseline code touched** row beyond the template.
-- `verification-constraints.md` §7: added `TC-001`–`TC-009` covering C-001–C-004, M-001, M-002, INV-001, POL-003 and the flag default, each with input, expected result and test path; plus regression scope, the statement that no live test is needed, and the evidence location.
+- `verification-constraints.md` §7: added `TC-001`–`TC-009` covering C-001–C-004, M-001, M-002, INV-001, POL-003 and the flag default, each with input, expected result and test path; plus regression scope, the statement that no live test is needed, and the evidence location. (`TC-010` was added later, in the review turn.)
 - Updated the `Last updated` header of every touched document to 2026-11-13.
 
 **Correction made during this turn:** `trace-matrix.md` first said "4 cases" while §7 defined nine; corrected to "9 cases TC-001–TC-009".
@@ -161,7 +161,7 @@ The agent verified each claim against source code rather than accepting the requ
 
 **Agent actions:** Searched all documents for `005-context` (one match), ran `git mv` so Git records a rename rather than a delete plus add, updated the reference in `EVAL-001`, and re-searched to confirm no stale path remained.
 
-**Result:** `git status` showed `RM docs/architecture/adr/005-context_adr.md -> docs/architecture/adr/005-contextADR.md`. The agent noted that the new name still does not follow the `NNN-<short-slug>.md` convention in `adr/000-template.md`, since the member specified it.
+**Result:** `git status` showed `RM docs/architecture/adr/005-context_adr.md -> docs/architecture/adr/005-contextADR.md`. The agent noted at the time that this name still did not follow the `NNN-<short-slug>.md` convention in `adr/000-template.md`, since the member specified it; the file was later renamed to `005-context-adr.md`, which does follow it.
 
 ---
 
@@ -171,7 +171,7 @@ The agent verified each claim against source code rather than accepting the requ
 
 **Agent actions:** Wrote this file and appended `AIU-008` to `docs/ai-use-log.yaml`.
 
-**Note:** a file `transcripts/61061690_ZHANG Kaidi.md` already existed and was empty; the member asked for the hyphenated name `61061690-ZHANG_Kaidi.md`, which is the file written here. Both names are now present in `transcripts/`. No existing file was deleted or overwritten.
+**Note:** a file `transcripts/61061690_ZHANG Kaidi.md` already existed and was empty; the member asked for the hyphenated name `61061690-ZHANG_Kaidi.md`, which is the file written here. No existing file was overwritten at this point; the stale empty file was deleted in a later turn.
 
 ---
 
@@ -183,7 +183,7 @@ The agent verified each claim against source code rather than accepting the requ
 | Template conformance of ADR-005 | PASS | All nine `##` sections present, no remaining `TBD`/`<placeholder>` |
 | Summary tables vs detailed entries (risk list, option ledger) | PASS | Re-read and reconciled after correction |
 | Cross-reference reachability (EVAL-001 ↔ ADR-005 ↔ risk-list ↔ option-ledger) | PASS | Full-text search of `docs/` |
-| Stale file-name references after rename | PASS | Single match, updated |
+| Stale file-name references after rename | PASS | Updated to the final name `005-context-adr.md` in `docs/`; the historical renames recorded in Turn 3 and Turn 6 are kept as they happened |
 | `git status` shows only intended paths | PASS | See *Artifacts* table |
 | `ruff check` / `pytest test/offline` / `validate_requirements.py` | N/A | No source, test or `scripts/` change in this session |
 | CI gates | NOT_RUN | Nothing committed or pushed |
