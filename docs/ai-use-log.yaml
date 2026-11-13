@@ -190,4 +190,4 @@ entries:
       Pending human review. The member directed the ADD iterations and the design choices, and the
       output is Proposed until SA Review. No test was run, no review or approval is claimed, and
       the unresolved decisions U-1 to U-4 in ADR-001 §12 still need the team's decision.
-    transcript: null
+    transcript: transcripts/AIU-008-REQ-007-opencode.md
