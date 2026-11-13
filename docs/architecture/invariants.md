@@ -66,6 +66,26 @@ Every entry uses the same fields:
 - **Verification:** `test/offline/test_search_configuration.py`, `test/offline/test_search_fallback.py` with fake providers (normal, empty, timeout, invalid, unknown).
 - **Fallback:** on an eligible error, try only the configured fallback sources in order and record each attempt; when all fail, return an explicit search failure. Never substitute a source that is not configured.
 
+## INV-006 — Every metric result is valid or explicitly not evaluable
+
+- **Statement:** Every metric result is either `scored` with a score in `[0, 1]`, or `not_evaluable` with a null score and a reason. A `scored` result comes only from a strict integer judge rating `1..5`, validated on the raw judge value before any Pydantic or other type conversion, or, for groundedness only, from a ratio over at least one extracted claim. An invalid rating, missing input, empty claim list or evaluator exception makes only the affected metric `not_evaluable`; it never produces a fabricated score and never aborts the remaining metrics.
+- **Module:** evaluation
+- **Source:** REQ-009
+- **Status:** Proposed
+- **Enforcing component:** `test/evaluation/validation.py`, `test/evaluation/metrics.py` and the compatibility adapter in `test/evaluators.py`.
+- **Verification:** `test/offline/test_evaluator_validity.py`; monitor `out_of_range_score_count == 0`.
+- **Fallback:** return `not_evaluable` with `score=None` and a reason code such as `invalid_rating`, `missing_input`, `no_claims` or `evaluator_error`; continue the other metric groups. Never clamp, round, default or replace a missing score with zero.
+
+## INV-007 — Evaluation-only entry does not perform research or search
+
+- **Statement:** The evaluation-only entry scores exactly the report it is given, using its question and optional reference answer, research brief and evidence. It does not compile or invoke the research graph, call a search provider, generate a replacement report or import the research graph, and it rejects a blank question or report before any evaluator runs.
+- **Module:** evaluation
+- **Source:** REQ-010
+- **Status:** Proposed
+- **Enforcing component:** `test/evaluation/entry.py` and its CLI; the import boundary keeps `open_deep_research.deep_researcher` and search tools out of the entry.
+- **Verification:** `test/offline/test_report_evaluation_entry.py`, including `::test_entry_does_not_import_research_graph`; review of the README procedure for REQ-010 C-003.
+- **Fallback:** raise `EvaluationInputError` (CLI exit `2`) for blank input; never fall back to running research, searching, or generating a report. Report the metric result as `not_evaluable` when an input the metric needs is absent.
+
 ## Adding an Entry
 
 Copy an entry, take the next free `INV-NNN` number, and fill every field. Never reuse a retired number. Add the INV ID to the requirement's row in `trace-matrix.md` and to the ADR's §6. At integration the integrator may renumber entries and updates every reference.

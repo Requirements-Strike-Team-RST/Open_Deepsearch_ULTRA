@@ -78,6 +78,33 @@ Copy the example for your module. Every acceptance criterion (C-/M-) of the modu
 - **Regression:** existing suites to re-run, including `test/offline/test_contracts.py` if a shared contract changes.
 - **Live or human checks:** cases marked `automated: false` in `requirements.yaml`, and where their evidence goes.
 
+### evaluation (REQ-009, REQ-010, ADR-001)
+
+| Case | Covers | Type | Input | Expected result | Test |
+|---|---|---|---|---|---|
+| TC-EVAL-001 | REQ-009 C-001 | normal | Distinct question, report, reference-answer, research-brief and evidence markers; a fake judge that records requests | Every metric's judge request contains its declared inputs unchanged; correctness receives question, report and reference answer; completeness receives the brief; groundedness receives the evidence | `test/offline/test_evaluator_validity.py::test_evaluators_receive_their_inputs` |
+| TC-EVAL-002 | REQ-009 C-002 / INV-006 | boundary | Ratings `1` and `5` | Scores `0.2` and `1.0`, status `scored` | `test/offline/test_evaluator_validity.py::test_ratings_are_validated` |
+| TC-EVAL-003 | REQ-009 C-002 / INV-006 | exception | Ratings `0`, `6`, `True`, `"4"`, `4.0`, `4.5`, `NaN`, `inf`, `None` | `not_evaluable`, `score=None`, reason code `invalid_rating`; no clamping or default | `test/offline/test_evaluator_validity.py::test_ratings_are_validated` |
+| TC-EVAL-004 | REQ-009 C-003 / INV-006 | exception | Missing reference answer, research brief and evidence, one at a time | Correctness, completeness or groundedness respectively is `not_evaluable`; the other metrics are still `scored` | `test/offline/test_evaluator_validity.py::test_missing_input_is_not_evaluable` |
+| TC-EVAL-005 | REQ-009 C-004 / INV-006 | boundary | Judge returns an empty claim list | Groundedness is `not_evaluable` with `score=None`; no `ZeroDivisionError` | `test/offline/test_evaluator_validity.py::test_groundedness_and_errors` |
+| TC-EVAL-006 | REQ-009 C-004 | normal | Four claims, two grounded | Groundedness score `0.5` | `test/offline/test_evaluator_validity.py::test_groundedness_and_errors` |
+| TC-EVAL-007 | REQ-009 C-004 / INV-006 | exception | One evaluator or judge call raises | Only that group's metrics are `not_evaluable`; the remaining metrics are still evaluated | `test/offline/test_evaluator_validity.py::test_one_metric_error_does_not_abort_others` |
+| TC-EVAL-008 | REQ-009 M-001 / INV-006 | boundary | Sweep of valid and invalid ratings across every metric | `out_of_range_score_count == 0`; every `scored` result is in `[0, 1]`; every invalid result has a null score | `test/offline/test_evaluator_validity.py::test_ratings_are_validated` |
+| TC-EVAL-009 | INV-006 | regression | Import `test.evaluators` with no API key and no network; call each adapter with a fake judge | Import has no model-client or network side effect; baseline `key`/return shapes hold; `not_evaluable` maps to null `score`, `value="not_evaluable"` and status metadata | `test/offline/test_evaluator_validity.py::test_adapter_contract_and_import_is_side_effect_free` |
+| TC-EVAL-010 | REQ-010 C-001 / INV-007 | normal | A supplied report and question with markers; research-graph and search entry points patched to fail if called | Judge requests contain the supplied text unchanged; graph and search call counts are zero; `report_id` is the report SHA-256 | `test/offline/test_report_evaluation_entry.py::test_entry_scores_supplied_report_without_research` |
+| TC-EVAL-011 | INV-007 | regression | Import the entry in a subprocess with no research modules preloaded | `open_deep_research.deep_researcher` is absent from `sys.modules` | `test/offline/test_report_evaluation_entry.py::test_entry_does_not_import_research_graph` |
+| TC-EVAL-012 | REQ-010 C-002 / INV-007 | exception | Empty, whitespace-only and `None` question or report | `EvaluationInputError`; fake judge call count is zero | `test/offline/test_report_evaluation_entry.py::test_blank_input_rejected` |
+| TC-EVAL-013 | REQ-010 C-001 | boundary | Same report submitted twice, and a report differing by one character | `report_id` is stable for the same text and differs for the changed text; it equals the lowercase SHA-256 of the UTF-8 report | `test/offline/test_report_evaluation_entry.py::test_entry_identifies_report` |
+| TC-EVAL-014 | REQ-010 C-003 | human | Reviewer follows the README to evaluate a report file and read the per-metric results | The procedure works without modifying source code; verdict recorded as `REVIEW-NNN` | `docs/review-memo.md` (report evaluation entry review) |
+| TC-EVAL-015 | REQ-010 C-002 / INV-007 / POL-007 | exception | CLI with a blank question or a missing report file | stderr contains `error: ...`; exit code `2`; no judge call | `test/offline/test_report_evaluation_entry.py::test_cli_blank_input_exit_code` |
+| TC-EVAL-016 | POL-008 | boundary | CLI completes with all metrics `not_evaluable`; CLI completes with at least one `scored` metric | Exit code `1` and JSON on stdout in the first case; exit code `0` and JSON in the second | `test/offline/test_report_evaluation_entry.py::test_cli_exit_codes` |
+
+- **Regression:** re-run `uv run pytest test/offline`; the adapter contract in `test/offline/test_evaluator_validity.py`; and the import surface of `test/run_evaluate.py` (the six evaluator names and their call signatures must remain available). No live model or network call is needed for any case above.
+- **Live or human checks:** REQ-010 C-003 is the only `automated: false` criterion in this module; its evidence is the `REVIEW-NNN` record in `docs/review-memo.md`.
+- **LangSmith type-contract check:** `PASS` (2026-11-13) against the installed `langsmith 0.9.2` source (`EvaluationResult.score` accepts `None`) and the official evaluator-output and feedback documentation; this is not a live service test.
+- **LangSmith live compatibility:** `NOT_RUN`; a live `aevaluate` run with a `not_evaluable` result and UI rendering must be executed after implementation.
+- **Raw-rating test note:** `TC-EVAL-003` deliberately includes `4.0` and `"4"`: a lax `int` schema would coerce both to `4`; the test must observe `not_evaluable` with `invalid_rating`.
+
 ## 8. Definition of Done
 
 | # | Condition | Done by |
