@@ -41,7 +41,7 @@
 
 - **Module:** context
 - **Owner:** BroZhai
-- **Decision recorded in:** ADR-005 (`docs/architecture/adr/005-context_adr.md`)
+- **Decision recorded in:** ADR-005 (`docs/architecture/adr/005-contextADR.md`)
 - **Status:** Open
 
 **ASR**
@@ -68,3 +68,5 @@ The decision has to answer four distinct sub-questions sharing one loop: (a) the
 **Choice:** **B** — a dedicated `context` module with a pure `plan_trim` decision, a single `classify_token_limit` entry point, and a `compress_with_recovery` loop called from a thin `compress_research`. It is the only option that keeps the safety-relevant decision deterministic and separately testable while staying inside the blueprint's module list, the thin-node rule and the REQ-005 scope. The remaining questions are settled inside B as follows: **(a)** the unit of removal is a *research turn* = one `AIMessage` + the `ToolMessage`s that follow it; **(b)** the protected region is the research topic / task specification, the compression instruction, and the newest AI turn together with its tool results — computed from message types, not from the model's text; **(c)** classification is `classify_token_limit(exc, configurable.compression_model)`, and an unknown provider falls back to checking all provider patterns; **(d)** when `plan_trim` returns `None`, the loop stops and produces a failed task result of category `token_limit`, and the placeholder string is removed.
 
 **Rejected and why:** **A**: the fix is correct but puts architectural logic in a graph node, against `structural-constraints.md` §2 and §8, and leaves the protected region untestable on its own; it would have to be moved once a second requirement touches compression. **C**: solves a different problem (avoiding the failed call) rather than REQ-005's problem (recovering correctly after it), needs a tokenizer with no provider-neutral answer and a new dependency, and contradicts REQ-005's stated scope boundary around token-limit configuration; the reactive path it keeps is exactly B, so C is a later extension on top of B, not an alternative to it.
+
+**Ledger:** the rejected options are tracked as OPL-001 (A, Dropped) and OPL-002 (C, Deferred) in `docs/architecture/option-ledger.md`, together with the conditions that would reopen them. Risks this decision carries are RISK-001 to RISK-006 in `docs/architecture/risk-list.md`.

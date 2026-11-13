@@ -170,6 +170,8 @@ The module's case table (TC-IDs, input and expected result per case) is written 
 - *delivery* (REQ-004): gains a clean failure signal, so an outcome of `partial` or `failed` can be derived without parsing text.
 - *evaluation*: unchanged; the compression prompt is untouched, so no prompt version bump.
 
+**Risks and alternatives:** the risks this decision carries are RISK-001 to RISK-006 in `docs/architecture/risk-list.md`; the rejected options and their re-evaluation conditions are OPL-001 and OPL-002 in `docs/architecture/option-ledger.md`.
+
 ## 9. Implementation Steps
 
 Ordered steps for the coding agent. Each step names the files it changes and the acceptance criterion it serves. Steps 1–7 are new code; step 8 wires the node; step 9 adds the flag; step 10 is regression.
