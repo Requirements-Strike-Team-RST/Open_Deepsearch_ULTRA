@@ -1,0 +1,10 @@
+# Store and check out every text file with Unix (LF) line endings, on every platform.
+* text=auto eol=lf
+
+# Binary files: no line-ending conversion.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+*.ico binary

@@ -1,31 +1,921 @@
-# Machine-readable PRD (D1)
-# Format per docs/req/req-schema.json
+schema_version: "1.0.0"
+updated_at: "2026-11-11"
+notes: >-
+  Consolidated team requirements, revision of 2026-11-11. All requirements are approved. Code
+  line references are to commit f4a016e. Verification paths name planned tests under
+  test/offline and test/live; none has been executed yet.
 
-# Tips: 一些关键属性的定义 (如status) 见 >> ./关键属性声明.txt, 后续引入了别的attribute也可以在.txt文件中进行补充
+requirements:
+  - id: REQ-001
+    title: Supervisor delegation and researcher results shall follow a typed contract
+    type: functional
+    problem: >-
+      The supervisor delegates through ConductResearch, whose only field is a free-text
+      research_topic (state.py L15-19), so a researcher receives no scope, no questions it must
+      answer and no budget. A researcher returns ResearcherOutputState (state.py L92-96), which
+      holds free text and raw notes with no task id, no status and no source list. A failed,
+      empty or partial result therefore looks the same as a finished one, and nothing downstream
+      can check deterministically which parts of the research brief were answered.
+    statement: >-
+      The supervisor shall delegate every research task as a task specification that states a
+      task id, the scope, the questions the task must answer and a budget given as a maximum
+      number of tool calls no greater than max_react_tool_calls. Every researcher shall return a
+      task result that states the task id, the findings for each required question with the
+      source URLs that support them, the tool calls spent and, unless the task is complete, the
+      reason. A finding shall count as sourced only if each of its URLs was returned by a tool
+      call made in that task. The system, not the model, shall derive the task status from the
+      sourced findings: complete when every required question has one, partial when some but not
+      all do, and failed when none do. A result that fails contract validation shall be failed.
+    owner: centay
+    priority: must
+    priority_rationale: >-
+      Failure handling (REQ-002), the coverage check (REQ-003) and the run outcome (REQ-004) all
+      read these fields, so the contract has to exist first. Re-planning of failed tasks and
+      provider-aware scheduling are left out of this delivery.
+    scope:
+      in_scope:
+        - Task specification sent when the supervisor delegates
+        - Task result returned by a researcher
+        - Contract validation of results, including source URL resolution
+        - Derivation of task status from sourced findings
+      out_of_scope:
+        - Search tools and search provider selection inside the researcher
+        - Context compaction inside compress_research (REQ-005)
+        - Researcher exceptions and delegations above the concurrency limit (REQ-002)
+        - Final report format and citation rules (REQ-006)
+    fit_criterion:
+      summary: >-
+        Every delegation and every result passes contract validation, and every task status is
+        derived from findings whose sources were actually retrieved in that task.
+      checks:
+        - id: C-001
+          description: >-
+            Given a scripted supervisor turn that delegates one task, when supervisor_tools
+            dispatches it, then the researcher receives a task specification with task id,
+            scope, required questions and budget that passes schema validation.
+          verification: test/offline/test_task_contract.py::test_delegation_is_valid_task_spec
+          automated: true
+        - id: C-002
+          description: >-
+            Given a fake researcher whose findings answer two of three required questions with
+            URLs returned by its own tool calls, when its result is validated, then the status
+            is partial and the unanswered question is listed in the reason.
+          verification: test/offline/test_task_contract.py::test_status_derived_from_sourced_findings
+          automated: true
+        - id: C-003
+          description: >-
+            Given a fake researcher that claims every question answered but cites a URL that no
+            tool call in the task returned, when its result is validated, then that finding is
+            not counted and the status is derived from the remaining findings only.
+          verification: test/offline/test_task_contract.py::test_unretrieved_source_does_not_count
+          automated: true
+        - id: C-004
+          description: >-
+            Given a researcher output that does not match the result schema, when the supervisor
+            receives it, then the task result is failed with reason invalid_result.
+          verification: test/offline/test_task_contract.py::test_malformed_result_becomes_failed
+          automated: true
+      metrics:
+        - id: M-001
+          metric: unsourced_finding_counted_count
+          operator: "=="
+          threshold: 0
+          unit: count
+          verification: test/offline/test_task_contract.py::test_unretrieved_source_does_not_count
+    depends_on: []
+    safety_relevant: true
+    status: approved
+    version: "1.1"
+    updated_at: "2026-11-11"
+    notes: >-
+      Source: code analysis, no upstream issue. Team baseline of 2026-09-12, from a local trace
+      script that is not in the repository: a three-sentence question was split into parallel
+      tasks costing about 34,000 tokens; the budget field is where such over-delegation can be
+      limited later. Field names are proposals for the design review.
 
-project: open_deepsearch_ULTRA
-version: 0.1.0
-date: 2026/09/19
+  - id: REQ-002
+    title: No delegated research task shall be lost or silently treated as completed
+    type: invariant
+    problem: >-
+      supervisor_tools runs the researcher fan-out inside one try block whose handler tests
+      is_token_limit_exceeded(...) or True (deep_researcher.py L332-342). Every exception from
+      any researcher, such as a provider error, a network failure or an MCP error, therefore ends
+      the research phase as if it had finished, and the outer graph continues to
+      final_report_generation (L715). asyncio.gather (L305) re-raises the first exception, so
+      findings of siblings that succeed are discarded while those siblings keep running and
+      spending tokens. Delegations above max_concurrent_research_units are never run (L291-292)
+      and each receives an error string instead (L315-321). Delegations in the turn on which the
+      iteration cap is hit are never run either (L247, L255). The overflow string and the
+      compress_research placeholder "Error synthesizing research report" (L310, L582-585) are
+      stored as tool messages and read into notes by get_notes_from_tool_calls (utils.py
+      L599-601), so report generation receives failure text as findings.
+    statement: >-
+      Every delegated research task shall end with a task result as defined in REQ-001, and no
+      delegation shall be dropped: delegations above the concurrency limit shall be queued and
+      run, and a delegation left unrun because the research loop exits shall end failed with
+      reason not_run. An exception raised while a task runs, including a token or context limit
+      error, shall make only that task failed, with an error category and the error message,
+      shall keep the results of sibling tasks, and shall never on its own end the research
+      phase. The supervisor shall not continue or exit while any task it started is still
+      running. Failure or placeholder text shall never reach report generation as a finding.
+    owner: AlchemyHAN
+    contributors:
+      - centay
+    priority: must
+    priority_rationale: >-
+      This is the defect reported in upstream #283 and the direct cause of silently truncated
+      reports. Automatic retry and re-planning of failed tasks are left out of this delivery;
+      the supervisor may still re-delegate within max_researcher_iterations.
+    scope:
+      in_scope:
+        - Exception handling around the parallel researcher fan-out
+        - Queuing of delegations above the concurrency limit
+        - Joining of parallel researcher tasks
+        - Delegations left unrun when the research loop exits
+        - Separation of task failures from research findings in notes
+      out_of_scope:
+        - Errors of individual search or MCP tool calls inside researcher_tools (REQ-008)
+        - Token-limit recovery inside compress_research (REQ-005)
+        - Exit decision of the research loop (REQ-003)
+        - legacy/multi_agent.py, which was removed in commit a4d557a
+        - Automatic retry or re-planning of failed tasks
+    fit_criterion:
+      summary: >-
+        Under injected researcher failures every delegation ends with a result, no failure ends
+        the research phase, completed siblings are kept, no task is still running after the
+        join, and no failure text appears among the findings.
+      checks:
+        - id: C-001
+          description: >-
+            Given one delegation whose researcher raises RuntimeError, when supervisor_tools
+            runs, then it routes back to the supervisor rather than END and the task result is
+            failed with category runtime and the original error message.
+          verification: test/offline/test_failure_propagation.py::test_child_exception_becomes_failed_result
+          automated: true
+        - id: C-002
+          description: >-
+            Given two delegations where one researcher returns a finding and the other raises,
+            when supervisor_tools runs, then the finding is kept in the tool messages and
+            raw_notes and only the other task is failed.
+          verification: test/offline/test_failure_propagation.py::test_sibling_result_kept_on_failure
+          automated: true
+        - id: C-003
+          description: >-
+            Given a researcher that raises a recognised token-limit error, when supervisor_tools
+            runs, then the task result is failed with category token_limit and the research
+            phase does not end.
+          verification: test/offline/test_failure_propagation.py::test_token_limit_error_is_task_failure
+          automated: true
+        - id: C-004
+          description: >-
+            Given three delegations and a concurrency limit of one, when supervisor_tools runs,
+            then all three tasks are run and each ends with a task result.
+          verification: test/offline/test_failure_propagation.py::test_overflow_delegations_are_queued
+          automated: true
+        - id: C-005
+          description: >-
+            Given a final supervisor turn that holds two delegations when the iteration cap is
+            reached, when the loop exits, then both delegations end failed with reason not_run.
+          verification: test/offline/test_failure_propagation.py::test_delegations_left_at_exit_are_failed
+          automated: true
+        - id: C-006
+          description: >-
+            Given a fan-out where one researcher raises immediately while a sibling is still
+            running, when supervisor_tools returns, then no task it started is still pending.
+          verification: test/offline/test_failure_propagation.py::test_no_task_running_after_join
+          automated: true
+        - id: C-007
+          description: >-
+            Given one failed task and one task whose compression produced the placeholder text,
+            when the research phase ends, then notes contain only validated findings and both
+            failures appear only as failed task results.
+          verification: test/offline/test_failure_propagation.py::test_failure_text_not_in_notes
+          automated: true
+      metrics:
+        - id: M-001
+          metric: dropped_delegation_count
+          operator: "=="
+          threshold: 0
+          unit: count
+          verification: test/offline/test_failure_propagation.py
+        - id: M-002
+          metric: failure_text_in_notes_count
+          operator: "=="
+          threshold: 0
+          unit: count
+          verification: test/offline/test_failure_propagation.py::test_failure_text_not_in_notes
+    depends_on:
+      - REQ-001
+    safety_relevant: true
+    status: approved
+    version: "1.1"
+    updated_at: "2026-11-11"
+    notes: >-
+      Source: upstream issue #283, reported against commit 1f24f11, which is an ancestor of this
+      branch; src/open_deep_research is unchanged since then. Offline probes on 2026-11-10
+      reproduced every failure listed in the problem. Upstream #284 targets
+      legacy/multi_agent.py, which is not in this repository; the property it asks for, that
+      the supervisor converges only after every parallel branch has ended, is C-006. Design
+      decision: a researcher's token-limit error is a task failure and does not end the phase,
+      because it says nothing about the supervisor's own context; the upstream code ended the
+      phase on it. Proposed error categories are token_limit, runtime, not_run and
+      invalid_result.
 
-# ------------------------------------------------------------
-# Functional Requirements
-# ------------------------------------------------------------
-functional_requirements:
-  - id: FR-001
-    title: "Latest Context Missing"
-    description: "During multiple conversations with agent, the agent may forget / lost the lastest context message."
-    fit_criterion: "Agent should always remember the latest message and the oldest context can be dropped."
-    status: pending
-    links: no
+  - id: REQ-003
+    title: Research loop shall stop on a coverage check, not on the model's claim
+    type: invariant
+    problem: >-
+      supervisor_tools ends the research phase on three conditions only: the iteration cap, a
+      turn with no tool calls, or a ResearchComplete call (deep_researcher.py L246-262). Nothing
+      checks whether the research brief was answered, and the exit reason is not recorded. An
+      error in the supervisor's own model call (L214) is not handled and aborts the whole run.
+      In the team baseline of 2026-09-12 both test queries ran until the iteration cap and the
+      model never called ResearchComplete.
+    statement: >-
+      The research loop shall end only through a deterministic check of the validated task
+      results from REQ-001, and every exit shall record exactly one exit reason: covered when
+      coverage reaches the configured threshold, budget_exhausted when the iteration cap is
+      reached, stalled when two consecutive supervisor turns that do more than call think_tool
+      leave coverage unchanged, and failed when the supervisor's own model call fails after its
+      retries. When several conditions hold at once, they take precedence in that order.
+      Coverage is the share of required questions, across all delegated tasks, that have at
+      least one sourced finding. A ResearchComplete call or a turn without tool calls shall not
+      end the loop while coverage is below the threshold; the supervisor shall instead be told
+      which required questions remain unanswered.
+    owner: centay
+    priority: must
+    priority_rationale: >-
+      This is the orchestration half of the project's safety-relevant boundary: the model's
+      own claim of completion is not trusted. One configurable threshold is enough for this
+      delivery; per-query tuning of the threshold is deferred.
+    scope:
+      in_scope:
+        - Exit decision of the supervisor research loop
+        - Exit reason recorded in supervisor state
+        - Handling of ResearchComplete calls and turns without tool calls as requests
+        - Failure of the supervisor's own model call
+      out_of_scope:
+        - Stop conditions inside researcher_tools
+        - Failures of individual research tasks (REQ-002)
+        - How non-covered exits are reported to the caller (REQ-004)
+    fit_criterion:
+      summary: >-
+        Every research loop exits through the coverage check with exactly one recorded reason,
+        and a completion request below the threshold never ends the loop.
+      checks:
+        - id: C-001
+          description: >-
+            Given scripted results that answer every required question, when the turn ends,
+            then the loop exits with reason covered whether or not ResearchComplete was called.
+          verification: test/offline/test_research_termination.py::test_full_coverage_exits_covered
+          automated: true
+        - id: C-002
+          description: >-
+            Given coverage 0.5 and threshold 0.8, when the supervisor calls ResearchComplete,
+            then the loop continues and the next supervisor input lists the unanswered
+            questions.
+          verification: test/offline/test_research_termination.py::test_complete_below_threshold_is_refused
+          automated: true
+        - id: C-003
+          description: >-
+            Given two consecutive delegation turns that add no coverage, with a think_tool-only
+            turn between them, when the second delegation turn ends, then the loop exits with
+            reason stalled.
+          verification: test/offline/test_research_termination.py::test_turns_without_progress_exit_stalled
+          automated: true
+        - id: C-004
+          description: >-
+            Given coverage below the threshold when the iteration cap is reached, when the turn
+            ends, then the loop exits with reason budget_exhausted.
+          verification: test/offline/test_research_termination.py::test_iteration_cap_exits_budget_exhausted
+          automated: true
+        - id: C-005
+          description: >-
+            Given a supervisor model that raises on every retry, when the supervisor node runs,
+            then the loop exits with reason failed and the run does not abort with an unhandled
+            exception.
+          verification: test/offline/test_research_termination.py::test_supervisor_model_error_exits_failed
+          automated: true
+        - id: C-006
+          description: >-
+            Given the two baseline queries run against the live model, when each run ends, then
+            at least one run exits with reason covered and at most one hits the iteration cap;
+            the baseline was zero covered exits and two cap hits.
+          verification: test/live/test_research_termination_live.py::test_baseline_queries_exit_reasons
+          automated: false
+      metrics:
+        - id: M-001
+          metric: exit_without_single_reason_count
+          operator: "=="
+          threshold: 0
+          unit: count
+          verification: test/offline/test_research_termination.py
+        - id: M-002
+          metric: premature_complete_accepted_count
+          operator: "=="
+          threshold: 0
+          unit: count
+          verification: test/offline/test_research_termination.py::test_complete_below_threshold_is_refused
+    depends_on:
+      - REQ-001
+    safety_relevant: true
+    status: approved
+    version: "1.1"
+    updated_at: "2026-11-11"
+    notes: >-
+      Source: code analysis and the team's live baseline of 2026-09-12. Proposed default
+      threshold 0.8, configurable, to be confirmed in the design review. The detailed rule is
+      proposed as INV-003 in docs/architecture/invariants.md. How a non-covered exit is reported
+      to the caller is specified in REQ-004.
 
-# ------------------------------------------------------------
-# Non-Functional Requirements
-# ------------------------------------------------------------
-non_functional_requirements:
-  - id: NFR-001
-    title: <performance/security/usability>
-    description: <requirement statement>
-    measure: <how it is measured>
+  - id: REQ-004
+    title: Run output shall state whether research was complete, partial or failed
+    type: functional
+    problem: >-
+      The outer graph routes research_supervisor to final_report_generation unconditionally
+      (deep_researcher.py L715) and its output has no status field, so a caller can tell a
+      complete run from a failed one only by reading the report. final_report_generation
+      returns its own errors as report text (L669-674, L684-697) and the run still ends
+      normally. On a token-limit error it cuts findings from the end (L676-682), so findings of
+      later tasks are dropped without notice. The report-writing model cannot be relied on to
+      disclose missing research.
+    statement: >-
+      The final output of every run shall include a research outcome and the list of failed
+      tasks with their reasons. The outcome shall be failed when the research loop exits with
+      reason failed, when no validated finding exists or when report generation fails; complete
+      when the exit reason is covered, every task result is complete and no finding was left
+      out of the report; and partial otherwise. When the outcome is partial, the system, not the
+      report model, shall append a limitations section that names each failed or partial task,
+      each unanswered required question and any findings left out. When the outcome is failed,
+      the final report shall be empty and error text shall appear only in the failure fields.
+    owner: AlchemyHAN
+    priority: must
+    priority_rationale: >-
+      Without a caller-visible outcome the failures recorded under REQ-002 and REQ-003 stay
+      internal and the user still receives a normal-looking report, which is the harm described
+      in upstream #283. Presentation of the outcome in a UI is left out of this delivery.
+    scope:
+      in_scope:
+        - Research outcome and failed-task list in the output of the outer graph
+        - Limitations section appended by the system to partial reports
+        - Runs that end without any validated finding
+        - Report-generation errors and findings truncated to fit the report model
+      out_of_scope:
+        - Recording of individual task failures (REQ-002)
+        - Exit reasons of the research loop (REQ-003)
+        - Report format and citation rules other than the limitations section (REQ-006)
+        - Front-end or LangGraph Studio presentation of the outcome
+        - The clarification path that ends with a question to the user
+    fit_criterion:
+      summary: >-
+        Every scripted run returns the outcome its exit reason and task results imply, every
+        partial report carries the system-added limitations section, and no failed run returns
+        error text as a report.
+      checks:
+        - id: C-001
+          description: >-
+            Given a scripted run whose tasks are all complete and whose loop exits covered, when
+            the graph finishes, then the outcome is complete, the failed-task list is empty and
+            the report has no limitations section.
+          verification: test/offline/test_run_outcome.py::test_covered_run_is_complete
+          automated: true
+        - id: C-002
+          description: >-
+            Given a two-task run in which one task fails, when the graph finishes, then the
+            outcome is partial, the failed-task list names that task and its reason, and the
+            limitations section names it although the fake report model never mentions it.
+          verification: test/offline/test_run_outcome.py::test_failed_task_makes_run_partial
+          automated: true
+        - id: C-003
+          description: >-
+            Given a run whose tasks are all complete but whose loop exits stalled or
+            budget_exhausted, when the graph finishes, then the outcome is partial.
+          verification: test/offline/test_run_outcome.py::test_non_covered_exit_is_partial
+          automated: true
+        - id: C-004
+          description: >-
+            Given a run in which no validated finding exists, when the graph finishes, then the
+            outcome is failed, the report model is not called and final_report is empty.
+          verification: test/offline/test_run_outcome.py::test_no_finding_run_is_failed
+          automated: true
+        - id: C-005
+          description: >-
+            Given a report model that raises a non-token-limit error, when report generation
+            runs, then the outcome is failed with that reason and final_report is empty.
+          verification: test/offline/test_run_outcome.py::test_report_error_run_is_failed
+          automated: true
+        - id: C-006
+          description: >-
+            Given findings that must be truncated to fit the report model, when the report is
+            generated, then the outcome is partial and the limitations section states that
+            findings were left out.
+          verification: test/offline/test_run_outcome.py::test_truncated_findings_make_run_partial
+          automated: true
+      metrics:
+        - id: M-001
+          metric: false_complete_outcome_count
+          operator: "=="
+          threshold: 0
+          unit: count
+          verification: test/offline/test_run_outcome.py
+    depends_on:
+      - REQ-002
+      - REQ-003
+    safety_relevant: true
+    status: approved
+    version: "1.1"
+    updated_at: "2026-11-11"
+    notes: >-
+      Source: upstream issues #283 and #284, both of which name a normal-looking but incomplete
+      report as the impact. The output field names research_outcome and failed_tasks are
+      proposals.
 
-constraints:
-  - <constraint statement>
+  - id: REQ-005
+    title: Token-limit recovery in compression shall discard the oldest context first
+    type: invariant
+    problem: >-
+      On a token-limit error compress_research calls remove_up_to_last_ai_message
+      (deep_researcher.py L568-571, utils.py L848-866), which cuts the history at the last AI
+      message and so drops that message, the tool results after it and the compression
+      instruction appended at L538. The call-site comment says older messages are removed,
+      while the helper's docstring says recent context is removed. The error is classified
+      with research_model (L569) although the call used compression_model, so a token-limit
+      error from a compression model of another provider is not recognised and the same
+      request is retried unchanged. After three attempts the node returns the placeholder
+      "Error synthesizing research report" in place of a summary (L582-585).
+    statement: >-
+      When compression exceeds the model's token limit, the system shall free context by
+      removing whole research turns, each an AI message together with its tool results,
+      starting from the oldest, and shall keep the research topic, the compression instruction,
+      the latest AI turn and the tool results that follow it. It shall never remove the latest
+      turn to recover and shall never keep a tool result without the AI message that requested
+      it. Token-limit errors shall be recognised for the model that made the call. When nothing
+      more can be removed and the limit is still exceeded, the task shall end with a failed
+      result of category token_limit instead of a summary.
+    owner: BroZhai
+    priority: must
+    priority_rationale: >-
+      Every token-limit recovery silently loses the newest research while the run still
+      produces a normal report. Correct recovery takes precedence over tuning the compression
+      prompt, which is deferred.
+    scope:
+      in_scope:
+        - Token-limit branch of compress_research
+        - Message trimming helper used by that branch
+        - Token-limit classification for the compression call
+        - Task result when the limit cannot be met
+      out_of_scope:
+        - Compression prompt wording and summarisation style
+        - Model selection and token-limit configuration
+        - Supervisor and researcher graph topology
+        - Token-limit handling in final_report_generation (REQ-004)
+    fit_criterion:
+      summary: >-
+        Across token-limit retries the newest turn always survives, space is reclaimed from the
+        oldest whole turns, and an unreducible history ends as a failed task, not as text.
+      checks:
+        - id: C-001
+          description: >-
+            Given a history of topic, three AI turns with tool results and the compression
+            instruction, and a model that rejects the request until two turns are removed, when
+            compression runs, then the two oldest turns are removed and the topic, the latest
+            turn with its tool results and the instruction are kept.
+          verification: test/offline/test_context_compaction.py::test_oldest_turns_removed_first
+          automated: true
+        - id: C-002
+          description: >-
+            Given any history trimmed after a token-limit error, when the trimmed history is
+            inspected, then every tool result follows the AI message that requested it.
+          verification: test/offline/test_context_compaction.py::test_no_orphan_tool_messages
+          automated: true
+        - id: C-003
+          description: >-
+            Given an OpenAI research model and an Anthropic compression model that raises an
+            Anthropic token-limit error, when compression runs, then the error is recognised and
+            the history is trimmed before the retry.
+          verification: test/offline/test_context_compaction.py::test_classification_uses_compression_model
+          automated: true
+        - id: C-004
+          description: >-
+            Given a history of only the topic, one AI turn and the instruction that still
+            exceeds the limit, when compression runs, then the task ends failed with category
+            token_limit and no placeholder text is returned as a summary.
+          verification: test/offline/test_context_compaction.py::test_unreducible_history_ends_failed
+          automated: true
+      metrics:
+        - id: M-001
+          metric: latest_turn_preservation_rate
+          operator: "=="
+          threshold: 1.0
+          unit: ratio
+          verification: test/offline/test_context_compaction.py::test_oldest_turns_removed_first
+        - id: M-002
+          metric: orphan_tool_message_count
+          operator: "=="
+          threshold: 0
+          unit: count
+          verification: test/offline/test_context_compaction.py::test_no_orphan_tool_messages
+    depends_on:
+      - REQ-001
+    safety_relevant: true
+    status: approved
+    version: "1.1"
+    updated_at: "2026-11-11"
+    notes: >-
+      Source: upstream issue #252, still open. A history without any AI message cannot be
+      reduced and is therefore covered by C-004.
+
+  - id: REQ-006
+    title: Research prompts shall specify one consistent citation format
+    type: invariant
+    problem: >-
+      compress_research_system_prompt asks for a bold "List of All Relevant Sources" label in
+      its output format (prompts.py L209) while its citation rules require a "### Sources"
+      heading (L212-219); this is upstream #232, whose fix PR #301 was closed without being
+      merged. final_report_generation_prompt asks for sources in "[Title](URL) format" (L251)
+      and later for numbered citations with a "[n] Source Title: URL" list (L298-307). Each
+      researcher numbers its own sources from 1, so the notes given to the report writer reuse
+      the same numbers for different URLs. Conflicting instructions lead to mixed citation
+      styles in reports.
+    statement: >-
+      The compression prompt and the final report prompt shall each specify exactly one
+      citation format, and it shall be the same format: numbered inline citations [n] and a
+      closing "### Sources" section that lists each cited URL once as "[n] Title: URL",
+      numbered without gaps. The final report prompt shall instruct the model to renumber the
+      citations of all findings into one sequence, so that each URL has one number in the
+      report.
+    owner: NoPumpkinz
+    priority: should
+    priority_rationale: >-
+      Mixed citation styles reduce trust in a report but do not lose research content, and the
+      fix is limited to prompt text. Deterministic validation of citations in generated reports
+      is deferred.
+    scope:
+      in_scope:
+        - Citation and sources instructions in compress_research_system_prompt
+        - Citation and sources instructions in final_report_generation_prompt
+      out_of_scope:
+        - Other prompt content
+        - Deterministic checking of citations in generated reports
+        - Models, search APIs and UI rendering of the report
+    fit_criterion:
+      summary: >-
+        Both prompts state one identical numbered citation format with no competing
+        instruction, and live reports follow it.
+      checks:
+        - id: C-001
+          description: >-
+            Given compress_research_system_prompt, when its text is inspected, then it contains
+            exactly one sources-section instruction, the "### Sources" heading, and no
+            competing label.
+          verification: test/offline/test_prompt_citation_contract.py::test_compression_prompt_has_single_sources_format
+          automated: true
+        - id: C-002
+          description: >-
+            Given final_report_generation_prompt, when its text is inspected, then it requires
+            numbered citations, contains no "[Title](URL)" instruction and asks for one
+            renumbered sequence across all findings.
+          verification: test/offline/test_prompt_citation_contract.py::test_report_prompt_has_single_citation_format
+          automated: true
+        - id: C-003
+          description: >-
+            Given both prompts, when their sources-entry formats are extracted, then the two
+            formats are identical.
+          verification: test/offline/test_prompt_citation_contract.py::test_prompts_share_citation_format
+          automated: true
+        - id: C-004
+          description: >-
+            Given the two baseline queries run against the live model, when the reports are
+            produced, then every inline citation is a number with exactly one matching entry in
+            the Sources section.
+          verification: test/live/test_report_citations_live.py::test_reports_use_numbered_citations
+          automated: false
+    depends_on: []
+    safety_relevant: false
+    status: approved
+    version: "1.1"
+    updated_at: "2026-11-11"
+    notes: >-
+      Source: upstream issue #232 and PR #301 (closed, unmerged). The numbered format was
+      chosen because three of the four existing citation instructions already use it.
+      safety_relevant is false because the change only alters prompt text and adds no
+      deterministic check on model output.
+
+  - id: REQ-007
+    title: Search provider setup shall be documented and validated before research
+    type: functional
+    problem: >-
+      Upstream #250 reports that it is unclear when the agent searches and how to use another
+      or a self-hosted search provider. search_api offers Tavily, OpenAI native search,
+      Anthropic native search or none (configuration.py L11-17, L78-93). The native options
+      only work with a research model of the same provider, which the UI states only as a note
+      and nothing checks. Custom providers can be added only as MCP tools (utils.py L569-597),
+      and the README just points to the search_api and mcp_config fields (README.md L77). A
+      wrong combination surfaces only after research has started, when the model API rejects
+      the tool. With search_api none and no MCP tool the researcher still runs, because its
+      tool list always holds ResearchComplete and think_tool (utils.py L579), so research
+      finishes with no search at all and no error.
+    statement: >-
+      The documentation shall explain that the researcher model decides when to search, how to
+      select each built-in search provider, which research models each native provider
+      requires, and how to add a custom or self-hosted search provider as an MCP tool. Before
+      any research starts, the system shall reject a configuration that names an unsupported
+      provider, pairs a native search provider with a research model of another provider, or
+      leaves the researcher with no search tool and no MCP tool, with an error that names the
+      setting to change.
+    owner: sszfot
+    priority: must
+    priority_rationale: >-
+      This answers upstream #250 directly and moves configuration errors from the middle of a
+      run to start-up, where they cannot be mistaken for research results. New provider
+      integrations are deferred.
+    scope:
+      in_scope:
+        - Documentation of search behaviour and provider configuration
+        - Documentation of custom and self-hosted search through MCP
+        - Validation of the search configuration before research starts
+      out_of_scope:
+        - Fallback between search providers (REQ-008)
+        - New built-in provider integrations
+        - Provider selection by cost or latency
+    fit_criterion:
+      summary: >-
+        Every invalid search configuration is rejected before any model or search call, and a
+        reader can set up each built-in provider and an MCP search server from the docs alone.
+      checks:
+        - id: C-001
+          description: >-
+            Given search_api anthropic and research_model openai:gpt-4.1, when the graph
+            starts, then a validation error naming both settings is raised before any model or
+            search call.
+          verification: test/offline/test_search_configuration.py::test_native_search_model_mismatch_rejected
+          automated: true
+        - id: C-002
+          description: >-
+            Given search_api none and no MCP configuration, when the graph starts, then a
+            validation error is raised before any research.
+          verification: test/offline/test_search_configuration.py::test_no_search_tool_rejected
+          automated: true
+        - id: C-003
+          description: >-
+            Given an unsupported search_api value, when the graph starts, then a validation
+            error lists the supported values.
+          verification: test/offline/test_search_configuration.py::test_unsupported_provider_rejected
+          automated: true
+        - id: C-004
+          description: >-
+            Given search_api tavily with a Tavily key, when the researcher tools are assembled,
+            then they include the web_search tool and no validation error is raised.
+          verification: test/offline/test_search_configuration.py::test_valid_tavily_configuration_accepted
+          automated: true
+        - id: C-005
+          description: >-
+            Given the README, when a reviewer follows it without reading source code, then they
+            can configure each built-in provider and an MCP search server and find the required
+            credentials.
+          verification: docs/review-memo.md (search provider configuration review)
+          automated: false
+    depends_on: []
+    safety_relevant: false
+    status: approved
+    version: "1.1"
+    updated_at: "2026-11-11"
+    notes: >-
+      Source: upstream issue #250, still open. The supported provider set is the existing
+      SearchAPI enum.
+
+  - id: REQ-008
+    title: Search shall fall back to configured alternative sources on failure
+    type: functional
+    problem: >-
+      A failed search is never retried with another source. An exception from Tavily
+      (utils.py L138-170) reaches execute_tool_safely (deep_researcher.py L427-432), which hands
+      the researcher model the text "Error executing tool: ..." and nothing else. Upstream #250
+      asks for fallback to another API. Only Tavily and MCP tools run as client-side tools; the
+      OpenAI and Anthropic searches run inside the model call and cannot be invoked as a
+      substitute after a failure.
+    statement: >-
+      The system shall accept an ordered list of fallback search sources, each being Tavily or a
+      configured MCP search tool. When a search fails with an eligible error, namely a timeout,
+      a connection failure, a rate limit, a provider server error or a rejected credential, the
+      system shall try the next source in order until one succeeds, and shall use a successful
+      result the same way whichever source returned it. A search that returns no hits is a
+      success and shall not trigger fallback, and an ineligible error shall be returned without
+      fallback. When every source fails, the researcher shall receive an explicit search failure
+      that lists each source tried and its error and that cannot be mistaken for an empty
+      result.
+    owner: sszfot
+    priority: should
+    priority_rationale: >-
+      Fallback is a team-proposed reliability improvement beyond what #250 asks. It can be
+      deferred because REQ-007 already makes provider setup clear and a failed search already
+      reaches the researcher as an error. Native model search as a fallback, parallel search
+      across providers and cost-based selection are excluded.
+    scope:
+      in_scope:
+        - Configuration of an ordered fallback list
+        - Fallback on eligible search errors
+        - Explicit failure when every source fails
+      out_of_scope:
+        - OpenAI or Anthropic native search in the fallback chain
+        - New built-in provider integrations
+        - Parallel search across providers
+        - Recovery from invalid credentials
+        - Supervisor delegation and termination (REQ-001 to REQ-003)
+    fit_criterion:
+      summary: >-
+        Eligible failures fall through the configured sources in order, empty results and
+        ineligible errors do not, and an all-failed search is explicit.
+      checks:
+        - id: C-001
+          description: >-
+            Given a primary source that times out and a working fallback, when a search is
+            requested, then the primary is tried once, the fallback is tried next and its
+            result is returned.
+          verification: test/offline/test_search_fallback.py::test_primary_failure_uses_fallback
+          automated: true
+        - id: C-002
+          description: >-
+            Given three sources where the first two fail with eligible errors, when a search is
+            requested, then the sources are tried in the configured order and the third
+            source's result is returned.
+          verification: test/offline/test_search_fallback.py::test_fallbacks_follow_configured_order
+          automated: true
+        - id: C-003
+          description: >-
+            Given every source failing with eligible errors, when a search is requested, then
+            the researcher receives a search failure naming each source and its error, and no
+            result is fabricated.
+          verification: test/offline/test_search_fallback.py::test_all_sources_fail_explicitly
+          automated: true
+        - id: C-004
+          description: >-
+            Given a primary source that returns no hits without error, when a search is
+            requested, then the empty result is returned and no fallback is tried.
+          verification: test/offline/test_search_fallback.py::test_empty_result_does_not_trigger_fallback
+          automated: true
+        - id: C-005
+          description: >-
+            Given a primary source that rejects the query as malformed, when a search is
+            requested, then the error is returned and no fallback is tried.
+          verification: test/offline/test_search_fallback.py::test_ineligible_error_does_not_trigger_fallback
+          automated: true
+    depends_on:
+      - REQ-007
+    safety_relevant: false
+    status: approved
+    version: "1.1"
+    updated_at: "2026-11-11"
+    notes: >-
+      Source: upstream issue #250 and the team's division-of-labour plan. The classification of
+      eligible errors is to be agreed in the design review.
+
+  - id: REQ-009
+    title: Evaluator scores shall be valid, bounded and based on their stated inputs
+    type: invariant
+    problem: >-
+      The evaluators in test/evaluators.py produce unreliable scores. CORRECTNESS_PROMPT
+      (test/prompts.py L95-104) contains no placeholder at all, so eval_correctness formats the
+      question, report and reference answer into nothing and the judge never sees them
+      (test/evaluators.py L195-219). Ratings declared as integers from 1 to 5 are divided by 5
+      without a range check (L90-98, L140, L179, L219, L312), so an out-of-range rating gives a
+      score outside 0 to 1. eval_groundedness divides by the number of extracted claims
+      (L268-269) and raises ZeroDivisionError when no claim is extracted. These faults affect
+      the benchmark run and any evaluation of an existing report alike.
+    statement: >-
+      Each evaluator shall send the judge model every input its metric is defined over: the
+      question, the report and, where the metric uses them, the reference answer, the research
+      brief or the evidence. Every metric result shall state the metric name, a status, a score
+      and a reason. A score shall be produced only from an integer rating from 1 to 5,
+      normalised as rating divided by 5, or from a groundedness ratio over at least one claim.
+      In every other case, including a missing input, an invalid rating, no extracted claim or
+      an evaluator exception, the metric shall be not_evaluable with a null score, and the
+      remaining metrics shall still be evaluated.
+    owner: DopplerXD
+    priority: must
+    priority_rationale: >-
+      Today correctness is scored without the report and some runs crash, so no evaluation
+      result, including those of REQ-010, can be trusted until this holds. Score-based
+      acceptance thresholds are deferred.
+    scope:
+      in_scope:
+        - Inputs each evaluator sends to the judge model
+        - Validation and normalisation of judge ratings
+        - not_evaluable results for missing inputs, empty claims and evaluator errors
+      out_of_scope:
+        - The evaluation-only entry (REQ-010)
+        - Judge model choice and rubric wording
+        - Score-based acceptance thresholds
+    fit_criterion:
+      summary: >-
+        Every metric result is either a score in the range 0 to 1 derived from valid judge
+        output and complete inputs, or not_evaluable with a reason, and one failing metric
+        never aborts the others.
+      checks:
+        - id: C-001
+          description: >-
+            Given distinct question, report and reference-answer markers, when correctness is
+            evaluated, then all three appear in the judge request; given a research brief or
+            evidence, then completeness or groundedness respectively receives it.
+          verification: test/offline/test_evaluator_validity.py::test_evaluators_receive_their_inputs
+          automated: true
+        - id: C-002
+          description: >-
+            Given ratings 1 and 5, when they are normalised, then the scores are 0.2 and 1.0;
+            given 0, 6, a boolean, a string, a fraction or a non-finite number, then the metric
+            is not_evaluable with a reason and a null score.
+          verification: test/offline/test_evaluator_validity.py::test_ratings_are_validated
+          automated: true
+        - id: C-003
+          description: >-
+            Given a missing reference answer, research brief or evidence, when the evaluators
+            run, then each metric that needs it is not_evaluable and the other metrics are
+            scored.
+          verification: test/offline/test_evaluator_validity.py::test_missing_input_is_not_evaluable
+          automated: true
+        - id: C-004
+          description: >-
+            Given no extracted claim or an evaluator that raises, when the evaluators run, then
+            the affected metric is not_evaluable and the others are scored; given two supported
+            claims out of four, then groundedness is 0.5.
+          verification: test/offline/test_evaluator_validity.py::test_groundedness_and_errors
+          automated: true
+      metrics:
+        - id: M-001
+          metric: out_of_range_score_count
+          operator: "=="
+          threshold: 0
+          unit: count
+          verification: test/offline/test_evaluator_validity.py::test_ratings_are_validated
+    depends_on: []
+    safety_relevant: true
+    status: approved
+    version: "1.1"
+    updated_at: "2026-11-11"
+    notes: >-
+      Source: analysis of the evaluators while answering upstream issue #234, at commit
+      1b7d2e8, where the package was still named tests/ (renamed test/ in a4d557a). The
+      missing placeholders in CORRECTNESS_PROMPT were confirmed on 2026-11-11.
+
+  - id: REQ-010
+    title: An existing report shall be evaluable without running research
+    type: functional
+    problem: >-
+      Upstream #234 asks how to evaluate a report that was already generated. run_evaluate.py
+      accepts only a LangSmith dataset, and its target compiles and invokes the full research
+      graph for every example (test/run_evaluate.py L32-61), so the only way to score a report
+      is to generate a new one.
+    statement: >-
+      The system shall provide a documented evaluation-only entry that takes an existing report
+      and its question, with an optional reference answer, research brief and evidence, and
+      returns the metric results defined in REQ-009 for that exact report. The entry shall not
+      run the research graph, call a search provider or generate a replacement report, and it
+      shall reject a blank report or question before calling any evaluator.
+    owner: DopplerXD
+    priority: must
+    priority_rationale: >-
+      This is the capability upstream #234 asks for. Automated acceptance thresholds and
+      revision of the evaluated report are deferred.
+    scope:
+      in_scope:
+        - Evaluation-only entry for an existing report
+        - Input validation of the entry
+        - Documentation of the entry
+      out_of_scope:
+        - Evaluator inputs and score validity (REQ-009)
+        - Custom report template generation
+        - Score-based acceptance thresholds
+        - Rewriting the report or repeating research
+    fit_criterion:
+      summary: >-
+        A supplied report is scored as given, with zero research or search calls, and blank
+        input is rejected before any evaluator runs.
+      checks:
+        - id: C-001
+          description: >-
+            Given an existing report and question, when they are submitted through the entry,
+            then the judge requests contain both unchanged, research-graph and search call
+            counts are zero, and the result identifies the supplied report.
+          verification: test/offline/test_report_evaluation_entry.py::test_entry_scores_supplied_report_without_research
+          automated: true
+        - id: C-002
+          description: >-
+            Given a blank report or a blank question, when it is submitted through the entry,
+            then a validation error is returned and no evaluator is called.
+          verification: test/offline/test_report_evaluation_entry.py::test_blank_input_rejected
+          automated: true
+        - id: C-003
+          description: >-
+            Given the README, when a reviewer follows it, then they can evaluate a report file
+            and read the per-metric results without modifying source code.
+          verification: docs/review-memo.md (report evaluation entry review)
+          automated: false
+    depends_on:
+      - REQ-009
+    safety_relevant: false
+    status: approved
+    version: "1.1"
+    updated_at: "2026-11-11"
+    notes: >-
+      Source: https://github.com/langchain-ai/open_deep_research/issues/234, still open. Score
+      validity is specified in REQ-009.

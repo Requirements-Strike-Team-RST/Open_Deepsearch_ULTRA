@@ -1,38 +1,297 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "CS5351 Requirements Schema",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cslab.local/se-project/schemas/req-schema.json",
+  "title": "SE Project Requirements Schema",
+  "description": "Single source of truth for requirements.yaml. CI uses this as the schema gate. Course-mandated fields: id / type / statement / fit_criterion / priority. Changes in this revision: (1) type is sub-typed into functional / invariant / quality / performance / cost / governance / security; (2) priority uses MoSCoW (must / should / could / wont) instead of P0-P2; (3) fit_criterion branching is per sub-type; (4) traceability, scope.modules, metric.baseline and source are removed (kept in trace-matrix.md / architecture blueprint / ADR instead); (5) priority_rationale added for delivery trade-offs only; (6) verification has minLength and metric names must be snake_case.",
   "type": "object",
-  "required": ["project", "version", "features"],
+  "required": ["schema_version", "updated_at", "requirements"],
+  "additionalProperties": false,
   "properties": {
-    "project": { "type": "string" },
-    "version": { "type": "string" },
-    "d1_date": { "type": "string", "format": "date" },
-    "features": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of this schema itself. Bump it whenever fields change, so a CI result can be traced back to the rule set that produced it. Quote it in YAML, e.g. \"1.0.0\"."
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date",
+      "description": "YYYY-MM-DD, the date requirements.yaml was last modified."
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional. Change log for this revision, e.g. 'Aligned priorities with MoSCoW scope decision'."
+    },
+    "requirements": {
       "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["id", "title", "priority"],
-        "properties": {
-          "id": { "type": "string" },
-          "title": { "type": "string" },
-          "description": { "type": "string" },
-          "priority": { "enum": ["high", "medium", "low"] }
+      "minItems": 1,
+      "description": "Requirement list. Note: JSON Schema cannot check id uniqueness; that is enforced by validate_requirements.py instead.",
+      "items": { "$ref": "#/$defs/requirement" }
+    }
+  },
+
+  "$defs": {
+    "requirement": {
+      "type": "object",
+      "description": "A single requirement. Field order is recommended to match `required` for human readability.",
+      "required": [
+        "id",
+        "title",
+        "type",
+        "problem",
+        "statement",
+        "owner",
+        "priority",
+        "fit_criterion",
+        "status",
+        "version",
+        "updated_at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^REQ-[0-9]{3}$",
+          "description": "Requirement ID, globally unique and never reused. Deprecate by changing status, never by deleting the number."
+        },
+        "title": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 80,
+          "description": "One-line title for trace-matrix and quick review."
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "functional",
+            "invariant",
+            "quality",
+            "performance",
+            "cost",
+            "governance",
+            "security"
+          ],
+          "description": "Sub-typed requirement type. functional = observable behaviour; invariant = a rule that must never be violated under any applicable condition (detail stays in docs/architecture/invariants.md); quality / performance / cost / security = quantified non-functional constraints; governance = process / permission / approval rules that are executable or reviewable."
+        },
+        "problem": {
+          "type": "string",
+          "minLength": 10,
+          "description": "What problem is being solved / what is wrong today. Without this an Agent cannot judge why a change is needed."
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 10,
+          "description": "Course-mandated field. The behaviour or constraint the system shall satisfy, written deterministically (shall / must not). Describes what, not how. For invariant types keep it short - the detailed rule lives in invariants.md."
+        },
+        "owner": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Primary owner's nickname, matching the division-of-labour table."
+        },
+        "contributors": {
+          "type": "array",
+          "description": "Optional. Collaborators / reviewers.",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["must", "should", "could", "wont"],
+          "description": "MoSCoW prioritization. must = required for this delivery; should = important but deferrable if necessary; could = implement if time and resources allow; wont = explicitly out of scope for this version. MoSCoW fixes delivery scope, it does not encode urgency or build order - do not default everything to must."
+        },
+        "priority_rationale": {
+          "type": "string",
+          "description": "Optional but recommended for must / should. Records only the delivery trade-off behind the priority, e.g. why this is in scope now and what is being traded away. Full architecture trade-offs belong in an ADR, not here."
+        },
+        "scope": { "$ref": "#/$defs/scope" },
+        "fit_criterion": { "$ref": "#/$defs/fit_criterion" },
+        "depends_on": {
+          "type": "array",
+          "description": "Optional. IDs of requirements this one depends on.",
+          "items": { "type": "string", "pattern": "^REQ-[0-9]{3}$" },
+          "uniqueItems": true
+        },
+        "safety_relevant": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether this is a safety-relevant boundary: model output must not be trusted directly and needs deterministic code to constrain / check / fall back. The course requires at least one such boundary in the project."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "approved", "in_progress", "implemented", "verified", "deprecated"],
+          "description": "draft -> approved (human confirmed) -> in_progress (Build) -> implemented -> verified (Test passed) -> deprecated."
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^v?\\d+(\\.\\d+){0,2}$",
+          "description": "Version of this requirement, e.g. 1 / 1.0 / v1.1. Bump whenever the content changes."
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date",
+          "description": "YYYY-MM-DD, when this requirement was last modified."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional. Change notes or open questions."
+        }
+      },
+
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "functional" } }, "required": ["type"] },
+          "then": {
+            "properties": {
+              "fit_criterion": { "required": ["checks"] }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "invariant" } }, "required": ["type"] },
+          "then": {
+            "properties": {
+              "fit_criterion": {
+                "anyOf": [
+                  { "required": ["metrics"] },
+                  { "required": ["checks"] }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "type": { "enum": ["quality", "performance", "cost", "security"] } },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "fit_criterion": { "required": ["metrics"] }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "governance" } }, "required": ["type"] },
+          "then": {
+            "properties": {
+              "fit_criterion": { "required": ["checks"] }
+            }
+          }
+        }
+      ]
+    },
+
+    "scope": {
+      "type": "object",
+      "description": "Optional. What the change covers, expressed as behaviour-level boundaries. Concrete modules, file paths and write permissions are owned by the Architecture Blueprint, Structural Constraints and Permission Model - they are not repeated here.",
+      "additionalProperties": false,
+      "properties": {
+        "in_scope": {
+          "type": "array",
+          "description": "Optional. What this change will touch.",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "out_of_scope": {
+          "type": "array",
+          "description": "Optional. What is explicitly not touched. Entries here double as evidence of Build's scope boundary.",
+          "items": { "type": "string" },
+          "uniqueItems": true
         }
       }
     },
-    "non_functional": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["id", "title"],
-        "properties": {
-          "id": { "type": "string" },
-          "title": { "type": "string" },
-          "description": { "type": "string" },
-          "measure": { "type": "string" }
+
+    "fit_criterion": {
+      "type": "object",
+      "description": "How far is 'done'. Course-mandated field and the only basis on which the Test Agent decides whether work is complete. Which child key is required depends on type: functional / governance -> checks; quality / performance / cost / security -> metrics; invariant -> at least one of them (metrics recommended).",
+      "required": ["summary"],
+      "additionalProperties": false,
+      "properties": {
+        "summary": {
+          "type": "string",
+          "minLength": 10,
+          "description": "One-sentence definition of done, for humans."
+        },
+        "checks": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Acceptance points for functional / governance requirements (Given/When/Then or equivalent). Required when type is functional or governance.",
+          "items": { "$ref": "#/$defs/check" },
+          "uniqueItems": true
+        },
+        "metrics": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Quantified metrics: metric + threshold + verification. Required when type is quality / performance / cost / security; recommended for invariant (zero-tolerance condition).",
+          "items": { "$ref": "#/$defs/metric" },
+          "uniqueItems": true
         }
       }
     },
-    "constraints": { "type": "array", "items": { "type": "string" } }
+
+    "check": {
+      "type": "object",
+      "required": ["id", "description", "verification"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^C-[0-9]{3}$",
+          "description": "Acceptance point id, unique within its requirement."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 5,
+          "description": "The concrete behaviour being verified."
+        },
+        "verification": {
+          "type": "string",
+          "minLength": 1,
+          "description": "How to verify: offline test path::case name, a check command, or a link to a human review doc. Must not be empty."
+        },
+        "automated": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether CI can execute this automatically."
+        }
+      }
+    },
+
+    "metric": {
+      "type": "object",
+      "description": "The quantified triple: metric (what to measure) + threshold (how much is enough) + verification (where it is measured).",
+      "required": ["id", "metric", "operator", "threshold", "verification"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^M-[0-9]{3}$",
+          "description": "Metric id, unique within its requirement."
+        },
+        "metric": {
+          "type": "string",
+          "minLength": 2,
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "Metric name, must be snake_case (lowercase letters, digits and underscores only), e.g. citation_resolution_success_rate."
+        },
+        "operator": {
+          "type": "string",
+          "enum": [">=", ">", "<=", "<", "==", "!="],
+          "description": "Comparison direction for threshold."
+        },
+        "threshold": {
+          "description": "Pass threshold. Number or string (e.g. '100%').",
+          "type": ["number", "string"]
+        },
+        "unit": {
+          "type": "string",
+          "description": "Optional. Unit: ratio / percent / seconds / USD / tokens / count. Must stay consistent with threshold (ratio -> 0.0-1.0, percent -> 0-100)."
+        },
+        "verification": {
+          "type": "string",
+          "minLength": 1,
+          "description": "How it is measured: test file::case name, an offline script, or a runtime monitor name. Must not be empty."
+        }
+      }
+    }
   }
 }

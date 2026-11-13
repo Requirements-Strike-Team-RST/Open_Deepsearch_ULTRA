@@ -3,7 +3,7 @@
     "graphs": {
       "Deep Researcher": "./src/open_deep_research/deep_researcher.py:deep_researcher"
     },
-    "python_version": "3.11",
+    "python_version": "3.12",
     "env": "./.env",
     "dependencies": [
       "."

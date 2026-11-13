@@ -1,0 +1,76 @@
+# Blocking CI gates. Gate definitions and their status:
+# docs/code-governance/verification-constraints.md section 5.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  # Course gate: schema
+  requirements-schema:
+    name: Requirements schema
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+
+      - name: Validate requirements.yaml
+        run: uv run --no-project --with pyyaml --with jsonschema python scripts/validate_requirements.py
+
+  # Course gate: static analysis. Paths join the list once they are lint-clean
+  # (see docs/debt-register.md).
+  static-analysis:
+    name: Static analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Install locked dependencies
+        run: uv sync --frozen --extra dev
+
+      - name: Ruff
+        run: uv run ruff check src/open_deep_research test/offline scripts
+
+  # Course gate: regression
+  offline-tests:
+    name: Offline tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Install locked dependencies
+        run: uv sync --frozen --extra dev
+
+      - name: Run offline tests
+        run: |
+          if ! find test/offline -type f -name 'test_*.py' -print -quit 2>/dev/null | grep -q .; then
+            echo "::warning::No offline tests found in test/offline."
+            echo "NOT_RUN: no offline tests found."
+          else
+            uv run pytest test/offline -q
+          fi
+
+  # Planned course gates, not active yet:
+  #   - Test approval: an approval record exists for PRs that change src/ or test/.
+  #   - AI-use log: docs/ai-use-log.yaml is valid and has an entry for the PR.
+  #   - Semantic evaluation: live evaluation of fit criteria for prompt or model changes.
+  #   - mypy in static analysis.
