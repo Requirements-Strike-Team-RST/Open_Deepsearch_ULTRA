@@ -78,6 +78,19 @@ Copy the example for your module. Every acceptance criterion (C-/M-) of the modu
 - **Regression:** existing suites to re-run, including `test/offline/test_contracts.py` if a shared contract changes.
 - **Live or human checks:** cases marked `automated: false` in `requirements.yaml`, and where their evidence goes.
 
+### citations (REQ-006, ADR-001)
+
+| Case | Covers | Type | Input | Expected result | Test |
+|---|---|---|---|---|---|
+| TC-001 | REQ-006 C-001, INV-006 | normal | Assembled `compress_research_system_prompt` | Exactly one sources-section instruction headed `### Sources`; no `**List of All Relevant Sources**` label; wording matches `SOURCES_SECTION_SPEC` | `test/offline/test_prompt_citation_contract.py::test_compression_prompt_has_single_sources_format` |
+| TC-002 | REQ-006 C-002, INV-006 | normal | Assembled `final_report_generation_prompt` | Requires numbered inline citations; no `[Title](URL)` instruction; contains the renumber-across-findings instruction | `test/offline/test_prompt_citation_contract.py::test_report_prompt_has_single_citation_format` |
+| TC-003 | REQ-006 C-003, INV-006 | boundary | Both assembled prompts | Extracted sources-entry formats are identical, both derived from the same contract constants | `test/offline/test_prompt_citation_contract.py::test_prompts_share_citation_format` |
+| TC-004 | ADR-001 §3 precondition | exception | The three contract constants in `citations/contract.py` | No unescaped `{` or `}` in the contract text, so the later `.format(date=...)` cannot raise `KeyError`/`ValueError` | `test/offline/test_prompt_citation_contract.py::test_contract_text_is_format_safe` |
+| TC-005 | REQ-006 C-004 | live | The two registered baseline queries against the live model | Every inline citation in the report is a number with exactly one matching entry in `### Sources` | `test/live/test_report_citations_live.py::test_reports_use_numbered_citations` |
+
+- **Regression:** re-run the full `test/offline/` suite (`prompts.py` is imported by all graph tests). No `test_contracts.py` addition: ADR-001 §5 changes no `state.py` type and no interface another module reads in code.
+- **Live or human checks:** TC-005 (C-004, `automated: false`) runs on demand through the semantic evaluation gate for the prompt change (`Prompt.md` §9); evidence goes to `docs/test-reports/REQ-006.md`.
+
 ## 8. Definition of Done
 
 | # | Condition | Done by |
