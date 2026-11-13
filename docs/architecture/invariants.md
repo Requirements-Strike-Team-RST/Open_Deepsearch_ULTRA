@@ -4,7 +4,7 @@
 > **Authoritative for:** the detailed rule behind each `invariant`-type or safety-relevant requirement. Where an entry here differs from `docs/req/requirements.yaml`, the requirement wins and the difference must be reported.
 > **Maintained by:** each module owner adds the entries for their module; they are integrated and renumbered before SA Review.
 > **Status:** All entries are *Proposed* until SA Review. Enforcing components are responsibility assignments, not implemented code.
-> **Last updated:** 2026-11-12
+> **Last updated:** 2026-11-13
 
 Every entry uses the same fields:
 
@@ -22,9 +22,10 @@ Every entry uses the same fields:
 - **Module:** context
 - **Source:** REQ-005
 - **Status:** Proposed
-- **Enforcing component:** the token-limit branch of `compress_research` and its trimming helper (module assigned in Design).
-- **Verification:** `test/offline/test_context_compaction.py`; monitor `latest_turn_preservation_rate == 1.0`.
+- **Enforcing component:** `plan_trim()` in `src/open_deep_research/context/trimming.py`, reached through `compress_with_recovery()` in `context/recovery.py` from the token-limit branch of `compress_research` (`deep_researcher.py` L511-585). The protected region is computed from message types by `segment_turns()` in `context/messages.py`.
+- **Verification:** `test/offline/test_context_compaction.py::test_oldest_turns_removed_first`, `::test_no_orphan_tool_messages`; monitors `latest_turn_preservation_rate == 1.0` and `orphan_tool_message_count == 0`, computed from the same helpers.
 - **Fallback:** remove whole turns from the oldest end; if the limit still cannot be met, end the task with a failed result of category `token_limit`. Never drop the latest turn and never return placeholder text as a summary.
+- **Decision:** ADR-005; comparison in EVAL-001.
 
 ## INV-002 — No failure is reported as complete research
 
