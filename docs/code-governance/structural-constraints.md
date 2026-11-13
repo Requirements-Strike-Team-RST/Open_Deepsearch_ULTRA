@@ -47,6 +47,12 @@ A new researcher tool is implemented in `utils.py` or the owning extension modul
 | Extend, never replace | Do not delete baseline nodes, tools or configuration fields, and do not build a parallel implementation of existing behaviour. Fix or extend it in place. |
 | Auth is independent | The research graph does not import `src/security/auth.py`. |
 
+**Approved exceptions to the dependency direction:**
+
+| From | To | Reason | ADR |
+|---|---|---|---|
+| `prompts.py` | `citations/contract.py` | `prompts.py` imports the text-only citation contract constants and interpolates them at module load; `prompts.py` stays a template assembler (string substitution only, no logic). | ADR-001 |
+
 ## 6. Shared Contracts
 
 A change to a type in `state.py`, or to any interface another owner's module reads, needs the approval of every owner who reads it, recorded in the PR review. Shared contracts introduced by a requirement are defined in that requirement's ADR and covered by the shared contract tests (`verification-constraints.md` §3).
@@ -86,3 +92,16 @@ Copy the example for your module. At integration, check that responsibilities do
 | Must not depend on | e.g. `deep_researcher.py`, other extension modules, model clients in deterministic code |
 | Shared contracts | Types or state fields it reads or writes that other modules also use |
 | Configuration flag | `Configuration` field that switches the behaviour, and its default (§8) |
+
+### citations (REQ-006, ADR-001)
+
+| Item | Constraint |
+|---|---|
+| Path | `src/open_deep_research/citations/` |
+| Responsibility | Hold the single source of truth for the research prompts' citation format as text constants only. |
+| Public interface | `contract.CITATION_RULES_BLOCK`, `contract.SOURCES_SECTION_SPEC`, `contract.RENUMBER_ACROSS_FINDINGS_INSTRUCTION` (all `str`, text only, no functions) |
+| Called from | `prompts.py` (module import; interpolated at module load), reached from `deep_researcher.py` → `prompts.py` |
+| May depend on | Standard library only (no project module needs to be imported by text constants) |
+| Must not depend on | `deep_researcher.py`, `state.py`, `configuration.py`, `utils.py`, model clients, or any other extension module |
+| Shared contracts | None in code: no `state.py` type and no cross-module interface is read. Changes the citation-format treatment of `compress_research_system_prompt` and `final_report_generation_prompt` in `prompts.py` (ADR-001). |
+| Configuration flag | None; the change is format-only and adds no runtime flag |

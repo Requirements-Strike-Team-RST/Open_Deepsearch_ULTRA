@@ -66,6 +66,16 @@ Every entry uses the same fields:
 - **Verification:** `test/offline/test_search_configuration.py`, `test/offline/test_search_fallback.py` with fake providers (normal, empty, timeout, invalid, unknown).
 - **Fallback:** on an eligible error, try only the configured fallback sources in order and record each attempt; when all fail, return an explicit search failure. Never substitute a source that is not configured.
 
+## INV-006 — The two research prompts state one identical citation format
+
+- **Statement:** `compress_research_system_prompt` and `final_report_generation_prompt` each state exactly one citation format, and both state the same one: numbered inline citations `[n]` and a closing `### Sources` section listing each cited URL once as `[n] Title: URL`, numbered without gaps, with the report prompt renumbering the citations of all findings into one sequence.
+- **Module:** citations
+- **Source:** REQ-006
+- **Status:** Proposed
+- **Enforcing component:** `src/open_deep_research/citations/contract.py` as the single source of truth, interpolated into both prompts in `prompts.py` (ADR-001).
+- **Verification:** `test/offline/test_prompt_citation_contract.py` (C-001, C-002, C-003); live check `test/live/test_report_citations_live.py` (C-004) monitors renumbering in generated reports.
+- **Fallback:** a CI failure of the offline inspection tests blocks the merge; revert to the last green prompt version. Renumbering correctness in generated reports is monitored, not enforced.
+
 ## Adding an Entry
 
 Copy an entry, take the next free `INV-NNN` number, and fill every field. Never reuse a retired number. Add the INV ID to the requirement's row in `trace-matrix.md` and to the ADR's §6. At integration the integrator may renumber entries and updates every reference.
