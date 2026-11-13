@@ -162,3 +162,33 @@ entries:
       The member edited the announcement before sending it, and reviewed the commits and the PR
       description; merging waits for two other members' approvals.
     transcript: null
+
+  - id: AIU-008
+    date: "2026-11-13"
+    member: DopplerXD
+    purpose: >-
+      Analyse and document the evaluation module architecture for REQ-009 and REQ-010.
+    prompt: >-
+      Follow the repository SA workflow, compare three candidate designs, and document the
+      selected evaluation package and compatibility adapter. Map each acceptance criterion
+      to the ADR, invariants, runtime policies, structural constraints and planned tests.
+      Apply the confirmed SHA-256 report identifier, strict rating checks before coercion,
+      LangSmith result mapping and CLI exit codes. Keep all changes within SA documents.
+    requirements: [REQ-009, REQ-010]
+    artifacts:
+      - docs/architecture/evaluation-table.md
+      - docs/architecture/adr/001-evaluation-module.md
+      - docs/architecture/invariants.md
+      - docs/architecture/runtime-policy-catalog.md
+      - docs/architecture/trace-matrix.md
+      - docs/code-governance/structural-constraints.md
+      - docs/code-governance/verification-constraints.md
+    supervision: >-
+      The member selected option B, simplified report identity to SHA-256, requested evidence
+      for packaging and LangSmith compatibility, and confirmed the remaining design choices.
+      After the built-in Plan restriction blocked repository edits, the member explicitly
+      authorised the Build role to write only the SA documents. A later intervention required
+      pre-coercion validation, a 4.0 rejection case and honest verification status. The path
+      conflict concerning test/evaluation remains recorded for module review. The ADR remains
+      Proposed; module review, integrated SA Review and implementation are pending.
+    transcript: transcripts/DopplerXD.md

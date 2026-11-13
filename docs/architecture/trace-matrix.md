@@ -19,8 +19,8 @@ Cell conventions: `TBD` = not decided yet; `Proposed:` = from a document that is
 | REQ-006 | One citation format | invariant | approved | TBD | TBD | Proposed: `citations/` | planned: `test/offline/test_prompt_citation_contract.py`, `test/live/test_report_citations_live.py` | TBD |
 | REQ-007 | Search setup documented and validated | functional | approved | TBD | INV-005 (Proposed) | Proposed: `search/` | planned: `test/offline/test_search_configuration.py`; review in `docs/review-memo.md` | TBD |
 | REQ-008 | Search fallback | functional | approved | TBD | INV-005 (Proposed) | Proposed: `search/` | planned: `test/offline/test_search_fallback.py` | TBD |
-| REQ-009 | Valid evaluator scores | invariant | approved | TBD | TBD | Proposed: `test/evaluation/` | planned: `test/offline/test_evaluator_validity.py` | `out_of_range_score_count` |
-| REQ-010 | Evaluate an existing report | functional | approved | TBD | TBD | Proposed: `test/evaluation/` | planned: `test/offline/test_report_evaluation_entry.py`; review in `docs/review-memo.md` | TBD |
+| REQ-009 | Valid evaluator scores | invariant | approved | Deterministic rating validation, `1..5` normalisation, non-empty claim ratio and per-metric failure isolation; every result is `scored` in `[0, 1]` or `not_evaluable` with a null score | ADR-001 / INV-006 (Proposed) | Proposed: `test/evaluation/` (`validation.py`, `metrics.py`); adapter in `test/evaluators.py` | planned: `test/offline/test_evaluator_validity.py` | `out_of_range_score_count` |
+| REQ-010 | Evaluate an existing report | functional | approved | Evaluation-only entry separated from the research graph and search; SHA-256 report identity; blank input rejected before any evaluator | ADR-001 / INV-007 (Proposed) | Proposed: `test/evaluation/entry.py`; CLI `test/evaluation/evaluate_report.py` | planned: `test/offline/test_report_evaluation_entry.py`; review in `docs/review-memo.md` | N/A (INV-007 structural test) |
 
 ## Example (Reference Only — VHIS Course Example)
 

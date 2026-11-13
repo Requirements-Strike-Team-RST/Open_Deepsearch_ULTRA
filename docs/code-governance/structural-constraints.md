@@ -86,3 +86,20 @@ Copy the example for your module. At integration, check that responsibilities do
 | Must not depend on | e.g. `deep_researcher.py`, other extension modules, model clients in deterministic code |
 | Shared contracts | Types or state fields it reads or writes that other modules also use |
 | Configuration flag | `Configuration` field that switches the behaviour, and its default (§8) |
+
+### evaluation (REQ-009, REQ-010, ADR-001)
+
+| Item | Constraint |
+|---|---|
+| Path | `test/evaluation/` |
+| Responsibility | Validate and normalise evaluator outputs, produce `scored` or `not_evaluable` metric results, and provide an evaluation-only entry for an existing report. |
+| Public interface | `evaluate_existing_report(question, report, *, reference_answer=None, research_brief=None, evidence=None, judge=None) -> EvaluationResult`; `MetricStatus`, `MetricResult`, `EvaluationResult`, `EvaluationInputError`; CLI `python -m test.evaluation.evaluate_report`. |
+| Called from | The compatibility adapter in `test/evaluators.py` (and therefore `test/run_evaluate.py`), and the CLI. |
+| May depend on | `test/prompts.py`, `open_deep_research.utils.get_today_str`, the Python standard library, and `pydantic`/`langchain_openai` only inside the lazy judge factory. |
+| Must not depend on | `open_deep_research.deep_researcher`, the research graph, search providers or search tools, `test.run_evaluate` import-time state, or any extension module. No model client is constructed at import. |
+| Shared contracts | None: no `state.py` type or graph state field is added. The baseline LangSmith evaluator names, keys and return shapes are preserved by `test/evaluators.py`. |
+| Configuration flag | None: the module is evaluation-only and adds no runtime behaviour flag. |
+
+`test/evaluators.py` is a thin compatibility adapter; evaluation logic lives only in `test/evaluation/`.
+
+**Module-review question:** §1 lists top-level `test/` as “No” for new work; `architecture-blueprint.md` §4 assigns this module to `test/evaluation/`. Confirm this exception at module review and integration; §1 is human-owned and is not edited here.
