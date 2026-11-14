@@ -3,7 +3,7 @@
 > **Purpose:** The rules every member follows when changing code structure, so that parallel work by six people can be merged.
 > **Authoritative for:** source layout, change rules, dependency direction and code-level traceability. *Which* modules exist is decided in `docs/architecture/architecture-blueprint.md` §4; where a specific requirement lands is decided in its ADR.
 > **Maintained by:** humans for §1–§9; each module owner writes their module's section in §10, integrated before SA Review.
-> **Last updated:** 2026-11-12
+> **Last updated:** 2026-11-13
 
 ## 1. Source Layout
 
@@ -86,3 +86,18 @@ Copy the example for your module. At integration, check that responsibilities do
 | Must not depend on | e.g. `deep_researcher.py`, other extension modules, model clients in deterministic code |
 | Shared contracts | Types or state fields it reads or writes that other modules also use |
 | Configuration flag | `Configuration` field that switches the behaviour, and its default (§8) |
+
+### context (REQ-005, ADR-005)
+
+| Item | Constraint |
+|---|---|
+| Path | `src/open_deep_research/context/` with `__init__.py`, `messages.py`, `trimming.py`, `classification.py`, `recovery.py`; added to `[tool.setuptools] packages` in `pyproject.toml` in the same PR |
+| Responsibility | Decide, without calling a model, which whole research turns to remove when compression exceeds the model token limit, classify token-limit errors for the invoked compression model, and report an unreducible history as a typed failure instead of a summary |
+| Public interface | `segment_turns()`, `TurnLayout`, `ResearchTurn` (`messages.py`); `plan_trim()`, `TrimPlan` (`trimming.py`); `classify_token_limit()` (`classification.py`); `compress_with_recovery()`, `CompressionOutcome`, `TokenLimitExceeded` (`recovery.py`); exported through `context/__init__.py` only |
+| Called from | `compress_research` in `deep_researcher.py` (the token-limit branch), and nothing else |
+| May depend on | `langchain_core.messages`, `configuration.py` (`Configuration` values passed in as arguments, not constructed), `utils.py` (`is_token_limit_exceeded`, `filter_messages` usage pattern) |
+| Must not depend on | `deep_researcher.py`, `prompts.py`, any other extension module (`orchestration/`, `delivery/`, `search/`, `citations/`), any model client, any network call, and `src/security/` |
+| Shared contracts | Reads `ResearcherState.researcher_messages`; returns `compressed_research` and `raw_notes` in their existing types and format. The failed `token_limit` result uses the REQ-001 task-result type; ADD-005 §5 requires the orchestration owner's approval before implementation. Adds no state field |
+| Purity rule | `segment_turns`, `plan_trim` and `classify_token_limit` are pure: no I/O, no model, no logging of message content, no mutation of the input list. `compress_with_recovery` is the only coroutine and the only place that awaits a model |
+| Configuration flag | `context_trimming: bool = False` (baseline behaviour preserved until REQ-005 is `verified`; the flipping PR is separate) |
+| Baseline code touched | `compress_research` body in `deep_researcher.py` (becomes thin, baseline branch kept verbatim under `context_trimming = False`); the `compressed_research` default in `supervisor_tools` (L310) becomes a non-silent no-result message; docstring correction only in `utils.remove_up_to_last_ai_message`. `state.py` and `prompts.py` unchanged; `utils.is_token_limit_exceeded` behaviour unchanged because `final_report_generation` also uses it |

@@ -3,7 +3,7 @@
 > **Purpose:** One shared way to decide that a requirement is really done.
 > **Authoritative for:** verification layers, test conventions, commands, CI gates, verdicts and evidence, module test requirements and the Definition of Done.
 > **Maintained by:** humans for §1–§6 and §8; each module owner writes their module's test requirements in §7, integrated before SA Review.
-> **Last updated:** 2026-11-12
+> **Last updated:** 2026-11-13
 
 ## 1. Three Verification Layers
 
@@ -77,6 +77,28 @@ Copy the example for your module. Every acceptance criterion (C-/M-) of the modu
 
 - **Regression:** existing suites to re-run, including `test/offline/test_contracts.py` if a shared contract changes.
 - **Live or human checks:** cases marked `automated: false` in `requirements.yaml`, and where their evidence goes.
+
+### context (REQ-005, ADR-005)
+
+Tests are deterministic offline tests: fake message lists and fake model/exception objects, no network, no API keys (`verification-constraints.md` §3). Every case drives the public interface of `context/__init__.py`, never a private helper, so Build can reorganise the files without invalidating Gate 2.
+
+| Case | Covers | Type | Input | Expected result | Test |
+|---|---|---|---|---|---|
+| TC-001 | REQ-005 C-001 | normal | `plan_trim` with preamble (`HumanMessage` topic), three AI turns each followed by its `ToolMessage`s, and the instruction index; fake model that raises a token-limit error until two turns are gone | Removed turns are exactly the two oldest; preamble, instruction and newest turn with its tool results are kept; returned message order is the original order minus the removed turns | `test/offline/test_context_compaction.py::test_oldest_turns_removed_first` |
+| TC-002 | REQ-005 M-001 | boundary | Same history as TC-001, asserting the measurement | `latest_turn_preservation_rate == 1.0`; the newest turn index never appears in `removed_turn_indices` | `test/offline/test_context_compaction.py::test_oldest_turns_removed_first` |
+| TC-003 | REQ-005 C-002 | exception | Generated histories (0, 1, 2, 3 turns; a turn with 0, 1 and 3 tool results; a malformed trailing `ToolMessage` block with no preceding `AIMessage`) fed to `plan_trim` | Every `ToolMessage` in the result follows an `AIMessage` whose `tool_calls` contain its `tool_call_id`; the malformed block is preserved, not removed | `test/offline/test_context_compaction.py::test_no_orphan_tool_messages` |
+| TC-004 | REQ-005 M-002 | boundary | Result of TC-003 | `orphan_tool_message_count == 0` | `test/offline/test_context_compaction.py::test_no_orphan_tool_messages` |
+| TC-005 | REQ-005 C-003 | exception | Anthropic `BadRequestError`-shaped fake exception with message `"prompt is too long"`; `compression_model = "anthropic:claude-..."`, `research_model = "openai:gpt-4.1"`; fake model that fails identically twice | `classify_token_limit(exc, compression_model)` is `True`; the loop trims before the retry; the identical request is never sent twice without a trim | `test/offline/test_context_compaction.py::test_classification_uses_compression_model` |
+| TC-006 | REQ-005 C-004 | exception | History of preamble + one AI turn + instruction; fake model that always raises a token-limit error | `compress_with_recovery` raises `TokenLimitExceeded`; the node returns status `failed`, category `token_limit`; no summary is returned and the placeholder literal does not appear anywhere in the result | `test/offline/test_context_compaction.py::test_unreducible_history_ends_failed` |
+| TC-007 | INV-001 | exception | Union of TC-001 to TC-006 and TC-010, asserting the invariant clauses directly: newest turn kept, no orphan, `token_limit` failure, no placeholder at either site | The invariant holds in every case; the monitors are computed from the same helpers | `test/offline/test_context_compaction.py::test_newest_context_never_dropped` |
+| TC-008 | REQ-005 (scope boundary), POL-003 | exception | Fake model raising a non-token error (e.g. `ValueError("bad request")`) on a history that *could* be trimmed | The original exception propagates unchanged; no trimming occurs; the module does not return a summary | `test/offline/test_context_compaction.py::test_non_token_error_is_propagated` |
+| TC-009 | `structural-constraints.md` §8 (behaviour flag default) | normal | `Configuration()` defaults; `Configuration(context_trimming=False)` | `context_trimming` defaults to `False`, so the baseline branch is selected and REQ-005 behaviour is opt-in | `test/offline/test_context_compaction.py::test_flag_defaults_to_baseline` |
+| TC-010 | REQ-005 C-004 (consumer site, ADR-005 §2 defect 4) | exception | `supervisor_tools` given a researcher output with `compressed_research` absent | The resulting `ToolMessage` content is not the placeholder literal and states that the task returned no result; the success path passes an existing value through unchanged | `test/offline/test_context_compaction.py::test_no_placeholder_at_consumer` |
+
+- **Helpers:** cases may use shared fixtures in `test/offline/` for building AI turns with tool calls and for a fake token-limit exception per provider; the fixtures must not call a model or read environment variables.
+- **Regression:** `uv run pytest test/offline` in full. `test/offline/test_contracts.py` must be re-run if the REQ-001 task-result type changes in the same PR. No existing suite reads `remove_up_to_last_ai_message` behaviour, but the helper's docstring correction is reviewed in the diff.
+- **Live or human checks:** none. All REQ-005 criteria are `automated: true` in `requirements.yaml`, and the requirement has no `automated: false` case, so no live test is needed. The thin-node check (`structural-constraints.md` §2) is human review evidence recorded in `docs/review-memo.md`, not a test.
+- **Evidence location:** `docs/test-reports/REQ-005.md` — baseline run by Test Author, verification by Verify (`verification-constraints.md` §6).
 
 ## 8. Definition of Done
 
