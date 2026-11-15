@@ -3,7 +3,7 @@
 > **Purpose:** How the research agent stores, passes and discards state and memory: state structure, ownership and lifecycle.
 > **Authoritative for:** state and memory design. Graph state types live in `src/open_deep_research/state.py`.
 > **Maintained by:** owners of modules that add or change state write a module section (§5); §1–§4 are integrated from those sections before SA Review. Modules that do not touch state add nothing.
-> **Last updated:** 2026-11-12
+> **Last updated:** 2026-11-15
 
 ## 1. State Model
 
@@ -29,6 +29,38 @@ Checkpointers and anything stored beyond a single run. *TBD.*
 
 Copy the example for your module. Before SA Review, check §5 of the other modules for conflicting field names, reducers or owners.
 
+### delivery (REQ-002, REQ-004, ADR-001, ADR-002)
+
+**Fields added or changed**
+
+| State type | Field | Type | Reducer | Written by | Read by | Created → cleared |
+|---|---|---|---|---|---|---|
+| `AgentState` | `failed_tasks` | `list[dict]` (each entry: `task_id`, `reason`, `category`, `message`) | `override_reducer` — each writer sends `{"type": "override", "value": [...]}`, the convention `notes` already uses | `finalize`, first pass only | `evaluate_before_report`, `evaluate_after_report`, `render_limitations`; the caller reading the run output | written once when research ends → kept to the end of the run; never written a second time |
+| `AgentState` | `research_outcome` | `str` ∈ {`complete`, `partial`, `failed`} | last write wins (plain field, no reducer) | `finalize`, both passes | `finalize` (second pass); the caller | set by the first pass → overwritten by the second pass with the report-stage verdict |
+| `AgentState` | `run_finalized` | `bool` | last write wins | `finalize`, both passes | `finalize`, to tell its two passes apart | absent/`False` → set `True`, so the first-pass logic cannot run twice |
+| `AgentState` | `report_truncated` | `bool` | last write wins | `final_report_generation` | `evaluate_after_report`, `render_limitations` | default `False` → `True` when findings were cut to fit the report model; `False` again on a successful report |
+| `AgentState` | `report_error` | `str` | last write wins | `final_report_generation` | `evaluate_after_report` | `""` on success → the error text when the report stage failed; this text never enters `final_report` |
+
+`SupervisorState` is **not** changed by this module: the supervisor subgraph keeps its baseline shape and `failed_tasks` lives only in `AgentState`.
+
+- **Ownership:** `finalize` is the only writer of `failed_tasks`, `research_outcome` and `run_finalized`; `final_report_generation` is the only writer of `report_truncated` and `report_error`.
+- **Lifecycle:** `failed_tasks` is absent until the first `finalize` pass, which writes the whole list in one override. There is no append path, so the same failure cannot be recorded twice — this is why the field uses `override_reducer` rather than `operator.add`. It is read before report generation to decide `report_allowed` and after it to render the limitations section. `research_outcome` is absent until the first pass and finalised by the second. `run_finalized` is the marker that separates the passes; `finalize` must not infer its pass from whether `final_report` is set, because a failed report leaves that field empty. `report_truncated` and `report_error` are written by the report node just before `finalize` reads them. None of these fields is cleared at the end of a run: they are part of the run output.
+
+  ```text
+  supervisor_tools --DelegationOutcome--> (research phase)
+          │ (subgraph return)
+          ▼
+  finalize (1st pass) --evaluate_before_report--> research_outcome, failed_tasks (override), run_finalized
+          │ report_allowed
+          ▼
+  final_report_generation --report_truncated, report_error--> finalize (2nd pass)
+          │ --evaluate_after_report--> research_outcome (final)
+          ▼
+         END
+  ```
+
+- **Shared contract:** yes. These are new fields of `AgentState`, a type other modules also edit. Owners who must approve a change to them (`structural-constraints.md` §6): the orchestration owner (REQ-001, REQ-003), the integrator (blueprint §5 interface table), and the delivery owner. `DelegationOutcome` and `TaskRunRecord` are in-process values and are not checkpointed, so what was queued and when is visible only for the duration of the fan-out (RISK-005).
+
 ### <Module> (REQ-NNN, ADR-NNN)
 
 **Fields added or changed**
@@ -40,27 +72,3 @@ Copy the example for your module. Before SA Review, check §5 of the other modul
 - **Ownership:** which component is the only writer of each field.
 - **Lifecycle:** when the fields are created, updated and cleared within a run.
 - **Shared contract:** whether other modules read these fields, and which owners must approve changes (`structural-constraints.md` §6).
-
-### delivery (REQ-002, REQ-004, ADR-001)
-
-**Fields added or changed**
-
-| State type | Field | Type | Reducer | Written by | Read by | Created → cleared |
-|---|---|---|---|---|---|---|
-| `SupervisorState` | `failed_tasks` | `list[dict]` (each entry: `task_id`, `reason`, `category`, `message`) | `operator.add` | `supervisor_tools` in `deep_researcher.py`, from `DelegationOutcome.failures` | the exit branch of `supervisor_tools`; `evaluate_before_report` after the subgraph returns | first fan-out with a failure → carried into `AgentState` when the subgraph ends; never cleared inside the subgraph |
-| `AgentState` | `failed_tasks` | `list[dict]` (same entry shape) | `operator.add` | the `research_supervisor` subgraph's return value, then `finalize` after the report stage | `evaluate_before_report`, `evaluate_after_report`, `render_limitations` | first write when the research phase ends → kept to the end of the run so the caller sees it |
-| `AgentState` | `research_outcome` | `str` ∈ {`complete`, `partial`, `failed`} | last write wins (plain field, no reducer) | `finalize` in `deep_researcher.py` (both passes) | `finalize` (second pass); any caller reading the run output | set by the first `finalize` pass; overwritten by the second pass with the report-stage verdict |
-
-- **Ownership:** `finalize` is the only writer of `research_outcome`. `supervisor_tools` (through `run_delegations`) is the only writer of `SupervisorState.failed_tasks`; the subgraph hands it to `AgentState.failed_tasks` unchanged, and nothing appends to `AgentState.failed_tasks` outside the subgraph return.
-- **Lifecycle:** `failed_tasks` starts absent (empty by reducer). It is appended once per failed or unrun delegation during the research phase, survives the subgraph boundary, and is read twice by the outcome functions — before report generation to decide `report_allowed`, and after it to render the limitations section. `research_outcome` is absent until the first `finalize` pass, so `finalize` tells its two passes apart by which of `research_outcome` and `final_report` are set. Neither field is cleared at the end of a run: they are part of the run output.
-
-  ```text
-  supervisor_tools --failed_tasks--> SupervisorState
-          │ (subgraph return)
-          ▼
-  AgentState.failed_tasks --evaluate_before_report--> OutcomeDecision --finalize--> research_outcome
-          │
-  final_report_generation --report, truncated--> evaluate_after_report --finalize--> research_outcome (final), final_report
-  ```
-
-- **Shared contract:** yes. `AgentState.failed_tasks` and `AgentState.research_outcome` are new fields of a type other modules also edit, and `SupervisorState.failed_tasks` sits beside the orchestration fields of the same state. Owners who must approve a change to them (`structural-constraints.md` §6): the orchestration owner (reads the subgraph state and writes the exit reason for REQ-003), the integrator (blueprint §5 interface table), and the delivery owner. `DelegationOutcome` is an in-process value and is not stored in state, so what was queued and when is visible only for the duration of the fan-out and not to a checkpoint replay.

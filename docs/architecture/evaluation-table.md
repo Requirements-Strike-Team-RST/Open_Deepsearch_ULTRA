@@ -41,8 +41,7 @@
 
 - **Module:** delivery
 - **Owner:** AlchemyHAN
-- **Decision recorded in:** ADR-001
-- **Status:** Decided
+- **Decision recorded in:** ADR-001 (task failure isolation). **Status:** Decided
 
 **ASR**
 
@@ -50,14 +49,14 @@
 |---|---|---|
 | REQ-002 | C-001, C-002, C-003, C-004, C-005, C-006, C-007; M-001, M-002 | Correctness of failure isolation; testability without a network or a model; preserving completed work (cost already spent); observability of what was run |
 
-The task contract itself — `TaskSpec`, `TaskResult`, the error categories and `derive_task_status` — belongs to the orchestration module (REQ-001, ADR-00X, owner centay). This entry assumes that contract and decides only how the delivery module consumes it.
+The task contract itself — `TaskSpec`, `TaskResult`, the error categories and `derive_task_status` — belongs to REQ-001 and is owned by the orchestration module (ADR-00X, owner centay); this ADR proposes placing the types in the shared `state.py` so that neither extension module imports the other. This entry assumes that contract and decides only how the delivery module consumes it.
 
 **Candidates**
 
 | Option | Summary | Components touched | Pros | Cons | Complexity | Offline testability |
 |---|---|---|---|---|---|---|
 | A | Patch `supervisor_tools` in place: `asyncio.gather(..., return_exceptions=True)`, classify each outcome inline, replace the overflow slice `[:max]` with a loop that runs the remaining calls after the first batch, and filter `get_notes_from_tool_calls` | `deep_researcher.py` (`supervisor_tools`), `utils.py` | Smallest diff; no new package; no new state field | Four unrelated concerns (fan-out, queuing, classification, note filtering) stay inside one ~150-line node; the exception branch cannot be exercised without driving the whole node; the join guarantee from C-006 has nowhere to live; no place to record per-task outcomes | Medium | Low: only end-to-end node tests |
-| B | New `delivery/execution.py`: `run_delegations(calls, config)` builds one `TaskRunRecord` per call, runs them in batches of `max_concurrent_research_units`, collects every outcome with `asyncio.gather(return_exceptions=True)`, classifies exceptions into `token_limit` / `runtime`, produces a `TaskResult` for every call including those left unrun, and returns `DelegationOutcome(records, results, notes, failures)`; `supervisor_tools` becomes a thin caller | New `delivery/execution.py`; `deep_researcher.py` (`supervisor_tools`); `state.py` (`failed_tasks`) | Each concern has one function that can be unit-tested with a fake researcher; queuing, classification and join are testable in isolation; per-call records make `dropped_delegation_count` measurable; matches the "one element, one module" rule and the thin-node rule | New subpackage must be added to `packages` in `pyproject.toml`; `supervisor_tools` keeps a small amount of glue; needs a new state field | Medium | High: fake researchers, no model or network |
+| B | New `delivery/execution.py`: `run_delegations(specs, researcher, ...)` builds one `TaskRunRecord` per call, launches them all and bounds concurrency with an `asyncio.Semaphore(max_concurrent_research_units)`, collects every outcome with `asyncio.gather(return_exceptions=True)`, classifies exceptions into `token_limit` / `runtime`, produces a `TaskResult` for every call including those left unrun, and returns `DelegationOutcome(records, results, notes, failures)`; `supervisor_tools` becomes a thin caller | New `delivery/execution.py`; `deep_researcher.py` (`supervisor_tools`); `state.py` (task contract) | Each concern has one function that can be unit-tested with a fake researcher; concurrency scheduling, classification and join are testable in isolation; per-call records make `dropped_delegation_count` measurable; a semaphore keeps every slot busy, so a slow task does not stall the queue; matches the "one element, one module" rule and the thin-node rule | New subpackage must be added to `packages` in `pyproject.toml`; `supervisor_tools` keeps a small amount of glue | Medium | High: fake researchers, no model or network |
 | C | `asyncio.TaskGroup` (or `anyio` task groups) for structured concurrency: cancel the group when one researcher raises | `deep_researcher.py` (`supervisor_tools`) | Python-native; guarantees no task outlives the block | A task group cancels its siblings when one child fails, so a successful sibling's findings are discarded — directly contradicts C-002 and M-001; cancellation also spends tokens on work whose result is thrown away | Low | Medium: cancellation timing is hard to assert deterministically |
 
 **Choice:** B — it is the only candidate whose units line up one-to-one with the acceptance criteria: queuing is C-004, classification is C-001/C-003, join is C-006, note separation is C-007, each with an interface that a fake researcher can drive offline.
@@ -68,7 +67,7 @@ The task contract itself — `TaskSpec`, `TaskResult`, the error categories and 
 
 - **Module:** delivery
 - **Owner:** AlchemyHAN
-- **Decision recorded in:** ADR-001
+- **Decision recorded in:** ADR-002 (graph shape and run outcome); the task-execution half is ADR-001
 - **Status:** Decided
 
 **ASR**
@@ -92,4 +91,4 @@ The outcome depends on information from two different moments: the research exit
 
 **Rejected and why:** A — free-text notes cannot carry per-task status, so the failed-task list and C-004 are unimplementable; it also leaves the report model as the only thing standing between a failed run and a normal-looking report, which is the harm REQ-004 exists to remove. C — duplicating the outcome assembly in two nodes creates two sources of truth for the same decision and more edges than B, for no gain in testability.
 
-**Cross-module note:** both entries consume the REQ-001 task contract owned by orchestration (centay) and the REQ-003 exit reason owned by orchestration. The interface between the two modules is recorded in ADR-001 §5 and in `structural-constraints.md` §10 as a shared contract that the orchestration owner must approve.
+**Cross-module note:** both entries consume the REQ-001 task contract and the REQ-003 exit reason owned by orchestration (centay). Neither delivery module imports orchestration: ADR-001 §5 places the task contract in the shared `state.py`, and the interface between the two modules is a shared contract that the orchestration owner must approve in the PR review (`structural-constraints.md` §10).

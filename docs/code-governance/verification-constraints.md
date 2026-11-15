@@ -78,7 +78,7 @@ Copy the example for your module. Every acceptance criterion (C-/M-) of the modu
 - **Regression:** existing suites to re-run, including `test/offline/test_contracts.py` if a shared contract changes.
 - **Live or human checks:** cases marked `automated: false` in `requirements.yaml`, and where their evidence goes.
 
-### delivery (REQ-002, REQ-004, ADR-001)
+### delivery (REQ-002, REQ-004, ADR-001, ADR-002)
 
 Case IDs are `TC-<REQ>-<nn>`. Every criterion of REQ-002 and REQ-004 and both invariants the module enforces (INV-002, INV-006) appear below. All cases are offline; none needs a network, an API key or a real model.
 
@@ -89,13 +89,13 @@ Case IDs are `TC-<REQ>-<nn>`. Every criterion of REQ-002 and REQ-004 and both in
 | TC-002-01 | REQ-002 C-001 | exception | one delegation; fake researcher raises `RuntimeError("boom")` | `run_delegations` returns a `failed` result with category `runtime` and message `"boom"`; no exception escapes; the caller routes back to the supervisor rather than `END` | `test_failure_propagation.py::test_child_exception_becomes_failed_result` |
 | TC-002-02 | REQ-002 C-002 | normal + exception | two delegations; one returns a finding, the other raises | the finding appears in the tool messages and in `notes`; only the other task is `failed` | `::test_sibling_result_kept_on_failure` |
 | TC-002-03 | REQ-002 C-003 | exception (boundary of classification) | fake raises a recognised token-limit error | result is `failed` with category `token_limit`; the phase does not end | `::test_token_limit_error_is_task_failure` |
-| TC-002-04 | REQ-002 C-004, M-001 | boundary | three delegations, `max_concurrent_research_units = 1` | all three records end `done`, three `TaskResult`s, `dropped_count == 0` | `::test_overflow_delegations_are_queued` |
-| TC-002-05 | REQ-002 C-005 | boundary (loop exit) | exit cap reached with two delegations in the last turn | both end `failed` with reason `not_run`, each with a `ToolMessage` | `::test_delegations_left_at_exit_are_failed` |
+| TC-002-04 | REQ-002 C-004, M-001 | boundary | three delegations, `max_concurrent_research_units = 1` | all three end `done` with three `TaskResult`s, `dropped_count == 0`, and peak simultaneous running never exceeds 1 | `::test_overflow_delegations_are_queued` |
+| TC-002-05 | REQ-002 C-005 | boundary (loop exit) | exit cap reached with two delegations in the last turn | both end `failed` with reason `not_run`, each answered by a `ToolMessage` | `::test_delegations_left_at_exit_are_failed` |
 | TC-002-06 | REQ-002 C-006 | exception (join) | one fake raises immediately, sibling still sleeping | after return no `asyncio.Task` started by the call is pending | `::test_no_task_running_after_join` |
 | TC-002-07 | REQ-002 C-007, M-002 | exception | one failed task and one placeholder-compression task | `notes` contains only validated findings; both failures appear only in `failed_tasks`; `failure_text_in_notes_count == 0` | `::test_failure_text_not_in_notes` |
 | TC-002-08 | INV-006 | boundary | specs supplied as unrun with `unrun_reason="not_run"` | exactly one terminal result per spec; no record left `queued` or `running` | `::test_unrun_specs_all_end_not_run` |
 | TC-002-09 | INV-002 S1 | exception (cancellation) | the run is cancelled while a researcher is sleeping | `asyncio.CancelledError` propagates; it is not converted into a `failed` task result | `::test_cancellation_is_not_swallowed` |
-| TC-002-10 | REQ-002 C-001 (negative control) | normal | `max_concurrent = 0` passed by mistake | clamped to 1, the task still runs and ends with a result | `::test_non_positive_concurrency_clamped` |
+| TC-002-10 | REQ-002 C-004 (concurrency bound) | boundary | three delegations with `max_concurrent = 2` and uneven fake durations | all three finish; at most 2 run at once; the third starts as soon as one of the first two frees a slot, so the run does not wait for the slowest of the first pair | `::test_semaphore_keeps_slots_full` |
 
 **REQ-004 — run outcome and limitations section** (`test/offline/test_run_outcome.py`)
 
@@ -104,12 +104,14 @@ Case IDs are `TC-<REQ>-<nn>`. Every criterion of REQ-002 and REQ-004 and both in
 | TC-004-01 | REQ-004 C-001 | normal | covered exit, all task results complete, report generated | `research_outcome == "complete"`, `failed_tasks == []`, no limitations section | `test_run_outcome.py::test_covered_run_is_complete` |
 | TC-004-02 | REQ-004 C-002 | exception | two tasks, one failed; fake report model never mentions the failure | outcome `partial`; `failed_tasks` names the task and its reason; the limitations section names it | `::test_failed_task_makes_run_partial` |
 | TC-004-03 | REQ-004 C-003 | boundary | all tasks complete, exit reason `stalled` and separately `budget_exhausted` | outcome `partial` in both cases | `::test_non_covered_exit_is_partial` |
-| TC-004-04 | REQ-004 C-004 | boundary (no data) | no validated finding | outcome `failed`, `report_allowed` false, `final_report` empty, fake report model call count `0` | `::test_no_finding_run_is_failed` |
-| TC-004-05 | REQ-004 C-005 | exception | fake report model raises a non-token-limit error | outcome `failed` with that reason, `final_report` empty, no error text in the report field | `::test_report_error_run_is_failed` |
-| TC-004-06 | REQ-004 C-006, M-001 | boundary | findings exceed the limit and are truncated | outcome `partial`; limitations section states findings were left out; `false_complete_outcome_count == 0` at aggregate level | `::test_truncated_findings_make_run_partial` |
+| TC-004-04 | REQ-004 C-004 | boundary (no data) | no validated finding | outcome `failed`, `report_allowed` false, `final_report` empty, fake report model call count `0`, no limitations section | `::test_no_finding_run_is_failed` |
+| TC-004-05 | REQ-004 C-005 | exception | fake report model raises a non-token-limit error, so `report_error` is set | outcome `failed` with that reason, `final_report` empty, no error text in the report field | `::test_report_error_run_is_failed` |
+| TC-004-06 | REQ-004 C-006, M-001 | boundary | findings exceed the limit, so `report_truncated` is set | outcome `partial`; limitations section states findings were left out; `false_complete_outcome_count == 0` at aggregate level | `::test_truncated_findings_make_run_partial` |
 | TC-004-07 | INV-002 S5 | boundary | exit reason `failed` after retries | outcome `failed` even if every task result is complete | `::test_supervisor_failure_is_failed_outcome` |
-| TC-004-08 | INV-002 S6 | normal (negative control) | a partial run whose report model *does* mention the failure | exactly one limitations section is appended; the model's mention is not duplicated or removed | `::test_limitations_appended_once` |
-| TC-004-09 | INV-002 S5 (determinism) | exception | failing task list mutated after the first pass | `evaluate_before_report` is a pure function: the same state yields the same decision twice | `::test_outcome_decision_is_pure` |
+| TC-004-08 | INV-002 S6 | normal (negative control) | a partial run whose report model *does* mention the failure | exactly one limitations section is appended; the model's mention is neither duplicated nor removed | `::test_limitations_appended_once` |
+| TC-004-09 | INV-002 S5 (determinism) | normal | the same state dict passed twice, and the state dict checked for mutation afterwards | both calls return equal decisions and the input mapping is unchanged, so a second `finalize` cannot alter what the first pass decided | `::test_outcome_decision_does_not_mutate_state` |
+| TC-004-10 | REQ-004 C-002 (no duplicate records) | boundary | `failed_tasks` written by the first pass, then the second pass runs | the list holds each failure exactly once (the field is written with `override_reducer`, not appended) | `::test_failed_tasks_not_duplicated` |
+| TC-004-11 | REQ-004 C-001 (pass marker) | boundary | a failed report, so `final_report` is empty when `finalize` runs the second time | `finalize` still detects the second pass from `run_finalized` and does not re-run the first-pass logic | `::test_second_pass_detected_without_report` |
 
 - **Regression:** every existing suite in `test/offline/` (CI job `offline-tests`), and `test/offline/test_contracts.py` if the task-contract shared contract changes. With `enforce_delivery_outcome = False` the baseline supervisor behaviour must be unchanged, so also re-run any suite the test author writes for the baseline `supervisor_tools` path.
 - **Live or human checks:** none for this module. REQ-004's criteria are all scripted with fake models; REQ-003's live check (`test/live/test_research_termination_live.py`) belongs to orchestration. The `false_complete_outcome_count` and `dropped_delegation_count` monitors are computed from the offline scenarios above, not from live runs.

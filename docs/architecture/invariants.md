@@ -73,9 +73,10 @@ Every entry uses the same fields:
 - **Module:** delivery
 - **Source:** REQ-002 (C-004, C-005, C-006; M-001)
 - **Status:** Proposed
-- **Enforcing component:** `delivery.execution.run_delegations`, which builds one `TaskRunRecord` per `TaskSpec`, batches the work above `max_concurrent_research_units` instead of rejecting it, gathers with `return_exceptions=True`, and asserts before returning that no record is still `queued` or `running`.
+- **Enforcing component:** `delivery.execution.run_delegations`, which builds one `TaskRunRecord` per `TaskSpec`, bounds concurrency with a semaphore so the limit queues work instead of rejecting it, gathers with `return_exceptions=True`, and asserts before returning that no record is still `queued` or `running`.
 - **Verification:** `test/offline/test_failure_propagation.py` (C-004, C-005, C-006); monitor `dropped_delegation_count == 0`, computed from `DelegationOutcome.dropped_count`.
-- **Fallback:** a delegation that cannot be run ends `failed` with reason `not_run` and its original error; the phase never ends while a task it started is still pending. Never answer a delegation with a text that is not a `TaskResult`, and never drop a delegation silently.
+- **Fallback:** a delegation that cannot be run ends `failed` with an error category and reason of `not_run` and its original error; the phase never ends while a task it started is still pending. Never answer a delegation with a text that is not a `TaskResult`, and never drop a delegation silently.
+- **Ownership note:** which delegations count as unrun is decided by the research loop (orchestration, REQ-003); producing their `not_run` results is this module's job. The split of `supervisor_tools` is in ADR-001 §5.
 
 ## INV-002-d — Detailed conditions for INV-002 (delivery)
 

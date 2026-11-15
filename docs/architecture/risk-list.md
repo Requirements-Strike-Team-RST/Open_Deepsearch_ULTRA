@@ -18,7 +18,7 @@ Every entry uses the same fields:
 ## RISK-001 — A report can still be incomplete without the run being marked partial
 
 - **Risk:** The outcome is `complete` although the report model paraphrased away or silently omitted a finding it was given. Because the delivery module does not parse the report body, nothing detects the omission.
-- **Module / Source:** delivery; REQ-004 ("no finding was left out of the report"), ADR-001 §3.4.
+- **Module / Source:** delivery; REQ-004 ("no finding was left out of the report"), ADR-002 §3.6.
 - **Likelihood:** Medium. Report models are known to drop findings under a long `findings` block, and the baseline prompt asks for a *comprehensive* report without a completeness check.
 - **Impact:** High. This is the exact harm upstream #283 describes: a normal-looking report that hides missing research.
 - **Assumption:** Deterministic checking of the report body belongs to a later requirement (REQ-006 lists deterministic citation validation as out of scope), so this delivery only detects findings the system itself withheld — those dropped by report-stage truncation.
@@ -32,13 +32,13 @@ Every entry uses the same fields:
 - **Likelihood:** Medium. The field names in `requirements.yaml` are explicitly "proposals for the design review", so the orchestration ADR may still change them.
 - **Impact:** Medium. The delivery tests would need rewriting, and a merged implementation would stop importing.
 - **Assumption:** The orchestration owner's contract is stable by integration, and `derive_task_status` stays the single place that decides `complete` / `partial` / `failed` for one task; delivery never re-derives it. Merging the two module branches therefore needs one owner's approval of the other's interface.
-- **Mitigation:** ADR-001 §5 lists the consumed types explicitly, `structural-constraints.md` §10 records them as a shared contract, and this ADR defines no competing type. The integration step (Prompt.md §4.2) checks for overlapping responsibilities and two owners writing the same state field.
+- **Mitigation:** ADR-001 §5 places the task contract in the shared `state.py` and states that an existing orchestration definition is adopted verbatim; `structural-constraints.md` §10 records it as a shared contract; and neither ADR defines a competing type. The integration step (Prompt.md §4.2) checks for overlapping responsibilities and two owners writing the same state field.
 - **Re-evaluate when:** the orchestration ADR changes a field name or moves status derivation, or the integrator finds both modules deriving a task status.
 
 ## RISK-003 — The new `finalize` node behaves differently across LangGraph versions
 
 - **Risk:** `finalize` returns a `Command` with `goto`, and it runs twice in one run. Behaviour depends on how the installed LangGraph version handles a node that is both the source and the target of a conditional edge, and on how a subgraph's state update merges into the parent `AgentState` with `operator.add` reducers. A version bump could change routing or duplicate the `failed_tasks` entries.
-- **Module / Source:** delivery; REQ-004 C-001–C-006, ADR-001 §3.3.
+- **Module / Source:** delivery; REQ-004 C-001–C-006, ADR-002 §3.1–§3.4.
 - **Likelihood:** Medium. `pyproject.toml` pins `langgraph>=0.5.4`, a lower bound, so the resolved version can move.
 - **Impact:** High if it recurses: a `finalize` that routes back to itself without a state change is an infinite loop rather than a wrong answer.
 - **Assumption:** LangGraph keeps `Command(goto=...)` semantics and applies the `operator.add` reducer once per node return in an equal-or-newer version.
@@ -52,8 +52,8 @@ Every entry uses the same fields:
 - **Likelihood:** High. The baseline team trace already showed about 34,000 tokens for a three-sentence question (`requirements.yaml` REQ-001 notes).
 - **Impact:** Low to Medium. It is the intended trade — the work is no longer silently lost — but it can surface as a cost or rate-limit complaint.
 - **Assumption:** `max_concurrent_research_units` stays the binding limit on peak concurrency, and a queued task is worth its tokens because its result is kept rather than discarded.
-- **Mitigation:** batching keeps peak concurrency at the configured value; `REQ-001`'s per-task budget is where over-delegation will be limited later; `Configuration` remains the operator's lever.
-- **Re-evaluate when:** a live run shows queued tasks dominating cost, or providers start rejecting batched work that the baseline would have avoided.
+- **Mitigation:** the semaphore keeps peak concurrency at the configured value while every slot stays busy; `REQ-001`'s per-task budget is where over-delegation will be limited later; `Configuration` remains the operator's lever.
+- **Re-evaluate when:** a live run shows queued tasks dominating cost, or providers start rejecting work that the baseline would have avoided by rejecting it first.
 
 ## RISK-005 — `TaskRunRecord` is not visible after the fan-out
 
