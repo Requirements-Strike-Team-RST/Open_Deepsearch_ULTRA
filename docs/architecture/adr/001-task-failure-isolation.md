@@ -13,7 +13,7 @@
 | Requirement | Acceptance criteria that shape this decision | Why they matter architecturally |
 |---|---|---|
 | REQ-002 | C-001, C-002, C-003, C-004, C-005, C-006, C-007; M-001, M-002 | One exception must stop one task, not the phase; completed siblings must keep their findings; delegations above the concurrency limit must still run; delegations left unrun at loop exit must end `not_run`; the join must leave nothing pending; failure text must never enter `notes`. Together these decide that the fan-out needs per-task records, a bounded concurrency primitive and a join point, instead of one `try` block. |
-| REQ-001 (consumed) | C-001, C-002, C-003, C-004 | Supplies the task contract — `TaskSpec`, `TaskResult`, the error categories, task-status derivation. Owned by orchestration; placed in the shared `state.py` so neither module imports the other (§5). |
+| REQ-001 (consumed) | C-001, C-002, C-003, C-004 | Supplies the task contract — `TaskSpec`, `TaskResult`, the error categories, task-status derivation. Owned by orchestration; placed in the shared `state.py` so neither module imports the other (§5), and the `task_results` field that carries the results to later nodes is defined with that owner (ADR-002 §3.2). |
 | REQ-003 (consumed) | C-004, C-005 | Owns the loop-exit decision, i.e. which delegations count as unrun. This module only produces their `not_run` results. |
 
 ## 2. Context
@@ -69,11 +69,11 @@ The full comparison is in EVAL-001.
 
 | Component | Responsibility | Interface (signature or type) | Called by |
 |---|---|---|---|
-| `state.py` (shared) | Home of the task contract, so neither extension module imports the other | `TaskSpec`, `TaskResult`, `TaskFailure`, `derive_task_status` | `delivery/`, `orchestration/`, `deep_researcher.py` |
+| `state.py` (shared) | Home of the task contract and the field that carries the results across the subgraph boundary | `TaskSpec`, `TaskResult`, `TaskFailure`, `derive_task_status`; `SupervisorState.task_results` / `AgentState.task_results` (ADR-002 §3.2) | `delivery/`, `orchestration/`, `deep_researcher.py` |
 | `delivery/execution.py` | Own the fan-out: bound concurrency, isolate failures, join every task, emit one `TaskResult` per `TaskSpec` | `async run_delegations(*, specs, researcher, config, max_concurrent, research_model, unrun_reason="not_run") -> DelegationOutcome` | the fan-out region of `supervisor_tools` |
 | `delivery/execution.py` | Categorise an exception deterministically | `classify_task_error(exc: BaseException, research_model: str) -> TaskFailure` | `run_delegations` |
 | `delivery/execution.py` | Per-task bookkeeping for scheduling and the drop metric | `TaskRunRecord` (dataclass: `task_id`, `spec`, `state` ∈ {`queued`, `running`, `done`}, `result`) | `run_delegations`; tests |
-| `delivery/execution.py` | Return value of the fan-out | `DelegationOutcome` (dataclass: `records`, `results`, `notes`, `failures`; property `dropped_count`) | the fan-out region of `supervisor_tools` |
+| `delivery/execution.py` | Return value of the fan-out | `DelegationOutcome` (dataclass: `records`, `results`, `notes`, `failures`; property `dropped_count` = the number of specs that have **no terminal `TaskResult` at all**) | the fan-out region of `supervisor_tools` |
 | `delivery/execution.py` | Type of the researcher callable so tests can inject a fake | `ResearcherCallable = Callable[[TaskSpec, RunnableConfig], Awaitable[TaskResult]]` | `supervisor_tools`, tests |
 
 **Code ownership inside `supervisor_tools`.** The node is edited by two modules. This split is binding for both ADRs.
@@ -83,14 +83,14 @@ The full comparison is in EVAL-001.
 | Exit-condition evaluation (iteration cap, no tool calls, `ResearchComplete`) and the early return | orchestration (REQ-003) | When it returns early, it passes the turn's `ConductResearch` calls to `run_delegations` with `unrun_reason="not_run"` so delivery produces their results. The exit decision is never made by delivery. |
 | `think_tool` handling | unchanged | Neither module rewrites it. |
 | The `ConductResearch` fan-out — the `try` block, the slice at L291–292, the overflow messages at L315–321, the `asyncio.gather` at L305 | delivery (REQ-002) | Replaced by one `run_delegations` call, guarded by `enforce_delivery_outcome`. |
-| Building `ToolMessage`s from the results and setting `raw_notes` | delivery (REQ-002) | One `ToolMessage` per `ConductResearch` call, so no tool call is left unanswered. |
-| The `failed_tasks` write | `finalize` (ADR-002) | Not written inside `supervisor_tools`; the node's results travel in state to `finalize`. |
+| Building `ToolMessage`s from the results, setting `raw_notes`, and appending every `TaskResult` to `task_results` | delivery (REQ-002) | One `ToolMessage` per `ConductResearch` call, so no tool call is left unanswered. `task_results` is a state field (ADR-002 §3.2) because only state crosses the subgraph boundary; a returned `DelegationOutcome` would be dropped. |
+| The `failed_tasks` write | `finalize` (ADR-002) | Not written inside `supervisor_tools`; it is derived from `task_results`. |
 
 Shared contracts changed (`structural-constraints.md` §6): `TaskSpec`, `TaskResult`, `TaskFailure`, `derive_task_status` added to `state.py`. Owners who must approve: orchestration (REQ-001), the integrator (blueprint §5), and delivery. If the orchestration ADR already defines the contract, that definition is adopted verbatim in `state.py`; nothing is renamed.
 
 ## 6. State, Failure Handling and Deterministic Boundary
 
-- **State:** none added by this ADR. The per-task results travel in the graph's existing return values; `failed_tasks` is introduced by ADR-002. `DelegationOutcome` and `TaskRunRecord` are in-process values and are not checkpointed (RISK-005).
+- **State:** `task_results` is written from this module's fan-out region (field defined with orchestration, ADR-002 §3.2). No other state is added by this ADR; `failed_tasks` is derived by ADR-002's `finalize`. `DelegationOutcome` and `TaskRunRecord` are in-process values of a single node execution.
 - **Runtime policies:** POL-001 (researcher raises), POL-002 (researcher token limit), POL-003 (delegation above the concurrency limit), POL-004 (delegation left unrun at loop exit). POL-005 to POL-007 belong to ADR-002. Details in `runtime-policy-catalog.md` §2 (delivery).
 - **Invariants:** INV-002 conditions S1–S4 (failure isolation, sibling results kept, join, notes separation) and INV-006 (every delegation ends with a terminal result). Details in `invariants.md`.
 - **Deterministic boundary:** which task fails, with which error category, and whether a delegation ran at all are decided by `classify_task_error` and `run_delegations` from exceptions and records — never from model output.
@@ -102,7 +102,7 @@ Shared contracts changed (`structural-constraints.md` §6): `TaskSpec`, `TaskRes
 | REQ-002 C-001, C-003 | Fake researcher raising `RuntimeError` / a recognised token-limit error; assert a `failed` result with the right category and message and that no exception escapes | `test/offline/test_failure_propagation.py` |
 | REQ-002 C-002 | Two specs, one returning a finding, one raising; the finding is in `DelegationOutcome.notes`, only the other task is failed | `test/offline/test_failure_propagation.py` |
 | REQ-002 C-004, M-001 | Three specs, `max_concurrent=1`; three `done` records, three results, `dropped_count == 0`, peak concurrency never above 1 | `test/offline/test_failure_propagation.py` |
-| REQ-002 C-005 | Specs passed with `unrun_reason="not_run"`; each ends `failed` with an error category and reason of `not_run` | `test/offline/test_failure_propagation.py` |
+| REQ-002 C-005 | Specs passed with `unrun_reason="not_run"`; each ends `failed` with an error category and reason of `not_run`, and `dropped_count == 0` because each has a terminal result (M-001) | `test/offline/test_failure_propagation.py` |
 | REQ-002 C-006 | One fake raises immediately, a sibling is still pending; no `asyncio.Task` from the call is pending after return | `test/offline/test_failure_propagation.py` |
 | REQ-002 C-007, M-002 | A failed task and a placeholder-compression task; `notes` holds only validated findings, both failures sit in the results | `test/offline/test_failure_propagation.py` |
 | INV-006 | Every spec has exactly one terminal result; no record left `queued` or `running` | `test/offline/test_failure_propagation.py` |
@@ -139,9 +139,9 @@ The coding agent implements these in order; each step names the files it changes
 
 4. **Implement `classify_task_error`**: return a `TaskFailure` with an error category of `token_limit` when `is_token_limit_exceeded(exc, research_model)` from `open_deep_research.utils` is true, otherwise `runtime`, with `str(exc)` as the message.
 
-5. **Implement `run_delegations`** as decided in §3.1: one record per spec, an `asyncio.Semaphore` bounding `max_concurrent` (clamp to at least 1), all specs launched at once, one `asyncio.gather(..., return_exceptions=True)`, every exception classified, one `TaskResult` per spec, notes taken only from results whose findings are validated, specs that must not run ended `failed` with an error category and reason of `not_run`. Assert before returning that no record is left `queued` or `running`. Let `asyncio.CancelledError` propagate. Docstring names `REQ-002, ADR-001, INV-002, INV-006`.
+5. **Implement `run_delegations`** as decided in §3.1: one record per spec, an `asyncio.Semaphore` bounding `max_concurrent` (clamp to at least 1), all specs launched at once, one `asyncio.gather(..., return_exceptions=True)`, every exception classified, one `TaskResult` per spec, notes taken only from results whose findings are validated, specs that must not run ended `failed` with an error category and reason of `not_run`. Compute `dropped_count` as the number of records that have **no terminal `TaskResult`** — a `not_run` result is terminal, so it is not counted as dropped. Assert before returning that no record is left `queued` or `running`. Let `asyncio.CancelledError` propagate. Docstring names `REQ-002, ADR-001, INV-002, INV-006`.
 
-6. **Rewire only the fan-out inside `supervisor_tools`** in `src/open_deep_research/deep_researcher.py`, respecting the ownership table in §5. Keep the exit-condition evaluation, the early return and the `think_tool` handling as they are; if orchestration's ADR changes them, take that version. Replace only the `try` block, the slice, the overflow messages and the `except ... or True` handler with one `run_delegations` call whose `researcher` argument invokes `researcher_subgraph` for a spec. Build one `ToolMessage` per `ConductResearch` call from `DelegationOutcome.results` and set `raw_notes` from `DelegationOutcome.notes`. Carry `DelegationOutcome.failures` in the node's return value for `finalize` to record (ADR-002). Guard the new path with `configurable.enforce_delivery_outcome`, leaving the baseline body intact for the `False` case.
+6. **Rewire only the fan-out inside `supervisor_tools`** in `src/open_deep_research/deep_researcher.py`, respecting the ownership table in §5. Keep the exit-condition evaluation, the early return and the `think_tool` handling as they are; if orchestration's ADR changes them, take that version. Replace only the `try` block, the slice, the overflow messages and the `except ... or True` handler with one `run_delegations` call whose `researcher` argument invokes `researcher_subgraph` for a spec. Build one `ToolMessage` per `ConductResearch` call from `DelegationOutcome.results`, set `raw_notes` from `DelegationOutcome.notes`, and **append every `TaskResult` to the `task_results` state field** (ADR-002 §3.2) — do not return `DelegationOutcome.failures` expecting a later node to read it, because only state fields cross the subgraph boundary. Guard the new path with `configurable.enforce_delivery_outcome`, leaving the baseline body intact for the `False` case.
 
 7. **Add the configuration flag** `enforce_delivery_outcome: bool = Field(default=False, metadata={"x_oap_ui_config": {"type": "boolean", "default": False, "description": "..."}})` to `src/open_deep_research/configuration.py`, in the style of the neighbouring fields. The default stays `False` (`structural-constraints.md` §8.2).
 

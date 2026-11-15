@@ -57,11 +57,11 @@ Every entry uses the same fields:
 
 ## RISK-005 — `TaskRunRecord` is not visible after the fan-out
 
-- **Risk:** The records of what was queued, when, and how many attempts each task made live only for the duration of `run_delegations`. They are not stored in state, so a checkpoint replay or a post-mortem cannot show the schedule, and `dropped_delegation_count` is computable only inside a test, not from a stored run.
+- **Risk:** The records of what was queued, when, and how many attempts each task made live only for the duration of `run_delegations`. They are not stored in state, so a checkpoint replay or a post-mortem cannot show the schedule, and `dropped_delegation_count` is computable only from the fan-out's own records, not from a stored run.
 - **Module / Source:** delivery; REQ-002 M-001, `memory-design.md` §5 (delivery).
-- **Likelihood:** High — this is the design as written.
+- **Likelihood:** High — this is the design as written. The per-task `TaskResult`s do reach state through `task_results`, but the scheduling records do not.
 - **Impact:** Low. The invariant is enforced and tested; only the retrospective evidence is thinner.
-- **Assumption:** Storing per-task scheduling records in the checkpoint is not worth the state growth for this delivery, because the outcomes (one `TaskResult` per task) are already persisted.
+- **Assumption:** Storing per-task scheduling records in the checkpoint is not worth the state growth for this delivery, because the outcomes (one `TaskResult` per task, in `task_results`) are already persisted.
 - **Mitigation:** the outcome and the failed-task list are persisted; the drop metric is asserted offline. If operational visibility is needed, add a `delivery_records` list to state in a later ADR.
 - **Re-evaluate when:** someone needs to explain a past run's scheduling from its checkpoint, or M-001 has to be measured on production runs.
 

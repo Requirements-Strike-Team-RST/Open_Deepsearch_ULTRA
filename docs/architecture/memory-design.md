@@ -35,31 +35,33 @@ Copy the example for your module. Before SA Review, check §5 of the other modul
 
 | State type | Field | Type | Reducer | Written by | Read by | Created → cleared |
 |---|---|---|---|---|---|---|
-| `AgentState` | `failed_tasks` | `list[dict]` (each entry: `task_id`, `reason`, `category`, `message`) | `override_reducer` — each writer sends `{"type": "override", "value": [...]}`, the convention `notes` already uses | `finalize`, first pass only | `evaluate_before_report`, `evaluate_after_report`, `render_limitations`; the caller reading the run output | written once when research ends → kept to the end of the run; never written a second time |
+| `SupervisorState` | `task_results` | `Annotated[list[TaskResult], …]` | `operator.add` | the delivery-owned fan-out region of `supervisor_tools`, one entry per `ConductResearch` call | orchestration's coverage check (REQ-003); carried to `AgentState` when the subgraph ends | appended per turn → carried across the subgraph boundary |
+| `AgentState` | `task_results` | same | `operator.add` | the subgraph output | `evaluate_before_report`, `evaluate_after_report`, `render_limitations`; orchestration's coverage check | first write when research ends → kept to the end of the run |
+| `AgentState` | `failed_tasks` | `list[dict]` (each entry: `task_id`, `reason`, `category`, `message`) | `override_reducer` — each writer sends `{"type": "override", "value": [...]}`, the convention `notes` already uses | `finalize`, first pass only; derived from `task_results` | `evaluate_before_report`, `evaluate_after_report`, `render_limitations`; the caller | written once when research ends → kept to the end of the run; never written a second time |
 | `AgentState` | `research_outcome` | `str` ∈ {`complete`, `partial`, `failed`} | last write wins (plain field, no reducer) | `finalize`, both passes | `finalize` (second pass); the caller | set by the first pass → overwritten by the second pass with the report-stage verdict |
 | `AgentState` | `run_finalized` | `bool` | last write wins | `finalize`, both passes | `finalize`, to tell its two passes apart | absent/`False` → set `True`, so the first-pass logic cannot run twice |
 | `AgentState` | `report_truncated` | `bool` | last write wins | `final_report_generation` | `evaluate_after_report`, `render_limitations` | default `False` → `True` when findings were cut to fit the report model; `False` again on a successful report |
 | `AgentState` | `report_error` | `str` | last write wins | `final_report_generation` | `evaluate_after_report` | `""` on success → the error text when the report stage failed; this text never enters `final_report` |
 
-`SupervisorState` is **not** changed by this module: the supervisor subgraph keeps its baseline shape and `failed_tasks` lives only in `AgentState`.
+`SupervisorState` gains only `task_results`, which carries the per-task results (the REQ-001 contract type) across the subgraph boundary; without it a LangGraph node's returned value would be dropped and `finalize` would see nothing.
 
-- **Ownership:** `finalize` is the only writer of `failed_tasks`, `research_outcome` and `run_finalized`; `final_report_generation` is the only writer of `report_truncated` and `report_error`.
-- **Lifecycle:** `failed_tasks` is absent until the first `finalize` pass, which writes the whole list in one override. There is no append path, so the same failure cannot be recorded twice — this is why the field uses `override_reducer` rather than `operator.add`. It is read before report generation to decide `report_allowed` and after it to render the limitations section. `research_outcome` is absent until the first pass and finalised by the second. `run_finalized` is the marker that separates the passes; `finalize` must not infer its pass from whether `final_report` is set, because a failed report leaves that field empty. `report_truncated` and `report_error` are written by the report node just before `finalize` reads them. None of these fields is cleared at the end of a run: they are part of the run output.
+- **Ownership:** `finalize` is the only writer of `failed_tasks`, `research_outcome` and `run_finalized`; `final_report_generation` is the only writer of `report_truncated` and `report_error`; the delivery-owned fan-out region of `supervisor_tools` is the only writer of `SupervisorState.task_results`.
+- **Lifecycle:** `task_results` accumulates one entry per `ConductResearch` call during the research phase and survives the subgraph boundary unchanged, so `finalize` and orchestration's coverage check read the same evidence. `failed_tasks` is absent until the first `finalize` pass, which derives the whole list from `task_results` and writes it in one override — there is no append path, so the same failure cannot be recorded twice, which is why the field uses `override_reducer` rather than `operator.add`. `research_outcome` is absent until the first pass and finalised by the second. `run_finalized` separates the passes; `finalize` must not infer its pass from whether `final_report` is set, because a failed report leaves that field empty. `report_truncated` and `report_error` are written by the report node just before `finalize` reads them. None of these fields is cleared at the end of a run: they are part of the run output.
 
   ```text
-  supervisor_tools --DelegationOutcome--> (research phase)
+  supervisor_tools --task_results (state)--> SupervisorState
           │ (subgraph return)
           ▼
   finalize (1st pass) --evaluate_before_report--> research_outcome, failed_tasks (override), run_finalized
-          │ report_allowed
+          │ report_allowed → goto final_report_generation
           ▼
   final_report_generation --report_truncated, report_error--> finalize (2nd pass)
-          │ --evaluate_after_report--> research_outcome (final)
+          │ --evaluate_after_report--> research_outcome (final) → goto END
           ▼
          END
   ```
 
-- **Shared contract:** yes. These are new fields of `AgentState`, a type other modules also edit. Owners who must approve a change to them (`structural-constraints.md` §6): the orchestration owner (REQ-001, REQ-003), the integrator (blueprint §5 interface table), and the delivery owner. `DelegationOutcome` and `TaskRunRecord` are in-process values and are not checkpointed, so what was queued and when is visible only for the duration of the fan-out (RISK-005).
+- **Shared contract:** yes. `task_results` sits in both state types and is read by orchestration's coverage check, so it is co-owned with the REQ-001 / REQ-003 owner; the other five fields are new fields of `AgentState`, a type other modules also edit. Owners who must approve a change to them (`structural-constraints.md` §6): the orchestration owner (REQ-001, REQ-003), the integrator (blueprint §5 interface table), and the delivery owner. `DelegationOutcome` and `TaskRunRecord` are in-process values and are not checkpointed, so what was queued and when is visible only for the duration of the fan-out (RISK-005).
 
 ### <Module> (REQ-NNN, ADR-NNN)
 
