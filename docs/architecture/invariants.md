@@ -32,9 +32,10 @@ Every entry uses the same fields:
 - **Module:** delivery
 - **Source:** REQ-002, REQ-004
 - **Status:** Proposed
-- **Enforcing component:** the failure branch of `supervisor_tools`; the run-outcome computation before and after `final_report_generation`.
-- **Verification:** `test/offline/test_failure_propagation.py`, `test/offline/test_run_outcome.py`; monitor `false_complete_outcome_count == 0`.
+- **Enforcing component:** `delivery.execution.run_delegations` (failure isolation, queuing and join); `delivery.outcome.evaluate_before_report` / `evaluate_after_report` (outcome and limitations section).
+- **Verification:** `test/offline/test_failure_propagation.py`, `test/offline/test_run_outcome.py`; monitor `false_complete_outcome_count == 0`. The conditions S1–S6 below each name their test.
 - **Fallback:** record the failed task with category and message, keep sibling results, and deliver outcome `partial` with a system-added limitations section, or `failed` with an empty report. Never swallow an exception.
+- **Conditions (delivery module):** the statement is expanded into conditions S1–S6 in `INV-002-d` below, so that a test can fail on each one separately.
 
 ## INV-003 — Research is bounded and every exit has one reason
 
@@ -65,6 +66,31 @@ Every entry uses the same fields:
 - **Enforcing component:** search configuration validation at graph start; the search adapter called through `utils.get_all_tools()`.
 - **Verification:** `test/offline/test_search_configuration.py`, `test/offline/test_search_fallback.py` with fake providers (normal, empty, timeout, invalid, unknown).
 - **Fallback:** on an eligible error, try only the configured fallback sources in order and record each attempt; when all fail, return an explicit search failure. Never substitute a source that is not configured.
+
+## INV-006 — Every delegated task ends with a terminal result
+
+- **Statement:** For every delegation the supervisor makes, exactly one terminal `TaskResult` exists by the time the research phase ends; no delegation is left queued, running or unanswered, and a delegation that was never run ends `failed` with reason `not_run`.
+- **Module:** delivery
+- **Source:** REQ-002 (C-004, C-005, C-006; M-001)
+- **Status:** Proposed
+- **Enforcing component:** `delivery.execution.run_delegations`, which builds one `TaskRunRecord` per `TaskSpec`, batches the work above `max_concurrent_research_units` instead of rejecting it, gathers with `return_exceptions=True`, and asserts before returning that no record is still `queued` or `running`.
+- **Verification:** `test/offline/test_failure_propagation.py` (C-004, C-005, C-006); monitor `dropped_delegation_count == 0`, computed from `DelegationOutcome.dropped_count`.
+- **Fallback:** a delegation that cannot be run ends `failed` with reason `not_run` and its original error; the phase never ends while a task it started is still pending. Never answer a delegation with a text that is not a `TaskResult`, and never drop a delegation silently.
+
+## INV-002-d — Detailed conditions for INV-002 (delivery)
+
+**Module:** delivery. The statement in INV-002 is unchanged; these conditions say what "reported", "complete" and "failure" concretely mean for this module, so that a test can fail on each one separately.
+
+| # | Condition | Enforced by | Test |
+|---|---|---|---|
+| S1 | An exception raised while one task runs makes only that task `failed`, with an error category and the original message; it never ends the research phase on its own. | `delivery.execution.classify_task_error`, `run_delegations` | `test/offline/test_failure_propagation.py::test_child_exception_becomes_failed_result` |
+| S2 | A failed task does not remove a sibling's result: findings of tasks that succeeded reach the tool messages and `notes`. | `run_delegations` (`return_exceptions=True`) | `::test_sibling_result_kept_on_failure` |
+| S3 | No task the supervisor started is still pending when the fan-out returns. | `run_delegations` final assertion | `::test_no_task_running_after_join` |
+| S4 | Failure text and placeholder text never become a finding; `notes` contains only validated findings, and every failure appears only in `failed_tasks`. | `run_delegations` note filtering; `supervisor_tools` | `::test_failure_text_not_in_notes` |
+| S5 | The outcome is `complete` only when the exit reason is `covered`, every task result is `complete` and no finding was withheld by the system; any other end is `partial`, and a `failed` exit, no validated finding or a failed report generation is `failed`. | `delivery.outcome.evaluate_before_report`, `evaluate_after_report` | `test/offline/test_run_outcome.py::test_covered_run_is_complete`, `::test_failed_task_makes_run_partial`, `::test_non_covered_exit_is_partial`, `::test_no_finding_run_is_failed`, `::test_report_error_run_is_failed` |
+| S6 | When the outcome is `partial`, the limitations section naming each failed or partial task, each unanswered required question and any withheld findings is written by code from structured results and appended to the report; the report model is never asked to disclose it. When the outcome is `failed`, the report is empty and error text appears only in the failure fields. | `delivery.outcome.render_limitations`; `supervisor_tools` and `final_report_generation` | `::test_failed_task_makes_run_partial`, `::test_truncated_findings_make_run_partial`, `::test_no_finding_run_is_failed` |
+
+**Status:** Proposed. **Runtime monitor:** `false_complete_outcome_count == 0` (REQ-004 M-001).
 
 ## Adding an Entry
 

@@ -86,3 +86,24 @@ Copy the example for your module. At integration, check that responsibilities do
 | Must not depend on | e.g. `deep_researcher.py`, other extension modules, model clients in deterministic code |
 | Shared contracts | Types or state fields it reads or writes that other modules also use |
 | Configuration flag | `Configuration` field that switches the behaviour, and its default (§8) |
+
+### delivery (REQ-002, REQ-004, ADR-001)
+
+| Item | Constraint |
+|---|---|
+| Path | `src/open_deep_research/delivery/` (new subpackage; add `"open_deep_research.delivery"` to `[tool.setuptools] packages` in the same PR) |
+| Responsibility | Decide, without consulting a model, what becomes of each delegated research task (run, queue, fail with a category) and what outcome a run delivers (`complete` / `partial` / `failed`, with the failed-task list and a system-written limitations section) |
+| Public interface | `execution.run_delegations(*, specs, researcher, config, max_concurrent, research_model, unrun_reason="not_run") -> DelegationOutcome`; `execution.classify_task_error(exc, research_model) -> TaskFailure`; `execution.TaskRunRecord`, `execution.DelegationOutcome`, `execution.ResearcherCallable`; `outcome.evaluate_before_report(state) -> OutcomeDecision`; `outcome.evaluate_after_report(state, report, *, truncated) -> OutcomeDecision`; `outcome.render_limitations(...) -> str`; `outcome.OutcomeDecision` |
+| Called from | `supervisor_tools` and the `finalize` node in `src/open_deep_research/deep_researcher.py`; `final_report_generation` for the truncation signal. Nothing else may call it |
+| May depend on | `state.py`, `configuration.py`, `utils.py` (`is_token_limit_exceeded`), the standard library, `langchain_core.messages` (for building `ToolMessage`s), `langchain_core.runnables` (`RunnableConfig`) |
+| Must not depend on | `deep_researcher.py` (the researcher subgraph is passed in as a `ResearcherCallable`); any other extension module's private internals; model clients, `init_chat_model` or any network call inside the decision functions; storing or mutating `notes` text produced by the report model |
+| Shared contracts | Reads the orchestration-owned `TaskSpec`, `TaskResult`, `TaskFailure`, `derive_task_status` and the research exit reason (REQ-001, REQ-003, ADR-00X); writes `SupervisorState.failed_tasks`, `AgentState.failed_tasks`, `AgentState.research_outcome`. Any change here needs the orchestration owner's approval and an entry in blueprint §5 |
+| Configuration flag | `enforce_delivery_outcome: bool = False`. While `False` the baseline `supervisor_tools` behaviour and the baseline graph shape apply; while `True` `run_delegations`, the `finalize` node and the outcome fields are active. The default flips only when REQ-002 and REQ-004 are `verified` (§8.2) |
+
+Additional rules for this module:
+
+1. **Pure decisions.** `outcome.py` takes and returns plain mappings and performs no I/O; a test must be able to call each function without a graph, a checkpoint or a model (§7 of this document: the decision is deterministic).
+2. **No exception escapes `run_delegations`.** The only exception that may propagate is `asyncio.CancelledError`, so cancellation of the whole run is not swallowed.
+3. **One `TaskResult` per `TaskSpec`.** `run_delegations` asserts it before returning; a delegation without a result is a defect, not an acceptable state.
+4. **Notes are validated findings only.** Any string that came from an error, from an overflow message or from the compression placeholder must be attached to a `TaskResult`, never appended to `notes`.
+5. **No new model client.** Everything that calls a model stays in `deep_researcher.py`; this module receives already-produced text and already-raised exceptions.
