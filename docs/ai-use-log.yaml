@@ -162,3 +162,32 @@ entries:
       The member edited the announcement before sending it, and reviewed the commits and the PR
       description; merging waits for two other members' approvals.
     transcript: null
+
+  - id: AIU-008
+    date: "2026-11-15"
+    member: AlchemyHAN
+    purpose: >-
+      Draft the software architecture of the delivery module for REQ-002 and REQ-004.
+    prompt: >-
+      I own REQ-002 and REQ-004. From main, create the branch docs/sa-delivery and complete the
+      SA documents for the delivery module: ASR, an ADD entry with 2-3 candidates, an ADR whose
+      implementation steps a coding agent can follow, and the module sections of the shared
+      architecture and constraint documents. List test cases only, no test code.
+    requirements: [REQ-002, REQ-004]
+    artifacts:
+      - docs/architecture/evaluation-table.md
+      - docs/architecture/adr/001-task-failure-isolation.md
+      - docs/architecture/adr/002-finalize-node-run-outcome.md
+      - docs/architecture/invariants.md
+      - docs/architecture/memory-design.md
+      - docs/architecture/runtime-policy-catalog.md
+      - docs/architecture/trace-matrix.md
+      - docs/architecture/risk-list.md
+      - docs/code-governance/structural-constraints.md
+      - docs/code-governance/verification-constraints.md
+    supervision: >-
+      The member chose the delivery scope, both candidate-solution decisions and the new
+      invariant, then reviewed the drafts in three review rounds and had the AI correct a
+      module-to-module dependency, a duplicated state field, a finalize loop and several
+      inconsistencies between the ADR decisions and their implementation steps.
+    transcript: transcripts/60705556_HAN Peilin.md
