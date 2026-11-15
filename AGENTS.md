@@ -13,7 +13,7 @@ Two kinds of agent appear in this repository and must not be confused:
 
 | Term | Meaning | Governed by |
 |---|---|---|
-| **Coding agent** | The Plan, Test Author, Build and Verify roles that change this repository | this file, `Prompt.md`, `.opencode/rules.md`, `docs/architecture/permission-model.md` |
+| **Coding agent** | The Architect, Test Author, Build and Verify roles that change this repository | this file, `Prompt.md`, `.opencode/rules.md`, `docs/architecture/permission-model.md` |
 | **Research agent** | The runtime `supervisor` and `researcher` inside Open Deep Research, i.e. the product being improved | `docs/architecture/architecture-blueprint.md`, `docs/architecture/invariants.md`, `docs/architecture/runtime-policy-catalog.md` |
 
 ## 2. Reading Order

@@ -7,7 +7,7 @@
 
 ## Tools
 
-| Tool | Plan | Test Author | Build | Verify |
+| Tool | Architect | Test Author | Build | Verify |
 |---|---|---|---|---|
 | `read` | allow, except secrets | allow, except secrets | allow, except secrets | allow, except secrets |
 | `edit` (`write`, `edit`, `apply_patch`) | allow; deny on code and tests | allow on tests and docs; deny on other code | allow; deny on `test/offline/`, `test/live/` | allow; deny on code and tests |
