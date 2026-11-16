@@ -24,7 +24,7 @@ Every entry uses the same fields:
 - **Status:** Proposed
 - **Enforcing component:** `plan_trim()` in `src/open_deep_research/context/trimming.py`, reached through `compress_with_recovery()` in `context/recovery.py` from the token-limit branch of `compress_research` (`deep_researcher.py` L511-585). The protected region is computed from message types by `segment_turns()` in `context/messages.py`.
 - **Verification:** `test/offline/test_context_compaction.py::test_oldest_turns_removed_first`, `::test_no_orphan_tool_messages`; monitors `latest_turn_preservation_rate == 1.0` and `orphan_tool_message_count == 0`, computed from the same helpers.
-- **Fallback:** remove whole turns from the oldest end; if the limit still cannot be met, end the task with a failed result of category `token_limit`. Never drop the latest turn and never return placeholder text as a summary.
+- **Fallback:** remove whole turns from the oldest end, continuing until no removable turn is left; if the limit still cannot be met, end the task with a failed result of category `token_limit` carried by the declared `ResearcherOutputState.research_outcome` field. Never drop the latest turn, never return placeholder text as a summary on the new path, and never re-raise out of the researcher subgraph, because `asyncio.gather` would discard every parallel researcher's result.
 
 ## INV-002 — No failure is reported as complete research
 

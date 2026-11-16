@@ -44,17 +44,17 @@ Severity: **High** = the requirement's fit criterion can fail without any other 
 - **Assumption:** the preamble is position 0 (the topic `HumanMessage`), the instruction is the last `HumanMessage`, and every `ToolMessage` belongs to the `AIMessage` that precedes it. `segment_turns` groups by these positional rules.
 - **Why it may fail:** a change upstream that inserts a message before the topic (for example a REQ-001 task specification as a second `SystemMessage`), or a native web-search call that yields tool results without `tool_calls` on the AI message (`openai_websearch_called`, `anthropic_websearch_called`), breaks the grouping. Then a turn boundary is misidentified and trimming could cut inside a turn.
 - **Severity:** High if it happens silently — it would violate INV-001's "no orphan" clause without an error.
-- **Mitigation:** the malformed-block rule keeps an unclaimed `ToolMessage` block in the protected region instead of removing it (ADR-005 §3(a)); TC-003 covers a malformed trailing block; the orphan monitor is computed from the same helpers.
+- **Mitigation:** the orphan rule keeps an `AIMessage`-less `ToolMessage` in the protected region instead of removing it (ADR-005 §3(a)); TC-003 covers an orphan `ToolMessage` whose `tool_call_id` matches no `AIMessage`; the orphan monitor is computed from the same helpers.
 - **Re-evaluation condition:** REQ-001 lands a task specification in `researcher_messages`, or `utils.py` changes how native web-search results are appended. Either trigger reopens the ADD round for how the protected region is located (pass it explicitly from the node instead of inferring it).
 
 ## RISK-003 — Some providers may report token limits in ways pattern matching cannot see
 
 - **Module:** context
 - **Source:** REQ-005 C-003; ADR-005 §3(c); POL-001
-- **Assumption:** `utils.is_token_limit_exceeded` plus the wrapper's cross-provider retry recognise token-limit errors for every provider the project supports (`openai`, `anthropic`, `gemini`/`google`, and Bedrock-routed models).
-- **Why it may fail:** the checkers match exception class names and message keywords (`utils.py` L703-785). A provider that returns a 413, a GraphQL-truncation detail, or a local Ollama server message is not matched, so the wrapper reports "not a token limit", POL-003 re-raises, and the task fails through REQ-002 instead of recovering.
+- **Assumption:** `utils.is_token_limit_exceeded` recognises token-limit errors for every provider the project supports (`openai`, `anthropic`, `gemini`/`google`, and Bedrock-routed models) once it is given the model that actually made the call (`compression_model`).
+- **Why it may fail:** the checkers match exception class names and message keywords (`utils.py` L703-785). A provider that returns a 413, a GraphQL-truncation detail, or a local Ollama server message is not matched, so `classify_token_limit` returns `False` and POL-003 treats the error as a transient non-token error: the request is retried unchanged until the budget is spent, then the task fails with a category owned by REQ-001, without ever trimming. The recovery that REQ-005 promises therefore does not happen for that provider. The classifier deliberately does not fall back to other providers' patterns, because that fallback would let `_check_openai_token_limit`'s unguarded `invalid_request_error` branch misclassify other providers (ADR-005 §3(c)).
 - **Severity:** Medium — recovery is lost, but the failure is visible and is not a silent data loss.
-- **Mitigation:** the wrapper also tries all provider patterns when the exception class disagrees with the model prefix, which covers the reported C-003 case; no silent conversion to a summary occurs.
+- **Mitigation:** passing `compression_model` covers the reported C-003 case (an Anthropic compression model beside an OpenAI research model), because the prefix then selects the correct checker; no silent conversion to a summary occurs on the new path.
 - **Re-evaluation condition:** any live run or user report shows a provider token-limit error classified as a non-token error. Then classification should move from message patterns to a provider-declared error code, which is a widening of REQ-005's scope and needs a requirement change.
 
 ## RISK-004 — REQ-001's task-result type may not accept a `token_limit` category
@@ -67,15 +67,14 @@ Severity: **High** = the requirement's fit criterion can fail without any other 
 - **Mitigation:** ADR-005 deliberately defines no second result type and records the shared-contract approval as a Gate 1 condition; the node's behaviour is isolated in one place so the mapping can change without touching `plan_trim`.
 - **Re-evaluation condition:** REQ-001's ADR is accepted. The context owner must then confirm the category name and the field layout, and update ADR-005 §5 and TC-006 if they differ. If they cannot be reconciled, escalate to SA Review rather than inventing a parallel type.
 
-## RISK-005 — Three attempts may be too few once turns are the unit
+## RISK-005 — Resolved: the attempt budget now covers every removable turn
 
 - **Module:** context
 - **Source:** REQ-005 C-004; POL-001, POL-002; ADR-005 §9 step 5
-- **Assumption:** removing one turn per attempt and retrying at most three times is enough, matching the baseline's `max_attempts = 3` (`deep_researcher.py` L541-542).
-- **Why it may fail:** each attempt costs a provider round-trip, and a history with six turns needs up to five removals. With one removal per attempt the loop exhausts the budget and returns `failed` / `token_limit` although a reducible history remained — an avoidable failure that still looks correct to C-004.
-- **Severity:** Medium — no invariant is violated, but research is lost that the design could have saved.
-- **Mitigation:** `max_removals_per_attempt` is a parameter defaulting to 1, and TC-001 uses a model that fails until two turns are gone, which forces the loop to prove it can reach that state.
-- **Re-evaluation condition:** a test or live run shows `TokenLimitExceeded` while `plan_trim` would still return a `TrimPlan`. Then raise `max_removals_per_attempt` or make removal geometric (halve the removable turns), which is an ADR amendment of a still-*Proposed* ADR, not a new ADR.
+- **Original concern:** removing one turn per attempt with a fixed budget of three retries could only ever remove two turns, so the loop would return `failed` / `token_limit` although a reducible history remained — an avoidable failure that still looked correct to C-004.
+- **Resolution:** the fixed `max_attempts = 3` was replaced by a budget derived from the history: the loop continues until the removable turns are exhausted, so `TokenLimitExceeded` is raised only when `plan_trim` returns `None`, exactly as C-004 requires. `TC-012` (`test_budget_covers_all_removable_turns`) asserts that N removable turns are all consumed before failure.
+- **Residual risk:** each attempt costs a provider round-trip, so a very long history may now take many calls instead of three. This is accepted: correctness under C-004 takes precedence over call count, and the cost is bounded by the number of turns.
+- **Re-evaluation condition:** a live run shows the removal loop dominating the research time. Then make removal geometric (halve the removable turns per attempt), which is an ADR amendment of a still-*Proposed* ADR, not a new ADR.
 
 ## RISK-006 — The behaviour flag may hide the improvement
 
@@ -87,15 +86,15 @@ Severity: **High** = the requirement's fit criterion can fail without any other 
 - **Mitigation:** TC-009 pins the default; the flip is a separate, explicitly numbered step (ADR-005 §9 step 12) with its own review; Definition of Done item 10 keeps the status at `verified` only after the flip.
 - **Re-evaluation condition:** any PR that changes the default without REQ-005 being `verified`, or any release that contains the flag still `False` after the requirement closed. The second case is a defect for `docs/bug-diary.md`, not a new risk.
 
-## RISK-007 — Fixing the consumer default may overlap another module's scope
+## RISK-007 — The baseline placeholder stays reachable when the flag is off
 
 - **Module:** context
-- **Source:** REQ-005 C-004; ADR-005 §2 defect 4, §9 step 10; INV-002
-- **Assumption:** the `supervisor_tools` default at `deep_researcher.py` L310 can be narrowed to a non-silent no-result message without taking over the handling of researcher exceptions, which REQ-002 (orchestration) owns.
-- **Why it may fail:** L310 sits in the same `try/except` block as the researcher failure branch (L332-342). A broad rewrite of the default can accidentally change what happens when the subgraph raises, and REQ-002 or REQ-004 may edit the same lines in the same integration cycle, producing a merge conflict or two competing policies for one message.
-- **Severity:** Medium — a scope overlap, not a data-loss path; the final report content is affected only when the key is already missing.
-- **Mitigation:** ADR-005 §9 step 10 fixes the wording of the default only and states explicitly that exception handling is out of scope; the success path is required to stay byte-identical; TC-010 asserts both branches.
-- **Re-evaluation condition:** review rejects the L310 change as out of scope, or REQ-002's ADR assigns a different behaviour to a missing `compressed_research`. Then withdraw step 10 and keep only the L582-585 removal, and record the resulting gap as a note for REQ-002's owner.
+- **Source:** REQ-005 C-004; ADR-005 §2 defect 4, §3 "Behaviour switch", §9 step 10
+- **Assumption:** it is acceptable for `context_trimming = False` to keep both baseline placeholder sites (the node literal at L583 and the `supervisor_tools` default at L310) reachable, because the flag exists to preserve the pre-fix behaviour for A/B comparison.
+- **Why it may fail:** the flag is introduced for comparison, but if it stays `False` longer than expected, users see none of the REQ-005 improvement and the `token_limit` placeholder route stays open in production. Conversely, if someone "fixes" L310 while the flag is off, the baseline is no longer byte-identical and the A/B comparison loses its reference point.
+- **Severity:** Medium — the defect is known and bounded; the failure text is misleading rather than data-destroying on the new path, but it is a safety-relevant requirement left unfixed while the flag is off.
+- **Mitigation:** the new path (`True`) cannot reach either site, because the node returns the declared `research_outcome` field instead of omitting `compressed_research`; TC-010/TC-011 assert both the field and the consumer behaviour; the flag flip is a scheduled step (ADR-005 step 13) in the PR that marks REQ-005 `verified`.
+- **Re-evaluation condition:** SA Review requires the placeholder gone regardless of the flag, or the flag is still `False` after REQ-005 is `verified`. Then withdraw the flag-preservation rule and remove both sites unconditionally, accepting that the A/B comparison is no longer possible.
 
 ## Retired or Accepted Risks
 
