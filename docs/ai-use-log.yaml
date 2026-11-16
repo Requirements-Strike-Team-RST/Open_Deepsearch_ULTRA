@@ -187,7 +187,46 @@ entries:
       - docs/code-governance/verification-constraints.md
       - docs/ai-use-log.yaml
     supervision: >-
-      Pending human review. The member directed the ADD iterations and the design choices, and the
-      output is Proposed until SA Review. No test was run, no review or approval is claimed, and
-      the unresolved decisions U-1 to U-4 in ADR-001 §12 still need the team's decision.
+      The member directed the ADD iterations and selected the
+      centralized pure validator design after comparing candidate
+      architectures. The initial documents were reviewed against
+      REQ-007 and the source code. Subsequent refinements are
+      recorded in AIU-009. The architecture remains Proposed
+      pending SA Review.
     transcript: transcripts/60725623-ChensihanLIU.md
+
+
+      - id: AIU-009
+        date: "2026-11-16"
+        member: sszfot
+        purpose: >-
+          Review and refine the proposed REQ-007 software architecture,
+          including configuration validation, MCP runtime handling,
+          module boundaries, and verification coverage.
+        prompt: >-
+          Audit and refine ADR-001 and the related REQ-007 architecture
+          artifacts against the existing implementation and acceptance
+          criteria. Correct environment precedence and configuration
+          snapshot handling, clarify MCP loading responsibilities,
+          strengthen the search capability predicate, and expand the
+          verification matrix. Keep all unresolved decisions open and
+          make no implementation or test changes.
+        requirements: [ REQ-007 ]
+        artifacts:
+          - docs/architecture/adr/001-search-configuration-validation.md
+          - docs/architecture/evaluation-table.md
+          - docs/architecture/invariants.md
+          - docs/architecture/runtime-policy-catalog.md
+          - docs/architecture/trace-matrix.md
+          - docs/code-governance/structural-constraints.md
+          - docs/code-governance/verification-constraints.md
+        supervision: >-
+          The member reviewed the architecture changes, requested
+          corrections to the configuration snapshot and MCP dependency
+          boundaries, and checked documentation consistency.
+          The Markdown diff check passed. The verification matrix
+          defines 26 test cases, but tests were not executed.
+          ADR-001 remains Proposed and U-1 through U-5 remain open
+          pending SA Review.
+        transcript: transcripts/60725623-ChensihanLIU-AIU009.md
+
