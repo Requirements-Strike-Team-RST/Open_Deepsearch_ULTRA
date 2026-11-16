@@ -92,12 +92,12 @@ Copy the example for your module. At integration, check that responsibilities do
 | Item | Constraint |
 |---|---|
 | Path | `src/open_deep_research/search/` |
-| Responsibility | Statically decide whether a search configuration is usable before research, without model or network calls; classify MCP capability from configuration only (Proposed, pending SA Review). |
-| Public interface | `validate_search_configuration(configurable: Configuration) -> None` (raises a domain error); `classify_mcp(mcp: MCPConfig \| None) -> MCPStatus`; `model_provider(model: str) -> str` |
-| Called from | `clarify_with_user` and `researcher` in `deep_researcher.py`, as their first statement before any model/search call |
-| May depend on | `configuration.py` (`Configuration`, `SearchAPI`, `MCPConfig`) |
-| Must not depend on | `deep_researcher.py`, `utils.py`, other extension modules, model clients, the MCP client |
-| Shared contracts | None: reads `Configuration`/`MCPConfig`; reads no state field and writes none |
+| Responsibility | Resolve and validate a search configuration on each run before a model/search call, decide whether a run has search capability, and classify the MCP load outcome, without model calls or implicit process-environment access during static validation; apply the runtime MCP stop-and-error policy (Proposed, pending SA Review). |
+| Public interface | `resolve_search_api(raw_configurable, environ: Mapping) -> SearchAPI` (pure; caller passes the environment snapshot); `resolve_configuration(raw_configurable, environ) -> Configuration` (builds from validated effective inputs, §7.2); `validate_search_configuration(search_api, research_model, mcp) -> None` (raises a domain error); `classify_mcp(mcp: MCPConfig \| None) -> MCPStatus`; `model_provider(model: str) -> str`; `load_mcp_result(config, existing_tool_names) -> McpLoadResult` (MCP load distinction, §8.1a; U-5); `has_search_capability(evidence: SearchEvidence) -> bool` (evaluated after binding, step 4) |
+| Called from | `clarify_with_user` (public boundary: effective configuration resolution and static validation only — no tool assembly, MCP loading or native binding) and `researcher` (subgraph boundary, which runs the §8.0 order: validate → assemble → bind → capability → invoke) in `deep_researcher.py` |
+| May depend on | `configuration.py` (`Configuration`, `SearchAPI`, `MCPConfig`); an explicit environment snapshot passed by the caller. MCP loading follows the chosen U-5 option: Option A — the module owns the load and does **not** import `utils.load_mcp_tools`; Option B — `utils.load_mcp_tools` (produced by orchestration) yields `McpLoadResult` that is **passed in**, so the module consumes the value and neither imports nor invokes the runtime loader |
+| Must not depend on | `deep_researcher.py`, other extension modules, model clients; private LangChain internals; implicit `os.environ` reads; global environment mutation; and, under either option, the `search` module never invokes the runtime MCP loader |
+| Shared contracts | None: reads `Configuration`/`MCPConfig` and the assembled tool list as an argument; reads no state field and writes none |
 | Configuration flag | None: baseline behaviour is preserved and no new `Configuration` field is added |
 
-REQ-008 (search fallback) will also live in this module and is designed separately; this section covers REQ-007 only. Runtime MCP loading failure is an open decision (ADR-001 §12 U-1) and is not enforced here.
+REQ-008 (search fallback) will also live in this module and is designed separately; this section covers REQ-007 only. Two call sites are intentional: `clarify_with_user` is the public boundary, and `researcher` is required because the researcher subgraph is compiled and directly invokable (ADR-001 §2.2, §10). `supervisor` binds no search tool and `researcher_tools` is reached only after `researcher` validated, so neither needs a check.

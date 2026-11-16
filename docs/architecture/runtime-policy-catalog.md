@@ -21,10 +21,10 @@ Copy the example for your module and number policies with the next free `POL-NNN
 |---|---|---|---|---|---|---|---|
 | POL-NNN | e.g. a researcher raises an exception | how deterministic code recognises it | what the system does | retries, limits, fallback, or none | effect on the run outcome (`complete`, `partial`, `failed`, REQ-004) | REQ-NNN / INV-NNN | `test/offline/<file>::<test>` |
 
-### search (REQ-007, ADR-001) — deferred, not approved
+### search (REQ-007, ADR-001) — proposed, awaiting approval
 
-The entries below record an open question. They are **not** approved policies and must not be implemented until SA Review and the human decide them.
+The entries below are **proposed** and are not approved until SA Review and the human decide them (ADR-001 §9, U-1). They introduce no fallback behaviour; fallback belongs to REQ-008 and is out of scope. Implementation **depends** on the MCP load adapter or refactor in ADR-001 §8.1a (U-5): the current `load_mcp_tools` returns an empty list for every failure, so the three failure states are not distinguishable today.
 
 | Policy ID | Trigger | Detection | Behaviour | Retry / degradation | Outcome effect | Source | Test |
 |---|---|---|---|---|---|---|---|
-| POL-DEF-001 | `mcp_config` is a valid declaration (`MCP_DECLARED`) but `utils.load_mcp_tools` returns zero tools at runtime, while `search_api=none` | `get_all_tools` yields only `ResearchComplete`/`think_tool` although a valid MCP declaration exists | TBD — no guard implemented (ADR-001 §12 U-1); today the run proceeds with no search | None | TBD | REQ-007 / INV-005 (Proposed) | none yet |
+| POL-002 | A declared MCP is the effective search source (`search_api=none` with `MCP_DECLARED`) and cannot provide a usable search tool at runtime | `McpLoadResult.status` is `LOAD_FAILED` (connection/loading failure), `ZERO_USABLE_TOOLS` (loaded but none match), or `AUTH_MISSING` (required token unresolvable). Requires the ADR-001 §8.1a adapter/refactor (U-5); not available in the current `load_mcp_tools` | Stop the affected research and raise an explicit error naming the cause (and `mcp_config.url`); no source substitution | None | Research for the affected task fails explicitly; no silent no-search run; a `LOADED` tool that returns no hits is not this policy and remains a success | REQ-007 / INV-005 (Proposed) | planned: `test/offline/test_search_configuration.py` (TC-016, TC-017, TC-018, TC-024) |

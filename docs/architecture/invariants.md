@@ -58,13 +58,13 @@ Every entry uses the same fields:
 
 ## INV-005 — Search results are never mistaken for evidence they do not contain
 
-- **Statement:** Every search source is reached through the single tool entry point and returns the same result contract; an unsupported search provider, a native provider paired with a `research_model` of another provider, or a configuration with no search and no valid MCP tool declaration is rejected before any model or search call (ADR-001, Proposed); a statically declared MCP capability is not proof of runtime availability; an invalid result is a failed search, and an empty result is a successful search that carries no evidence.
+- **Statement:** On every run, before any model or search call, a search configuration that names an unsupported provider, pairs a native provider with a `research_model` of another provider, or leaves no search and no valid MCP declaration is rejected. A statically declared MCP that cannot provide a usable search tool at runtime fails that research explicitly, while a search that returns no results is a successful search that carries no evidence.
 - **Module:** search
 - **Source:** REQ-007, REQ-008
 - **Status:** Proposed
-- **Enforcing component:** a pure search-configuration validator in `search/` called from `clarify_with_user` and `researcher` before any model/search call (ADR-001, Proposed); the search adapter called through `utils.get_all_tools()`. Runtime MCP loading failure is an open decision (ADR-001 §12 U-1) and is not yet enforced.
-- **Verification:** `test/offline/test_search_configuration.py`, `test/offline/test_search_fallback.py` with fake providers (normal, empty, timeout, invalid, unknown).
-- **Fallback:** on an eligible error, try only the configured fallback sources in order and record each attempt; when all fail, return an explicit search failure. Never substitute a source that is not configured.
+- **Enforcing component:** the pure search-configuration validator and search-capability predicate in `search/`, called from `clarify_with_user` and `researcher` (ADR-001, Proposed); the runtime MCP failure policy `POL-002` (Proposed; ADR-001 §9, U-1). The search adapter is reached through `utils.get_all_tools()`.
+- **Verification:** `test/offline/test_search_configuration.py`, `test/offline/test_search_fallback.py` with fake providers (normal, empty, timeout, invalid, unknown); see ADR-001 §11 and `verification-constraints.md` §7.
+- **Fallback:** on an eligible error, try only the configured fallback sources in order and record each attempt; when all fail, return an explicit search failure. Never substitute a source that is not configured. (Fallback behaviour itself is REQ-008 and out of REQ-007 scope.)
 
 ## Adding an Entry
 
