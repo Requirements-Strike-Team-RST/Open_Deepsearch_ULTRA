@@ -70,7 +70,7 @@ The full comparison is in EVAL-001.
 | Component | Responsibility | Interface (signature or type) | Called by |
 |---|---|---|---|
 | `state.py` (shared) | Home of the task contract and the field that carries the results across the subgraph boundary | `TaskSpec`, `TaskResult`, `TaskFailure`, `derive_task_status`; `SupervisorState.task_results` / `AgentState.task_results` (ADR-002 §3.2) | `delivery/`, `orchestration/`, `deep_researcher.py` |
-| `delivery/execution.py` | Own the fan-out: bound concurrency, isolate failures, join every task, emit one `TaskResult` per `TaskSpec` | `async run_delegations(*, specs, researcher, config, max_concurrent, research_model, unrun_reason="not_run") -> DelegationOutcome` | the fan-out region of `supervisor_tools` |
+| `delivery/execution.py` | Own the fan-out: bound concurrency, isolate failures, join every task, emit one `TaskResult` per `TaskSpec` | `async run_delegations(*, specs, researcher, config, max_concurrent, research_model, unrun_reason="not_run") -> DelegationOutcome` | the fan-out region of `supervisor_tools`; orchestration's early-return branch, with `unrun_reason="not_run"` only (§3.4) |
 | `delivery/execution.py` | Categorise an exception deterministically | `classify_task_error(exc: BaseException, research_model: str) -> TaskFailure` | `run_delegations` |
 | `delivery/execution.py` | Per-task bookkeeping for scheduling and the drop metric | `TaskRunRecord` (dataclass: `task_id`, `spec`, `state` ∈ {`queued`, `running`, `done`}, `result`) | `run_delegations`; tests |
 | `delivery/execution.py` | Return value of the fan-out | `DelegationOutcome` (dataclass: `records`, `results`, `notes`, `failures`; property `dropped_count` = the number of specs that have **no terminal `TaskResult` at all**) | the fan-out region of `supervisor_tools` |
@@ -91,7 +91,7 @@ Shared contracts changed (`structural-constraints.md` §6): `TaskSpec`, `TaskRes
 ## 6. State, Failure Handling and Deterministic Boundary
 
 - **State:** `task_results` is written from this module's fan-out region (field defined with orchestration, ADR-002 §3.2). No other state is added by this ADR; `failed_tasks` is derived by ADR-002's `finalize`. `DelegationOutcome` and `TaskRunRecord` are in-process values of a single node execution.
-- **Runtime policies:** POL-001 (researcher raises), POL-002 (researcher token limit), POL-003 (delegation above the concurrency limit), POL-004 (delegation left unrun at loop exit). POL-005 to POL-007 belong to ADR-002. Details in `runtime-policy-catalog.md` §2 (delivery).
+- **Runtime policies:** POL-001 (researcher raises), POL-002 (researcher token limit), POL-003 (delegation above the concurrency limit), POL-004 (delegation left unrun at loop exit), POL-008 (run cancelled: `asyncio.CancelledError` propagates and is never a task result). POL-005 to POL-007 and POL-009 belong to ADR-002. Details in `runtime-policy-catalog.md` §2 (delivery).
 - **Invariants:** INV-002 conditions S1–S4 (failure isolation, sibling results kept, join, notes separation) and INV-006 (every delegation ends with a terminal result). Details in `invariants.md`.
 - **Deterministic boundary:** which task fails, with which error category, and whether a delegation ran at all are decided by `classify_task_error` and `run_delegations` from exceptions and records — never from model output.
 

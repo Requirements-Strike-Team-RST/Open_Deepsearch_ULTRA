@@ -57,7 +57,7 @@ Baseline edges kept verbatim: `START → clarify_with_user`, `clarify_with_user 
 
 **3.4 Routing uses `Command` only.** `finalize` decides its destination by returning `Command(goto=...)`, exactly as `clarify_with_user` (L77) and `researcher_tools` (L464) already do. There is **no** `route_after_finalize` function, no `add_conditional_edges`, and no `finalize → END` edge: those would be a second place deciding the same thing, and a later edit could update one and forget the other. The only edges `finalize` participates in are the one coming in from `research_supervisor`, the one coming in from `final_report_generation`, and the ones its `Command` declares.
 
-**3.5 The flag cannot select a topology.** Because of the import-time compilation, `finalize` is always in the graph. `Configuration.enforce_delivery_outcome` changes behaviour only: while it is `False`, `finalize` is a transparent pass-through (`goto="final_report_generation"` on the first pass with only the marker, and `goto=END` with the report unchanged on the second), so the baseline behaviour and results are preserved. There is no second graph to maintain and no build-time switch.
+**3.5 The flag cannot select a topology.** Because of the import-time compilation, `finalize` is always in the graph. `Configuration.enforce_delivery_outcome` changes behaviour only: while it is `False`, `finalize` is a transparent pass-through (`goto="final_report_generation"` on the first pass with only the marker, and `goto=END` with the report unchanged on the second), so the control flow and the report content match the baseline. The run output still differs in two visible ways: `run_finalized` is written, and `finalize` executes twice per run. There is no second graph to maintain and no build-time switch.
 
 **3.6 The outcome rule.** `evaluate_before_report` applies the rule in this order, which is INV-002 condition **S5** restated with each step named:
 
@@ -65,7 +65,7 @@ Baseline edges kept verbatim: `START → clarify_with_user`, `clarify_with_user 
 2. `complete` when the exit reason is `covered` **and** every task result is `complete` **and** no finding was withheld by the system.
 3. `partial` otherwise — exit reason `budget_exhausted` or `stalled`, some task result not `complete`, or findings withheld.
 
-`evaluate_after_report` folds in the report stage: a non-empty `report_error` makes the outcome `failed`; `report_truncated` makes it `partial`; an outcome already `failed` stays `failed`. `render_limitations` writes the section from structured results and is not called when the outcome is `failed` (POL-007).
+`evaluate_after_report` folds in the report stage: a non-empty `report_error` makes the outcome `failed`; otherwise `report_truncated` makes it `partial`; an outcome already `failed` stays `failed`. `report_error` is checked first, so truncation whose retries ran out without a report is `failed`, not `partial` (POL-009). `render_limitations` writes the section from structured results and is not called when the outcome is `failed` (POL-007).
 
 **3.7 Limitation, recorded deliberately.** "No finding was left out of the report" is checked only for findings the system withheld itself, because truncation happens in `final_report_generation` and is reported through `report_truncated`. Whether the report model paraphrased or omitted a finding it was given is not parsed out of the report body; deterministic checking of generated reports is out of scope for REQ-006 and is not widened here. Recorded as RISK-001.
 
@@ -103,7 +103,7 @@ The full comparison is in EVAL-002.
 | `failed_tasks` | `list[dict]` | one entry per failed or unrun task: `task_id`, `reason`, `category`, `message`; derived from `task_results` |
 | `unanswered` | `list[str]` | required questions no validated finding answered (empty when orchestration does not provide them) |
 | `reason_code` | `str` | the exit reason or report-stage cause that produced the decision, e.g. `covered`, `budget_exhausted`, `stalled`, `no_finding`, `report_error`, `report_truncated` |
-| `update` | `dict` | the state update `finalize` applies: `research_outcome`, `final_report`, and on the first pass `failed_tasks` as `{"type": "override", "value": [...]}` |
+| `update` | `dict` | the state update `finalize` applies: `research_outcome` and `final_report`; on the first pass also `run_finalized: True` and `failed_tasks` as `{"type": "override", "value": [...]}`, on both the `report_allowed` and the failed branch (§3.3). The second pass writes neither. Leaving `run_finalized` out of the first-pass `update` makes `finalize` loop until the recursion limit (§9 step 3) |
 
 Both functions are **pure**: they take a mapping, return a decision, mutate no argument and perform no I/O. `finalize` never derives an outcome itself; it only routes and merges `update`.
 
@@ -122,7 +122,7 @@ Shared contracts changed (`structural-constraints.md` §6): `SupervisorState.tas
 ## 6. State, Failure Handling and Deterministic Boundary
 
 - **State:** `task_results` (both states, `operator.add`), plus the five `AgentState` fields of §3.3 and §3.5. Details in `memory-design.md` §5 (delivery).
-- **Runtime policies:** POL-005 (report model raises), POL-006 (findings truncated), POL-007 (no validated finding). POL-001 to POL-004 belong to ADR-001. Details in `runtime-policy-catalog.md` §2 (delivery).
+- **Runtime policies:** POL-005 (report model raises), POL-006 (findings truncated, report generated), POL-007 (no validated finding), POL-009 (truncation retries exhausted or token limit unknown: `failed` via `report_error`). POL-001 to POL-004 and POL-008 belong to ADR-001. Details in `runtime-policy-catalog.md` §2 (delivery).
 - **Invariants:** INV-002 conditions S5 (outcome rule) and S6 (system-written limitations section).
 - **Deterministic boundary:** `complete` / `partial` / `failed`, whether the report model may be called, and the text of the limitations section are decided by `delivery/outcome.py` from structured state. The report model's text is data appended to, never a source of, those decisions.
 
@@ -136,6 +136,7 @@ Shared contracts changed (`structural-constraints.md` §6): `SupervisorState.tas
 | REQ-004 C-004 | No validated finding: `failed`, the report model not called, `final_report` empty, no limitations section | `test/offline/test_run_outcome.py` |
 | REQ-004 C-005 | `report_error` set: `failed`, `final_report` empty, no error text in the report field | `test/offline/test_run_outcome.py` |
 | REQ-004 C-006 | `report_truncated` set: `partial` with a limitations line about left-out findings | `test/offline/test_run_outcome.py` |
+| POL-009 | Truncation retries exhausted, so `report_truncated` and `report_error` are both set: `failed`, not `partial`, with `final_report` empty (TC-004-15) | `test/offline/test_run_outcome.py` |
 | INV-002 S5, S6 | The outcome rule and the single appended limitations section; TC-004-01 to TC-004-09 | `test/offline/test_run_outcome.py` |
 | `task_results` crosses the boundary | A subgraph output carrying task results is visible to `finalize`; without the field, `evaluate_before_report` sees nothing (TC-004-12) | `test/offline/test_run_outcome.py` |
 | Pass marker | A failed report (empty `final_report`) still detected as the second pass (TC-004-11) | `test/offline/test_run_outcome.py` |
@@ -162,7 +163,7 @@ Shared contracts changed (`structural-constraints.md` §6): `SupervisorState.tas
 
 **Neutral**
 
-- With `enforce_delivery_outcome=False` the observable behaviour is the baseline, at the cost of one extra node execution per run.
+- With `enforce_delivery_outcome=False` the control flow and the report content match the baseline. The run is not byte-identical: `AgentState` gains `run_finalized`, and `finalize` executes twice per run. Baseline regression tests therefore compare the fields they care about (`final_report`, `messages`, `notes`, the node order apart from `finalize`), not the whole state.
 
 ## 9. Implementation Steps
 
@@ -174,13 +175,13 @@ The coding agent implements these in order.
 
 3. **Create `delivery/outcome.py`** with `OutcomeDecision` (the six fields of §5) and the three functions. Docstring names `REQ-004, ADR-002, INV-002`.
    - `evaluate_before_report(state)`: apply the ordered rule of §3.6 exactly. Read the exit reason, `task_results` and the validated findings from the mapping; derive `failed_tasks` from the task results; set `report_allowed` to `False` only for the two `failed` cases; put `research_outcome`, `final_report` (empty on failure), `run_finalized: True` and, on the first pass, `failed_tasks` as `{"type": "override", "value": [...]}` into `update`. **The first pass must write `run_finalized: True`**, in both the `report_allowed` and the failed branch; otherwise `finalize` cannot tell the second pass from the first and loops between itself and `final_report_generation` until LangGraph's recursion limit.
-   - `evaluate_after_report(state)`: read `report_error` and `report_truncated`; a non-empty `report_error` gives `failed`, `report_truncated` gives `partial`, an already-`failed` outcome stays `failed`; call `render_limitations` only when the outcome is `partial`; put `research_outcome` and `final_report` into `update`. It does not need to write `run_finalized`, which the first pass already set.
+   - `evaluate_after_report(state)`: read `report_error` and `report_truncated`; a non-empty `report_error` gives `failed` and is checked first, otherwise `report_truncated` gives `partial`, an already-`failed` outcome stays `failed`; call `render_limitations` only when the outcome is `partial`; put `research_outcome` and `final_report` into `update`. It does not need to write `run_finalized`, which the first pass already set.
    - `render_limitations(outcome, results, unanswered, truncated)`: build the section from the failed and partial task results, the unanswered questions and `truncated`; it must contain no model-generated text and must not be produced when the outcome is `failed`.
    - All three are pure: return a new decision, mutate no argument, no I/O, no model client, no import from another extension module.
 
 4. **Add the delivery package skeleton** if ADR-001 has not already: `src/open_deep_research/delivery/__init__.py` exporting `evaluate_before_report`, `evaluate_after_report`, `render_limitations`, `OutcomeDecision`, and add `"open_deep_research.delivery"` to `packages` in `pyproject.toml`.
 
-5. **Write the report-stage signals** in `final_report_generation` (`deep_researcher.py`): on the truncation branch return `report_truncated=True` instead of only cutting `findings`; on a non-token-limit error return `report_error=str(e)` with `final_report=""` instead of error text as the report; on the "maximum retries exceeded" path set `report_error` too; on success return `report_truncated=False` and `report_error=""`. Keep the existing retries and the `enforce_delivery_outcome` guard so the baseline return value is unchanged while the flag is off.
+5. **Write the report-stage signals** in `final_report_generation` (`deep_researcher.py`): on the truncation branch return `report_truncated=True` instead of only cutting `findings`; on a non-token-limit error return `report_error=str(e)` with `final_report=""` instead of error text as the report; on the "maximum retries exceeded" path (L692-697) and the unknown-token-limit branch (L669-674) set `report_error` with `final_report=""` too (POL-009); on success return `report_truncated=False` and `report_error=""`. Keep the existing retries and the `enforce_delivery_outcome` guard so the baseline return value is unchanged while the flag is off.
 
 6. **Add the `finalize` node** to `deep_researcher.py`. Read the pass from `state.get("run_finalized", False)`; never infer it from `final_report`. Return `Command(goto="final_report_generation")` on the first pass when `report_allowed`, and `Command(goto=END)` otherwise, merging `OutcomeDecision.update` into the command's update. Because `evaluate_before_report` now puts `run_finalized: True` into its `update`, the first pass always sets the marker whichever branch it takes; do not set it separately in the node for the flag-on path, or the two writers will drift. When `enforce_delivery_outcome` is `False`, skip `delivery/outcome.py` entirely and return `Command(goto="final_report_generation", update={"run_finalized": True})` on the first pass and `Command(goto=END)` with the state unchanged on the second. Do **not** add a router function or a conditional edge.
 
