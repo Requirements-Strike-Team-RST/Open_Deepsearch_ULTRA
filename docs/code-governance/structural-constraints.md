@@ -99,7 +99,7 @@ Copy the example for your module. At integration, check that responsibilities do
 |---|---|
 | Path | `src/open_deep_research/citations/` |
 | Responsibility | Hold the single source of truth for the research prompts' citation format as text constants only. |
-| Public interface | `contract.CITATION_RULES_BLOCK`, `contract.SOURCES_SECTION_SPEC`, `contract.RENUMBER_ACROSS_FINDINGS_INSTRUCTION` (all `str`, text only, no functions) |
+| Public interface | `contract.CITATION_RULES_BLOCK`, `contract.SOURCES_SECTION_POINTER`, `contract.RENUMBER_ACROSS_FINDINGS_INSTRUCTION` (all `str`, text only, no functions) |
 | Called from | `prompts.py` (module import; interpolated at module load), reached from `deep_researcher.py` → `prompts.py` |
 | May depend on | Standard library only (no project module needs to be imported by text constants) |
 | Must not depend on | `deep_researcher.py`, `state.py`, `configuration.py`, `utils.py`, model clients, or any other extension module |

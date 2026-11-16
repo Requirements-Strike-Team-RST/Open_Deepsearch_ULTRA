@@ -73,7 +73,7 @@ Every entry uses the same fields:
 - **Source:** REQ-006
 - **Status:** Proposed
 - **Enforcing component:** `src/open_deep_research/citations/contract.py` as the single source of truth, interpolated into both prompts in `prompts.py` (ADR-001).
-- **Verification:** `test/offline/test_prompt_citation_contract.py` (C-001, C-002, C-003); live check `test/live/test_report_citations_live.py` (C-004) monitors renumbering in generated reports.
+- **Verification:** `test/offline/test_prompt_citation_contract.py` (C-001, C-002, C-003, the format-safety guard `test_assembled_prompts_format_without_leftover_placeholders`, and the negative test `test_format_checks_detect_violations`); live check `test/live/test_report_citations_live.py` (C-004) monitors renumbering in generated reports.
 - **Fallback:** a CI failure of the offline inspection tests blocks the merge; revert to the last green prompt version. Renumbering correctness in generated reports is monitored, not enforced.
 
 ## Adding an Entry

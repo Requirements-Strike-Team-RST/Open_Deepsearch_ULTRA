@@ -65,51 +65,78 @@ sites stay unchanged.
 **Canonical constants in `src/open_deep_research/citations/contract.py`** (module docstring
 names `REQ-006, ADR-001`; strings only, no functions, no imports of model or graph code):
 
-- `CITATION_RULES_BLOCK` — the canonical Citation Rules block, a Markdown fragment that states
-  exactly one format with this content and no competing instruction:
-  - a citation is a number in square brackets, e.g. `[1]`, placed inline against the statement
-    it supports;
-  - each unique URL has exactly one number;
-  - the numbered sources section is headed exactly `### Sources` and lists one line per
-    source as `[n] Title: URL`, numbered sequentially without gaps starting at `1`.
-  It contains **no** `[Title](URL)` instruction and **no** "List of All Relevant Sources" label.
-- `SOURCES_SECTION_SPEC` — the section-specification fragment: heading `### Sources`, one line
-  per cited source, `[n] Title: URL`, each cited URL listed exactly once, numbering
-  sequential without gaps. This fragment is what both prompts point to as the required sources
-  section, so both name the section identically.
-- `RENUMBER_ACROSS_FINDINGS_INSTRUCTION` — the report-only instruction: "The findings may come
-  from several independent researchers and each numbered its sources from 1. Renumber the
-  citations of all findings into one sequence so that each URL has exactly one number in the
-  report, and list each URL once in the `### Sources` section, numbered without gaps."
+- `CITATION_RULES_BLOCK` — the complete citation rules, stated **exactly once**:
+
+  ```
+  <Citation Rules>
+  - Assign each unique URL a single citation number as an inline marker in your text, e.g. [1].
+  - End with a section headed ### Sources that lists every cited source, one per line, as [n] Title: URL.
+  - Number sources sequentially without gaps (1,2,3,4...) in the final list.
+  - Example format:
+    [1] Source Title: URL
+    [2] Source Title: URL
+  </Citation Rules>
+  ```
+
+  This is the only place the format is written. The sentence "Each source should be a separate
+  line item ... rendered as a list" is folded into "one per line" here. The block contains **no**
+  `[Title](URL)` instruction and **no** "List of All Relevant Sources" label.
+- `SOURCES_SECTION_POINTER` — a short pointer only, used in the Output Format block and in the
+  report Instruction 5: "End with the Sources section specified in the Citation Rules below." It
+  does **not** restate the heading, the entry format or the numbering; it only points at
+  `CITATION_RULES_BLOCK`, so the format is not duplicated.
+- `RENUMBER_ACROSS_FINDINGS_INSTRUCTION` — the report-only instruction, referring to the rules
+  without restating them: "The findings may come from several independent researchers and each
+  numbered its sources from 1. Renumber the citations of all findings into one sequence so that
+  each URL has exactly one number in the report, following the Citation Rules below." It states
+  no heading, entry format or numbering of its own.
 
 **Assembly in `src/open_deep_research/prompts.py`** (string substitution only):
 
 - At module load, `prompts.py` imports the three constants from
   `open_deep_research.citations.contract` and defines the two prompt strings with the
-  placeholders `{citation_rules}`, `{sources_section_spec}` and
+  placeholders `{citation_rules}`, `{sources_section_pointer}` and
   `{renumber_across_findings_instruction}` in place of the current inline text, then resolves
   them once with chained `str.replace()` — e.g.
-  `compress_research_system_prompt = _REASONING_TEMPLATE.replace("{citation_rules}", CITATION_RULES_BLOCK).replace("{sources_section_spec}", SOURCES_SECTION_SPEC)`
+  `compress_research_system_prompt = _REASONING_TEMPLATE.replace("{citation_rules}", CITATION_RULES_BLOCK).replace("{sources_section_pointer}", SOURCES_SECTION_POINTER)`
   and, for the report prompt, the same plus
   `.replace("{renumber_across_findings_instruction}", RENUMBER_ACROSS_FINDINGS_INSTRUCTION)`.
   Because the substitution happens at definition time, the module-level names
   `compress_research_system_prompt` and `final_report_generation_prompt` remain plain strings
-  with only the existing runtime placeholders (e.g. `{date}`, `{messages}`, `{findings}`,
-  `{research_brief}`), so the `.format(date=...)` calls in `deep_researcher.py:547` and
-  `deep_researcher.py:642` stay untouched.
+  with only the existing runtime placeholders (`{date}`, `{messages}`, `{findings}`,
+  `{research_brief}`), so the `.format(...)` calls in `deep_researcher.py:547` and
+  `deep_researcher.py:642-647` stay untouched. Note: `compress_research` formats the compression
+  prompt with `date` only (`deep_researcher.py:547`); `final_report_generation` formats the
+  report prompt with **`research_brief`, `messages`, `findings` and `date`**
+  (`deep_researcher.py:642-647`), not `date` alone.
 - `compress_research_system_prompt`: replace the inline `<Citation Rules>` block (L212-219)
   with `{citation_rules}`, and replace the `**List of All Relevant Sources ...**` line in the
-  Output Format block (L209) and the `"Sources"` wording (L200) so the section is referred to
-  only via `{sources_section_spec}`. After the change the prompt contains exactly one
-  sources-section instruction (`### Sources`, from `SOURCES_SECTION_SPEC`) and no competing
-  label.
+  Output Format block (L209) and the `"Sources"` wording (L200) with `{sources_section_pointer}`.
+  After the change the prompt states the format exactly once (`CITATION_RULES_BLOCK`) and refers
+  to it elsewhere only through the pointer.
 - `final_report_generation_prompt`: delete Instruction 3's `[Title](URL)` requirement (L251)
-  and rewrite Instruction 5 (L253) to refer only to `{sources_section_spec}`; replace the inline
+  and rewrite Instruction 5 (L253) to use `{sources_section_pointer}`; replace the inline
   `<Citation Rules>` block (L298-307) with `{citation_rules}`; add
-  `{renumber_across_findings_instruction}` so the report renumbers across all findings.
+  `{renumber_across_findings_instruction}` after the rules so the report renumbers across all
+  findings. The format-neutral emphasis sentence at L306 ("Citations are extremely important
+  ...") stays in the report prompt, and L296 ("include source references where appropriate")
+  stays because it specifies no format and conflicts with nothing.
 - The three contract placeholders must be resolved before any `.format()` is applied: the
   contract text must contain no unescaped `{` or `}`, or those characters must be escaped, so
-  the later `.format(date=...)` does not raise `KeyError`/`ValueError`.
+  the later `.format(...)` does not raise `KeyError`/`ValueError`.
+
+**Recorded decisions (module review):**
+
+- The canonical entry format is `[n] Title: URL`, one per line. This is fixed by the approved
+  REQ-006 statement; adding Markdown bullet markers would require a change to
+  `requirements.yaml` and is not done here.
+- The format is stated once (in `CITATION_RULES_BLOCK`); every other site uses
+  `SOURCES_SECTION_POINTER` or `RENUMBER_ACROSS_FINDINGS_INSTRUCTION`, neither of which
+  restates it. This keeps the assembled prompts from stating the format two or three times,
+  which would violate C-001 itself.
+- L296 ("include source references where appropriate") and L306 (the emphasis sentence) stay
+  because they specify no format.
+
 
 **New interface edge (approved exception):** `prompts.py → citations/contract.py`, the
 direction being `deep_researcher.py → prompts.py → citations/contract.py`. Recorded as an
@@ -125,7 +152,8 @@ validates or rewrites generated reports (INV-004 Deferred).
 
 | Option | Reason for rejection |
 |---|---|
-| A — inline prompt fixes in `prompts.py` only | Reconciles the two prompts once but leaves the drift mode behind: the sources-section instruction is still duplicated across the two prompts and the Output-Format block, so a future edit can reintroduce a competing label (the finding that motivated this work). It treats the symptom, not the single-source cause. |
+| A — inline prompt fixes in `prompts.py` only | Reconciles each prompt inline but leaves the format duplicated: the citation rules still live independently in both prompts, so the drift mode that produced this defect survives, and a future edit to one copy reintroduces a competing instruction. It treats the symptom, not the single-source cause. |
+| A2 — shared constants defined directly in `prompts.py`, interpolated into both prompts | Single source of truth with no new module and no dependency exception, so it is the simplest possible drift-proof option. Rejected on governance grounds: it leaves the citation contract in the shared baseline file with no owning module (blueprint §4 assigns one architectural element to one module and one owner), gives future INV-004 work no home, and bypasses the §4 one-element-one-module ownership. |
 | C — deterministic post-processor that reformats/renumbers generated reports | Out of REQ-006 scope: it is "deterministic checking of citations in generated reports" (`requirements.yaml` scope) and implements the property owned by Deferred INV-004 (`invariants.md`). A post-processor can reformat and renumber what is present, but cannot recover which URL backs an unsourced claim, so it cannot deliver the integrity guarantee it appears to promise; it also widens scope beyond a format-only change. |
 
 The full comparison is in EVAL-001.
@@ -134,10 +162,11 @@ The full comparison is in EVAL-001.
 
 | Component | Responsibility | Interface (signature or type) | Called by |
 |---|---|---|---|
-| `citations/contract.py` | Single source of truth for the citation format: text constants only | `CITATION_RULES_BLOCK: str`, `SOURCES_SECTION_SPEC: str`, `RENUMBER_ACROSS_FINDINGS_INSTRUCTION: str` | `prompts.py` (module import) |
-| `prompts.py` (changed) | Import the contract constants and assemble both prompts by module-load `.replace()` of `{citation_rules}`, `{sources_section_spec}`, `{renumber_across_findings_instruction}`; remains template-only and exposes plain strings | existing `compress_research_system_prompt`, `final_report_generation_prompt` (unchanged names and runtime placeholders) | `deep_researcher.py` (`compress_research`, `final_report_generation`) — unchanged call sites |
+| `citations/contract.py` | Single source of truth for the citation format: text constants only | `CITATION_RULES_BLOCK: str`, `SOURCES_SECTION_POINTER: str`, `RENUMBER_ACROSS_FINDINGS_INSTRUCTION: str` | `prompts.py` (module import) |
+| `prompts.py` (changed) | Import the contract constants and assemble both prompts by module-load `.replace()` of `{citation_rules}`, `{sources_section_pointer}`, `{renumber_across_findings_instruction}`; remains template-only and exposes plain strings | existing `compress_research_system_prompt`, `final_report_generation_prompt` (unchanged names and runtime placeholders) | `deep_researcher.py` (`compress_research`, `final_report_generation`) — unchanged call sites |
 
-`deep_researcher.py` is not modified: the `.format(date=...)` call sites at L547 and L642 keep
+`deep_researcher.py` is not modified: the `.format(...)` call sites at L547 (compression,
+`date`) and L642-647 (report, `research_brief`, `messages`, `findings`, `date`) keep
 working because the contract placeholders are resolved at module load.
 
 Shared contracts changed (`structural-constraints.md` §6): the new dependency edge
@@ -163,12 +192,15 @@ no other module owner must approve it; the citation module owner records the exc
 
 | Criterion | Verification |
 |---|---|
-| C-001 (compression prompt has exactly one sources-section instruction, `### Sources`, no competing label) | `test/offline/test_prompt_citation_contract.py::test_compression_prompt_has_single_sources_format` asserts on the assembled `compress_research_system_prompt` text |
-| C-002 (report prompt requires numbered citations, contains no `[Title](URL)`, asks for one renumbered sequence) | `test/offline/test_prompt_citation_contract.py::test_report_prompt_has_single_citation_format` |
-| C-003 (both prompts' sources-entry formats are identical) | `test/offline/test_prompt_citation_contract.py::test_prompts_share_citation_format` compares the extracted formats, which both derive from `SOURCES_SECTION_SPEC` and `CITATION_RULES_BLOCK` |
-| C-004 (live reports use numbered citations with exactly one matching Sources entry per citation) | `test/live/test_report_citations_live.py::test_reports_use_numbered_citations` (live, `automated: false`) |
+| C-001 (compression prompt has exactly one sources-section instruction, `### Sources`, no competing label) | `test/offline/test_prompt_citation_contract.py::test_compression_prompt_has_single_sources_format` — `CITATION_RULES_BLOCK` occurs exactly once; banned strings `[Title](URL)` and `List of All Relevant Sources` occur zero times; example lines match `^\s*\[\d+\] .+: .+$` |
+| C-002 (report prompt requires numbered citations, contains no `[Title](URL)`, asks for one renumbered sequence) | `test/offline/test_prompt_citation_contract.py::test_report_prompt_has_single_citation_format` — `CITATION_RULES_BLOCK` and `RENUMBER_ACROSS_FINDINGS_INSTRUCTION` each occur exactly once; banned strings occur zero times |
+| C-003 (both prompts' sources-entry formats are identical) | `test/offline/test_prompt_citation_contract.py::test_prompts_share_citation_format` — the text between `<Citation Rules>` and `</Citation Rules>` is byte-identical across both prompts (this FAILS on the baseline, where the blocks differ) |
+| INV-006 guard (ADR-001 §3 precondition) | `test/offline/test_prompt_citation_contract.py::test_assembled_prompts_format_without_leftover_placeholders` — both assembled prompts formatted with all real placeholders (`research_brief`, `messages`, `findings`, `date`) raise no exception and leave no `{citation_rules}` / `{sources_section_pointer}` / `{renumber_across_findings_instruction}` placeholder |
+| C-001..C-003 negative | `test/offline/test_prompt_citation_contract.py::test_format_checks_detect_violations` — synthetic violating texts (one containing `[Title](URL)`; two differing Citation Rules blocks; a duplicated block) are each flagged by the check helpers, proving the assertions are not vacuous |
+| C-004 (live reports use numbered citations with exactly one matching Sources entry per citation) | `test/live/test_report_citations_live.py::test_reports_use_numbered_citations` (live, `automated: false`); runs that triggered truncation retries are excluded and reported separately |
 
-The cases are listed in the citations module section of `verification-constraints.md` §7.
+All offline assertions must FAIL on the baseline prompts for the registered reason (`Prompt.md`
+§5). The cases are listed in the citations module section of `verification-constraints.md` §7.
 Traceability: `trace-matrix.md` REQ-006 row.
 
 ## 8. Consequences
@@ -183,7 +215,16 @@ Traceability: `trace-matrix.md` REQ-006 row.
 - **Neutral:** no state, data-flow or topology change; `deep_researcher.py` call sites are
   untouched; the report writer still produces the final numbering, so renumbering correctness
   relies on the model following the instruction and is only monitored (C-004), not guaranteed.
-- **Other modules:** none affected; `delivery` (REQ-004) and `context` (REQ-005) are untouched.
+- **Other modules:** none affected; `delivery` (REQ-004) is untouched.
+- **Risk — retry truncation (out of REQ-006 scope):** on a token-limit retry,
+  `final_report_generation` truncates findings from the end
+  (`findings[:findings_token_limit]` in `deep_researcher.py`), which can drop later
+  researchers' `### Sources` blocks; renumbering then cannot map those citations back to URLs.
+  A truncation retry is therefore incompatible with C-004 evidence. Precondition for C-004:
+  the baseline queries must not trigger truncation retries, or truncation-affected runs are
+  reported separately and excluded from the citation result. This is a REQ-004 concern, not a
+  REQ-006 one; the context module (REQ-005) owner should be informed, since it owns the
+  token-limit retry behaviour.
 
 ## 9. Implementation Steps
 
@@ -197,17 +238,19 @@ Build implements only the code steps below.
 
 1. Create `src/open_deep_research/citations/__init__.py` and
    `src/open_deep_research/citations/contract.py` with the three text constants only
-   (`CITATION_RULES_BLOCK`, `SOURCES_SECTION_SPEC`, `RENUMBER_ACROSS_FINDINGS_INSTRUCTION`);
-   docstring names `REQ-006, ADR-001`. No functions, no imports of model or graph code, and no
-   unescaped `{`/`}` in the text.
+   (`CITATION_RULES_BLOCK`, `SOURCES_SECTION_POINTER`, `RENUMBER_ACROSS_FINDINGS_INSTRUCTION`);
+   docstring names `REQ-006, ADR-001`. The format is stated once, in `CITATION_RULES_BLOCK`
+   (inline `[n]`; each unique URL one number; `### Sources`; one source per line as
+   `[n] Title: URL`; sequential without gaps; the `[1]`/`[2]` example). No functions, no imports
+   of model or graph code, and no unescaped `{`/`}` in the text.
 2. Edit `src/open_deep_research/prompts.py`: import the three constants from
    `open_deep_research.citations.contract`; in `compress_research_system_prompt` replace the
-   inline Citation Rules block and the Output-Format sources label with the `{citation_rules}`
-   and `{sources_section_spec}` placeholders; in `final_report_generation_prompt` remove the
-   `[Title](URL)` instruction, point Instruction 5 at `{sources_section_spec}`, replace the
-   inline Citation Rules block with `{citation_rules}`, and add
-   `{renumber_across_findings_instruction}`.
+   inline Citation Rules block with `{citation_rules}` and the `**List of All Relevant
+   Sources**` label and `"Sources"` wording with `{sources_section_pointer}`; in
+   `final_report_generation_prompt` remove the `[Title](URL)` instruction, point Instruction 5
+   at `{sources_section_pointer}`, replace the inline Citation Rules block with
+   `{citation_rules}`, and add `{renumber_across_findings_instruction}`. Keep L296 and L306.
 3. In the same `src/open_deep_research/prompts.py`, resolve the three placeholders at module
    load with chained `.replace(...)` on the two template strings, so the module-level names are
-   plain strings carrying only the existing runtime placeholders and the
-   `.format(date=...)` call sites in `deep_researcher.py` are unchanged.
+   plain strings carrying only the existing runtime placeholders and the `.format(...)` call
+   sites in `deep_researcher.py` (L547, L642-647) are unchanged.
