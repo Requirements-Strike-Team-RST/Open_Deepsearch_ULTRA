@@ -47,7 +47,7 @@ Produce:
 - A revised acceptance-criteria-to-test-case matrix.
 - Risks and compatibility concerns.
 
-Stop after presenting the plan and wait for human approval before editing any file. 
+Stop after presenting the plan and wait for human approval before editing any file.
 
 ## Message 070 — assistant
 
@@ -236,7 +236,7 @@ Output only:
 - The exact document sections requiring edits.
 - Remaining questions requiring team approval.
 
-Stop and wait for my approval. 
+Stop and wait for my approval.
 
 ## Message 082 — assistant
 
@@ -492,7 +492,7 @@ After editing, provide:
 5. A verification coverage matrix.
 6. The output of `git diff --check` and `git status --short`.
 
-Do not commit or push. Stop after editing and reporting results so that a human can review the diff. 
+Do not commit or push. Stop after editing and reporting results so that a human can review the diff.
 
 ## Message 086 — assistant
 
@@ -709,7 +709,7 @@ Run read-only checks and report:
 6. `git diff --check`.
 7. `git status --short`.
 
-Do not implement code or tests. Stop for human review. 
+Do not implement code or tests. Stop for human review.
 
 ## Message 100 — assistant
 
@@ -910,7 +910,7 @@ A successful bind is not proof that a remote search will execute.
 - Run `git diff --check`.
 - Report the exact edits and any remaining implementation dependencies.
 
-Stop for human review. Do not commit or push. 
+Stop for human review. Do not commit or push.
 
 ## Message 124 — assistant
 
@@ -1075,7 +1075,7 @@ Only modify the existing seven REQ-007 Markdown files if needed. No code changes
 
 Run `git diff --check` and report only the actual changes.
 
-Stop without committing or pushing. 
+Stop without committing or pushing.
 
 ## Message 152 — assistant
 
