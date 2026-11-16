@@ -194,3 +194,37 @@ entries:
       The accompanying session record is an English translation with intervention annotations;
       non-English filenames in tool records retain their identity through Unicode escapes.
     transcript: transcripts/60741820-YANG_Xinchuan.md
+
+  - id: AIU-009
+    date: "2026-11-17"
+    member: DopplerXD
+    purpose: >-
+      Revise the evaluation SA documents in response to the PR #15 module review.
+    prompt: >-
+      Address AlchemyHAN's six findings and BroZhai's path-whitelist suggestion. Remove the
+      utils date dependency, separate import-boundary and call-isolation tests, complete the
+      missing cases, align the C-004 verification path, distinguish judge failures with exit
+      code 3, and document proposed client and path exceptions. Preserve completed metric
+      results and map real provider authentication and permission exceptions. Keep changes
+      within English architecture documents and test specifications.
+    requirements: [REQ-009, REQ-010]
+    artifacts:
+      - docs/architecture/adr/001-evaluation-module.md
+      - docs/architecture/evaluation-table.md
+      - docs/architecture/invariants.md
+      - docs/architecture/runtime-policy-catalog.md
+      - docs/architecture/trace-matrix.md
+      - docs/code-governance/structural-constraints.md
+      - docs/code-governance/verification-constraints.md
+      - https://github.com/Requirements-Strike-Team-RST/Open_Deepsearch_ULTRA/pull/15
+    supervision: >-
+      The member accepted the review direction, required isolation between patch setup and
+      clean-import tests, and corrected the assumption that client construction proves key
+      validity. The member required completed scores to survive judge failures, comparison
+      with other viable factories, separate SDK 401/403 mappings, network blocking before
+      imports, and whole-request prompt checks. The revised proposal was authorised for SA
+      documents only. Public-rule exceptions remain Proposed, and behavioural tests and
+      integrated SA Review are pending. The member subsequently authorised submission and
+      an updated PR explanation. The transcript addendum translates user instructions and
+      labels response summaries; original tool records remain in the OpenCode session.
+    transcript: transcripts/60741820-YANG_Xinchuan.md

@@ -65,4 +65,12 @@
 
 The decision, interfaces and implementation steps are in ADR-001.
 
-**Open for module review:** `structural-constraints.md` §1 lists top-level `test/` as not for new work, while `architecture-blueprint.md` §4 assigns this module to `test/evaluation/`. Confirm the exception at module review and integration.
+**Open for module review:** the following remain proposed until SA Review:
+
+- **Path whitelist:** `structural-constraints.md` §1 lists top-level `test/` as not for new work, while `architecture-blueprint.md` §4 assigns this module to `test/evaluation/`. BroZhai's suggestion is to add `test/evaluation/` as the only whitelisted `test/` subdirectory for new architecture code; tests remain in `test/offline/` and `test/live/`.
+- **Evaluation judge client:** `judge.py` needs one lazy, injectable evaluation-only chat client, which is an exception to `structural-constraints.md` §4 because `configurable_model` lives in `deep_researcher.py` and §5 forbids importing it. Provider credential resolution is part of the same proposed exception.
+- **Raw judge interface:** confirm that rating and `grounded` fields stay raw until `validation.py` checks them, before any Pydantic conversion.
+- **Judge failure semantics:** confirm exit code `3` for judge initialisation, real OpenAI 401 `AuthenticationError` and 403 `PermissionDeniedError`, with per-metric results and completed scores preserved.
+- **LangSmith live behaviour:** SDK type compatibility is checked; live `aevaluate` and UI behaviour with a null score remain `NOT_RUN`.
+
+Confirm these at module review and integration.

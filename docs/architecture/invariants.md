@@ -68,23 +68,23 @@ Every entry uses the same fields:
 
 ## INV-006 — Every metric result is valid or explicitly not evaluable
 
-- **Statement:** Every metric result is either `scored` with a score in `[0, 1]`, or `not_evaluable` with a null score and a reason. A `scored` result comes only from a strict integer judge rating `1..5`, validated on the raw judge value before any Pydantic or other type conversion, or, for groundedness only, from a ratio over at least one extracted claim. An invalid rating, missing input, empty claim list or evaluator exception makes only the affected metric `not_evaluable`; it never produces a fabricated score and never aborts the remaining metrics.
+- **Statement:** Every metric result is either `scored` with a score in `[0, 1]`, or `not_evaluable` with a null score and a reason. A `scored` result comes only from a strict integer judge rating `1..5`, validated on the raw judge value before any Pydantic or other type conversion, or, for groundedness only, from a ratio over at least one valid extracted claim. An invalid rating, missing input, empty claim list, invalid claim or evaluator exception makes only the affected metric `not_evaluable`; it never produces a fabricated score and never aborts the remaining metrics. A judge authentication or permission failure marks the affected group `not_evaluable`, preserves every completed score and sets the run-level `judge_failure`.
 - **Module:** evaluation
 - **Source:** REQ-009
 - **Status:** Proposed
-- **Enforcing component:** `test/evaluation/validation.py`, `test/evaluation/metrics.py` and the compatibility adapter in `test/evaluators.py`.
-- **Verification:** `test/offline/test_evaluator_validity.py`; monitor `out_of_range_score_count == 0`.
-- **Fallback:** return `not_evaluable` with `score=None` and a reason code such as `invalid_rating`, `missing_input`, `no_claims` or `evaluator_error`; continue the other metric groups. Never clamp, round, default or replace a missing score with zero.
+- **Enforcing component:** `test/evaluation/validation.py`, `test/evaluation/metrics.py`, `test/evaluation/judge.py` and the compatibility adapter in `test/evaluators.py`.
+- **Verification:** `test/offline/test_evaluator_validity.py`; monitor `out_of_range_score_count == 0`; the CLI judge-failure cases are in `test/offline/test_report_evaluation_entry.py`.
+- **Fallback:** return `not_evaluable` with `score=None` and a reason code such as `invalid_rating`, `missing_input`, `no_claims`, `invalid_claim`, `evaluator_error`, `judge_unavailable`, `judge_authentication` or `judge_permission`; continue the other metric groups. Never clamp, round, default or replace a missing score with zero.
 
 ## INV-007 — Evaluation-only entry does not perform research or search
 
-- **Statement:** The evaluation-only entry scores exactly the report it is given, using its question and optional reference answer, research brief and evidence. It does not compile or invoke the research graph, call a search provider, generate a replacement report or import the research graph, and it rejects a blank question or report before any evaluator runs.
+- **Statement:** The evaluation-only entry scores exactly the report it is given, using its question and optional reference answer, research brief and evidence. At the import layer it imports no `open_deep_research.deep_researcher`, `open_deep_research.utils`, `test.run_evaluate` or search/MCP module. At the client layer it creates no research/search client. At the network layer it makes no research/search request; the only permitted network request is the judge model call. It rejects a blank question or report before any evaluator runs.
 - **Module:** evaluation
 - **Source:** REQ-010
 - **Status:** Proposed
-- **Enforcing component:** `test/evaluation/entry.py` and its CLI; the import boundary keeps `open_deep_research.deep_researcher` and search tools out of the entry.
-- **Verification:** `test/offline/test_report_evaluation_entry.py`, including `::test_entry_does_not_import_research_graph`; review of the README procedure for REQ-010 C-003.
-- **Fallback:** raise `EvaluationInputError` (CLI exit `2`) for blank input; never fall back to running research, searching, or generating a report. Report the metric result as `not_evaluable` when an input the metric needs is absent.
+- **Enforcing component:** `test/evaluation/entry.py`, `test/evaluation/judge.py` and the CLI; the import boundary keeps `open_deep_research.deep_researcher`, `open_deep_research.utils` and search tools out of the entry.
+- **Verification:** `test/offline/test_report_evaluation_entry.py`, including `::test_entry_does_not_import_research_graph` and `::test_entry_scores_supplied_report_without_research`; review of the README procedure for REQ-010 C-003.
+- **Fallback:** raise `EvaluationInputError` (CLI exit `2`) for blank input and report `JudgeUnavailableError`/`JudgeAuthenticationError`/`JudgePermissionError` as the corresponding exit `3` path; never fall back to running research, searching, or generating a report. Report the metric result as `not_evaluable` when an input the metric needs is absent.
 
 ## Adding an Entry
 

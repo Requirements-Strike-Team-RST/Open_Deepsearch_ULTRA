@@ -1,6 +1,6 @@
 # Evaluation module SA session — DopplerXD
 
-- Date: 2026-11-13
+- Dates: 2026-11-13 and 2026-11-17
 - Requirements: REQ-009 v1.1, REQ-010 v1.1
 - Branch: docs/sa-evaluation
 - OpenCode session: `ses_e2adf4cdeffe9h92cWfrl4SAnn`
@@ -3397,3 +3397,82 @@ Recorded in four places instead of describing it as resolved:
 4. POL-002 through POL-008 are provisional module IDs, possibly renumbered at integration.
 5. ADR remains Proposed; SA Review, test approval and implementation are pending.
 6. Import side effects in `test/run_evaluate.py` (`load_dotenv("../.env")`, `Client()`) remain; decide whether to record separate technical debt.
+
+## Review revision addendum — 2026-11-17
+
+This addendum contains English translations of the three follow-up user instructions and labelled summaries of the public OpenCode responses. The original follow-up tool records remain in the same OpenCode session; they are not reproduced in this addendum. This continuation covers PR #15 review feedback and does not indicate completion of integrated SA Review or implementation.
+
+### Event 676 — User (English translation)
+
+Address AlchemyHAN's six review comments on PR #15 and BroZhai's suggestion for an explicit `test/evaluation/` path whitelist.
+
+Read the latest review, current SA documents and repository rules, then propose changes for each item:
+
+1. Use the standard library for dates within evaluation and remove the dependency on `utils.get_today_str`.
+2. Name the research/search interception points and network blockers while preserving the import boundary.
+3. Add the four missing categories of test cases identified by the reviewer.
+4. Place C-004 exception isolation under the required `test_groundedness_and_errors` name and check all references.
+5. Give judge initialisation/credential errors a distinct CLI exit code, proposed as 3.
+6. Identify the proposed evaluation-client and module-path rule exceptions, distinguishing proposals from approved rules.
+
+Report the affected document locations, behaviour changes, test-specification changes and human decisions needed. Remain in SA with the ADR Proposed. This round covers architecture documents and test specifications only; do not commit, push or reply to the PR yet.
+
+> **H-07 Review-driven scope**
+> The member directed the revision toward the six actual review findings and the path-whitelist suggestion, with explicit boundaries on source code, tests and publication.
+
+### Event 781 — OpenCode (Plan; response summary)
+
+OpenCode read the PR reviews, repository governance, baseline code and seven SA documents. It proposed a local date helper; named research/search interception points; missing-input, invalid-claim, adapter and prompt regression cases; alignment with the required C-004 test name; exit code 3 for judge setup failures; and proposed model-client and path exceptions. No repository files were changed in this Plan response.
+
+### Event 792 — User (English translation)
+
+Accept the overall revision direction, with these corrections before writing:
+
+1. Separate clean-process import-boundary testing from call/network isolation. Explain patch installation so patching does not itself import forbidden modules.
+2. Define exit code 3 fully. Successful client construction does not prove key validity; include a call-time `AuthenticationError` case. Preserve per-metric results, completed scores and REQ-009 failure isolation.
+3. Remove the claim that there are only two alternatives. Include judge injection and a side-effect-free shared factory, and justify the current exception.
+4. Distinguish dependency imports, client construction and network requests.
+5. Test placeholder contracts across complete judge requests and message-level input bindings.
+
+Provide the specific revised proposal for confirmation before applying it.
+
+> **H-08 Test isolation and error semantics**
+> The member corrected a conflict between patch setup and import-boundary testing, requested call-time authentication handling, and required preservation of completed results and realistic architectural alternatives.
+
+### Event 793 — OpenCode (Plan; response summary)
+
+OpenCode separated TC-EVAL-011 into a clean subprocess and TC-EVAL-010 into call/network interception with an injected judge. It proposed a run-level judge-failure field alongside per-metric results, retaining completed scores and continuing other metric groups. It added alternatives for judge construction and separate static-placeholder and full-request binding cases. The proposal remained in chat and the ADR remained Proposed.
+
+### Event 807 — User (English translation)
+
+Accept the latest revision and apply it to the SA documents, with these additions:
+
+1. Specify the mapping from provider SDK exceptions to module errors. OpenAI SDK HTTP 401 maps to `AuthenticationError`, while HTTP 403 maps to `PermissionDeniedError`. The test specifications must exercise real SDK exception types through the exit-code-3 mapping rather than directly raising only custom exceptions.
+2. Install network blocking before importing patch targets in TC-EVAL-010. Offline test setup must remove real credentials and use substitutes so preparation cannot access external services.
+
+Synchronise the ADR, EVAL, invariants, runtime policies, trace matrix, structural constraints and verification constraints in English. Keep public-rule exceptions Proposed pending review. Change SA documents and test specifications only, then show the diff and a response matrix for the six review comments. Do not commit, push or reply to the PR yet.
+
+> **H-09 Authorisation to apply the reviewed revision**
+> The member approved the revised design and required real SDK exception mappings and network blocking before test-target imports. The authorisation remained limited to English SA documents and test specifications.
+
+### Event 1163 — OpenCode (Build; response summary)
+
+OpenCode reported applying the revision to seven SA documents, with 195 insertions and 67 deletions. It left source code, test code, dependency configuration, permissions and approval records untouched and made no commit, push or PR reply. ADR-001 and the rule exceptions remained Proposed.
+
+| Review item | Reported revision |
+| --- | --- |
+| 1. Import-boundary contradiction | Replace `utils.get_today_str` with a standard-library date helper. Extend the clean-process import test to exclude research, utils, the benchmark entry and search/MCP modules. |
+| 2. Vague research/search interception | Name graph compile, Tavily/search-tool entry points and socket blockers. Clear credentials and block network before importing patch targets. Keep the clean-import check in a separate subprocess. |
+| 3. Missing test cases | Add invalid claims, missing/empty/whitespace inputs, adapter missing inputs, static placeholder checks and full judge-request bindings. |
+| 4. C-004 verification-path mismatch | Use `test_groundedness_and_errors` for the exception-isolation case and synchronise references. |
+| 5. Ambiguous exit code 1 | Add exit code 3 for initialisation, authentication and permission failures, with per-metric results and completed scores preserved. Specify real SDK exception objects constructed with synthetic HTTP request/response fixtures. |
+| 6. Model-client rule conflict | Record a proposed evaluation-client and credential-resolution exception, with alternative designs and review requirements. |
+| BroZhai path suggestion | Record an explicit proposed `test/evaluation/` whitelist while leaving the human-owned top-level rule pending approval. |
+
+The planned verification list grew from TC-EVAL-001 through TC-EVAL-016 to TC-EVAL-001 through TC-EVAL-023. Runtime policies extend through POL-011. CLI exit codes are 0/1/2/3. These are test specifications, not executed behavioural tests.
+
+OpenCode reported passing the whitespace, requirements, English-language, test-ID and ADR-section checks. Behavioural tests, integrated SA Review and Gate 1 remained NOT_RUN. Live LangSmith compatibility and the public-rule exceptions remain review/verification follow-ups.
+
+### Submission preparation — 2026-11-17
+
+The author subsequently authorised repository and PR updates. The ADR verification wording was changed from "the mapping is tested" to "the mapping can be tested" to distinguish planned SDK-error cases from executed tests. The AI-use log records this review revision separately. Module reviewers still decide whether to approve the proposed exceptions; the integrator handles shared-document reconciliation and whole-team SA Review.
