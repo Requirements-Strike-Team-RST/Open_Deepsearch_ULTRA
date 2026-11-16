@@ -21,16 +21,16 @@ The configuration controls tool access; it does not isolate the process. Anythin
 
 | Role | Job | Edits | Commands without asking (§4) |
 |---|---|---|---|
-| **Plan** | Software architecture: EVAL entries, ADRs, module sections | SA documents (§3) and other documentation; never source, tests or `scripts/` | Read-only, checks, Git add and commit |
+| **Architect** | Software architecture: EVAL entries, ADRs, module sections | SA documents (§3) and other documentation; never source, tests or `scripts/` | Read-only, checks, Git add and commit |
 | **Test Author** | Tests that fail on the baseline | `test/offline/`, `test/live/` and documentation; never source, `scripts/` or other code under `test/` | Read-only, checks, `ruff format` on tests, Git add, commit and switch |
 | **Build** | Implementation that makes the approved tests pass | Source, `scripts/`, evaluation code under `test/` and documentation, within the approval record (§5); never `test/offline/` or `test/live/` | Read-only, checks, `ruff format` on `src/`, Git add, commit and switch |
 | **Verify** | Independent verification | Documentation, including its reports in `docs/test-reports/`; never source, tests or `scripts/` | Read-only, checks, Git add and commit |
 
-Test Author and Build never edit each other's files, so an implementation cannot pass by changing its tests. Edits to governance documents and dependency files ask for every role; edits to SA documents ask for every role except Plan (§3). All roles may read the whole repository except secrets, search with `glob`, `grep`, `list` and `lsp`, and delegate searches to the read-only `explore` sub-agent.
+Test Author and Build never edit each other's files, so an implementation cannot pass by changing its tests. Edits to governance documents and dependency files ask for every role; edits to SA documents ask for every role except Architect (§3). All roles may read the whole repository except secrets, search with `glob`, `grep`, `list` and `lsp`, and delegate searches to the read-only `explore` sub-agent.
 
 ## 3. Path Ownership
 
-**SA documents:** `docs/architecture/*` except `permission-model.md`, plus `docs/code-governance/structural-constraints.md` and `verification-constraints.md`. Plan writes them freely during software architecture; Test Author, Build and Verify edit them only when the human confirms, so implementation cannot change the architecture silently. The ADR template `adr/000-template.md` is not edited by agents.
+**SA documents:** `docs/architecture/*` except `permission-model.md`, plus `docs/code-governance/structural-constraints.md` and `verification-constraints.md`. Architect writes them freely during software architecture; Test Author, Build and Verify edit them only when the human confirms, so implementation cannot change the architecture silently. The ADR template `adr/000-template.md` is not edited by agents.
 
 **Governance documents (human-owned):** `AGENTS.md`, `Prompt.md`, `.agent/*`, `.github/*`, `docs/req/*`, `docs/architecture/permission-model.md`, `docs/code-governance/mcp-tool-manifest.md`, `docs/ai-use-log.yaml`, `docs/review-memo.md`, `docs/bug-diary.md`, `docs/debt-register.md`. **Dependency files:** `pyproject.toml`, `uv.lock`. Agents edit these only when the human confirms; the change still goes through PR review.
 
@@ -42,7 +42,7 @@ Test Author and Build never edit each other's files, so an implementation cannot
 
 Rules for the `bash` tool. A command matching none of the rows asks the human.
 
-| Commands | Plan | Test Author | Build | Verify |
+| Commands | Architect | Test Author | Build | Verify |
 |---|---|---|---|---|
 | Read-only: `ls`, `pwd`, `cat`, `head`, `tail`, `wc`, `rg`, `grep`, `find`, `tree` | allow | allow | allow | allow |
 | Read-only Git: `status`, `diff`, `log`, `show`, `branch`, `blame` | allow | allow | allow | allow |
@@ -71,8 +71,10 @@ Build implements the accepted ADR, starting from the approved test commit; the P
 
 ## 6. Configuration and Acceptance
 
-**Configuration.** `.opencode/permissions.jsonc` holds the rules. It defines the `plan`, `test-author`, `build` and `verify` agents and the read-only `explore` sub-agent, configures the approved MCP servers, makes `plan` the default agent, and denies everything to agents it does not define. OpenCode does not load a file named `permissions.jsonc`; `.opencode/opencode.jsonc` is a symlink to it, so edit only `permissions.jsonc` and keep the symlink. On Windows, clone with `core.symlinks=true`.
+**Configuration.** `.opencode/permissions.jsonc` holds the rules. It defines the `architect`, `test-author`, `build` and `verify` agents and the read-only `explore` sub-agent, disables OpenCode's built-in `plan` agent, configures the approved MCP servers, makes `architect` the default agent, and denies everything to agents it does not define. OpenCode does not load a file named `permissions.jsonc`; `.opencode/opencode.jsonc` is a symlink to it, so edit only `permissions.jsonc` and keep the symlink. On Windows, clone with `core.symlinks=true`.
 
-**Merging.** A member's global OpenCode configuration and plugins merge with the project configuration. Work only in the `plan`, `test-author`, `build` and `verify` agents and do not start OpenCode with `--auto`, which approves every *ask*.
+**Why not `plan`.** OpenCode's built-in `plan` agent always runs in Plan mode: it injects a reminder that forbids editing files and rejects edits outside its own plan directory. That blocks writing SA documents, so the SA role is named `architect` and `plan` is disabled (verified in OpenCode 2.2.7).
 
-**Acceptance.** On OpenCode 2.2.7 (2026-11-12), `opencode debug config` showed that `.opencode/opencode.jsonc` is loaded, and the rules resolved by `opencode debug agents` were evaluated against 83 cases covering every tier for every role: reads and secret reads, SA-document, governance, source and test edits per role, the Test Author and Build separation, web, Context7 and unapproved MCP tools, permission and approval tampering through the edit tool and the shell, routine commands, push, reset, rebase, dependency and network commands, force-push, chained commands, sub-agents and undefined agents. Result: **PASS, 83/83**. OpenCode resolves the `bash` key to the action `shell` and `task` to `subagent`.
+**Merging.** A member's global OpenCode configuration and plugins merge with the project configuration. Work only in the `architect`, `test-author`, `build` and `verify` agents and do not start OpenCode with `--auto`, which approves every *ask*.
+
+**Acceptance.** On OpenCode 2.2.7 (2026-11-15), `opencode debug config` showed that `.opencode/opencode.jsonc` is loaded, and the rules resolved by `opencode debug agents` were evaluated against 64 cases covering every tier for every role, including that the built-in `plan` agent is disabled: reads and secret reads, SA-document, governance, source and test edits per role, the Test Author and Build separation, web, Context7 and unapproved MCP tools, permission and approval tampering through the edit tool and the shell, routine commands, push, reset, rebase, dependency and network commands, force-push, chained commands, sub-agents and undefined agents. Result: **PASS, 64/64**. OpenCode resolves the `bash` key to the action `shell` and `task` to `subagent`.

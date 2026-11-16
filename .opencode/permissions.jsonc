@@ -1,4 +1,4 @@
-// OpenCode permission configuration for the four coding-agent roles (Plan, Test Author, Build, Verify).
+// OpenCode permission configuration for the four coding-agent roles (Architect, Test Author, Build, Verify).
 // Specification: docs/architecture/permission-model.md (authoritative). This file is human-owned.
 //
 // Loading: OpenCode does not load .opencode/permissions.jsonc by name. The symlink
@@ -12,7 +12,7 @@
 // "/" and spaces, so "*git push*" also matches inside a chain such as "x && git push".
 {
   "$schema": "https://opencode.ai/config.json",
-  "default_agent": "plan",
+  "default_agent": "architect",
 
   // Approved MCP servers (listed in docs/code-governance/mcp-tool-manifest.md).
   // Context7: read-only library documentation. Optional higher rate limit: add
@@ -30,8 +30,14 @@
   },
 
   "agent": {
+    // OpenCode's built-in "plan" agent always receives a read-only "Plan mode" system reminder
+    // that forbids editing files, which blocks SA work. It is disabled; the SA role is "architect".
     "plan": {
-      "description": "Plan role: software architecture. Drafts ASR, ADD entries, ADRs and module sections of the architecture and constraint documents. Never writes source or tests.",
+      "disable": true
+    },
+
+    "architect": {
+      "description": "Architect role: software architecture. Drafts ASR, ADD entries, ADRs and module sections of the architecture and constraint documents. Never writes source or tests.",
       "mode": "primary",
       "permission": {
         "*": "ask",

@@ -24,8 +24,8 @@ Tests and implementation are written by different roles: Test Author writes the 
 ## 1. Before Any Task
 
 1. Read the documents in `AGENTS.md` §2.
-2. Confirm the current role (Plan, Test Author, Build or Verify), the requirement ID (RID) and what the role may write (`docs/architecture/permission-model.md` §2–§3). The task ID is the RID, e.g. `REQ-005`.
-3. Confirm the task's state: Plan needs the requirement `approved` in `docs/req/requirements.yaml`; Test Author needs Gate 1; Build needs Gate 2; Verify needs the build report.
+2. Confirm the current role (Architect, Test Author, Build or Verify), the requirement ID (RID) and what the role may write (`docs/architecture/permission-model.md` §2–§3). The task ID is the RID, e.g. `REQ-005`.
+3. Confirm the task's state: Architect needs the requirement `approved` in `docs/req/requirements.yaml`; Test Author needs Gate 1; Build needs Gate 2; Verify needs the build report.
 4. If anything is missing or ambiguous, ask the human; do not guess.
 
 ## 2. Workflow at a Glance
@@ -46,7 +46,7 @@ flowchart LR
 
 | # | Step | Who | Output |
 |---|---|---|---|
-| 1 | ASR, ADD, ADR, module sections | Each module owner, optionally with the Plan agent | EVAL entry, ADR, module sections on the branch `docs/sa-<module>` (§3) |
+| 1 | ASR, ADD, ADR, module sections | Each module owner, optionally with the Architect agent | EVAL entry, ADR, module sections on the branch `docs/sa-<module>` (§3) |
 | 2 | Module review | Reviewers named in the module's draft PR | Findings fixed by the owner on their branch until none remain; the draft PR is never merged (§4) |
 | 3 | Integration | The integrator, assisted by AI | One integration branch that merges every module branch: integrated documents and blueprint (§4) |
 | 4 | SA Review — **Gate 1** | Whole team | `SA-NNN` record in `docs/review-memo.md`; ADRs *Accepted*; integration merged into `main` |
@@ -58,7 +58,7 @@ flowchart LR
 
 ## 3. Phase 1 — Software Architecture (per module)
 
-Each module owner works on the module listed for their requirements in `architecture-blueprint.md` §4, on a branch `docs/sa-<module>` created from `main`. The Plan agent may draft; the owner decides. When done, the owner pushes the branch and opens a **draft** pull request to `main` for review only, naming at least one reviewer. The draft PR is never merged: every module edits the same shared documents, so the integrator merges all module branches at once (§4).
+Each module owner works on the module listed for their requirements in `architecture-blueprint.md` §4, on a branch `docs/sa-<module>` created from `main`. The Architect agent (`architect` in OpenCode) may draft; the owner decides. When done, the owner pushes the branch and opens a **draft** pull request to `main` for review only, naming at least one reviewer. The draft PR is never merged: every module edits the same shared documents, so the integrator merges all module branches at once (§4).
 
 1. **ASR.** From `docs/req/requirements.yaml`, pick the requirements of the module that shape the architecture and the acceptance criteria (C-/M-) that matter.
 2. **ADD.** Propose 2–3 candidate solutions and compare pros, cons, complexity and offline testability in a new entry of `docs/architecture/evaluation-table.md`.

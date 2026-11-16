@@ -1,7 +1,7 @@
 # Coding Agent Rules
 
 > **HUMAN-ONLY FILE — agents must not modify it.**
-> **Purpose:** The always-on behaviour rules for every coding agent role (Plan, Test Author, Build, Verify).
+> **Purpose:** The always-on behaviour rules for every coding agent role (Architect, Test Author, Build, Verify).
 > **Authoritative for:** agent behaviour. Paths and tools each role may use are in `docs/architecture/permission-model.md`; the workflow is in `Prompt.md`.
 > **Last updated:** 2026-11-12
 
@@ -20,7 +20,7 @@
 
 ## R3. Role Discipline
 
-- **Plan** drafts the software architecture (EVAL entries, ADRs, module sections); it never writes source or test code and never switches itself into another role.
+- **Architect** drafts the software architecture (EVAL entries, ADRs, module sections); it never writes source or test code and never switches itself into another role.
 - **Test Author** writes the tests for the module's approved test cases and shows that they fail on the baseline; it never writes source code.
 - **Build** implements only approved files until the approved tests pass; it never changes those tests, approves its own plan or weakens acceptance criteria, and pushes only when the human confirms.
 - **Verify** verifies independently; it never fixes source code and never edits tests, thresholds or evidence to make a check pass.
