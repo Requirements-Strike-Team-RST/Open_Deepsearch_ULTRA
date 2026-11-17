@@ -47,6 +47,12 @@ A new researcher tool is implemented in `utils.py` or the owning extension modul
 | Extend, never replace | Do not delete baseline nodes, tools or configuration fields, and do not build a parallel implementation of existing behaviour. Fix or extend it in place. |
 | Auth is independent | The research graph does not import `src/security/auth.py`. |
 
+**Approved exceptions to the dependency direction:**
+
+| From | To | Reason | ADR |
+|---|---|---|---|
+| `prompts.py` | `citations/contract.py` | `prompts.py` imports the text-only citation contract constants and interpolates them at module load; `prompts.py` stays a template assembler (string substitution only, no logic). | ADR-001 |
+
 ## 6. Shared Contracts
 
 A change to a type in `state.py`, or to any interface another owner's module reads, needs the approval of every owner who reads it, recorded in the PR review. Shared contracts introduced by a requirement are defined in that requirement's ADR and covered by the shared contract tests (`verification-constraints.md` §3).
@@ -144,3 +150,15 @@ Additional rules for this module:
 | Purity rule | `segment_turns`, `plan_trim` and `classify_token_limit` are pure: no I/O, no model, no logging of message content, no mutation of the input list. `compress_with_recovery` is the only coroutine and the only place that awaits a model |
 | Configuration flag | `context_trimming: bool = False` (baseline behaviour preserved until REQ-005 is `verified`; the flipping PR is separate) |
 | Baseline code touched | `compress_research` body in `deep_researcher.py` (becomes thin, baseline branch kept byte-for-byte under `context_trimming = False`, including its placeholder); `ResearcherOutputState` gains the declared `research_outcome` field in `state.py`; `supervisor_tools` (L308-313) gains one guard that reads `research_outcome` and whose `else` branch is the baseline line unchanged — the condition cannot hold while `context_trimming = False`, so baseline behaviour is preserved; docstring correction only in `utils.remove_up_to_last_ai_message`. `prompts.py` unchanged; `utils.is_token_limit_exceeded` behaviour unchanged because `final_report_generation` also uses it |
+### citations (REQ-006, ADR-001)
+
+| Item | Constraint |
+|---|---|
+| Path | `src/open_deep_research/citations/` |
+| Responsibility | Hold the single source of truth for the research prompts' citation format as text constants only. |
+| Public interface | `contract.CITATION_RULES_BLOCK`, `contract.SOURCES_SECTION_POINTER`, `contract.RENUMBER_ACROSS_FINDINGS_INSTRUCTION` (all `str`, text only, no functions) |
+| Called from | `prompts.py` (module import; interpolated at module load), reached from `deep_researcher.py` → `prompts.py` |
+| May depend on | Standard library only (no project module needs to be imported by text constants) |
+| Must not depend on | `deep_researcher.py`, `state.py`, `configuration.py`, `utils.py`, model clients, or any other extension module |
+| Shared contracts | None in code: no `state.py` type and no cross-module interface is read. Changes the citation-format treatment of `compress_research_system_prompt` and `final_report_generation_prompt` in `prompts.py` (ADR-001). |
+| Configuration flag | None; the change is format-only and adds no runtime flag |

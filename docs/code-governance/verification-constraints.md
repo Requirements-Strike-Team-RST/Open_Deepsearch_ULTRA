@@ -219,6 +219,20 @@ Tests are deterministic offline tests: fake message lists and fake model/excepti
 - **Regression:** `uv run pytest test/offline` in full. `test/offline/test_contracts.py` must be re-run if the REQ-001 task-result type changes in the same PR. No existing suite reads `remove_up_to_last_ai_message` behaviour, but the helper's docstring correction is reviewed in the diff.
 - **Live or human checks:** none. All REQ-005 criteria are `automated: true` in `requirements.yaml`, and the requirement has no `automated: false` case, so no live test is needed. The thin-node check (`structural-constraints.md` §2) is human review evidence recorded in `docs/review-memo.md`, not a test.
 - **Evidence location:** `docs/test-reports/REQ-005.md` — baseline run by Test Author, verification by Verify (`verification-constraints.md` §6).
+### citations (REQ-006, ADR-001)
+
+| Case | Covers | Type | Input | Expected result | Test |
+|---|---|---|---|---|---|
+| TC-001 | REQ-006 C-001, INV-006 | normal | Assembled `compress_research_system_prompt` | `CITATION_RULES_BLOCK` occurs exactly once; banned strings (`[Title](URL)`, `List of All Relevant Sources`) occur zero times; example lines match `^\s*\[\d+\] .+: .+$` | `test/offline/test_prompt_citation_contract.py::test_compression_prompt_has_single_sources_format` |
+| TC-002 | REQ-006 C-002, INV-006 | normal | Assembled `final_report_generation_prompt` | `CITATION_RULES_BLOCK` and `RENUMBER_ACROSS_FINDINGS_INSTRUCTION` each occur exactly once; banned strings occur zero times | `test/offline/test_prompt_citation_contract.py::test_report_prompt_has_single_citation_format` |
+| TC-003 | REQ-006 C-003, INV-006 | normal | Both assembled prompts | The text between `<Citation Rules>` and `</Citation Rules>` is byte-identical across both prompts (FAILS on the baseline, where the blocks differ) | `test/offline/test_prompt_citation_contract.py::test_prompts_share_citation_format` |
+| TC-004 | INV-006 guard (ADR-001 §3 precondition) | exception | Both assembled prompts formatted with all real placeholders (`research_brief`, `messages`, `findings`, `date`) | No exception; no `{citation_rules}` / `{sources_section_pointer}` / `{renumber_across_findings_instruction}` placeholder remains | `test/offline/test_prompt_citation_contract.py::test_assembled_prompts_format_without_leftover_placeholders` |
+| TC-005 | C-001..C-003 negative | negative | Synthetic violating texts (one containing `[Title](URL)`; two differing Citation Rules blocks; a duplicated block) | The check helpers flag every violation — proves the assertions are not vacuous | `test/offline/test_prompt_citation_contract.py::test_format_checks_detect_violations` |
+| TC-006 | REQ-006 C-004 | live | The two registered baseline queries against the live model | Every inline `[n]` has exactly one matching `### Sources` entry; runs that triggered truncation retries are excluded and reported separately | `test/live/test_report_citations_live.py::test_reports_use_numbered_citations` |
+
+- **Regression:** re-run the full `test/offline/` suite (`prompts.py` is imported by all graph tests). No `test_contracts.py` addition: ADR-001 §5 changes no `state.py` type and no interface another module reads in code.
+- **Baseline failure:** every offline assertion above must FAIL on the baseline prompts for the registered reason (`Prompt.md` §5).
+- **Live or human checks:** TC-006 (C-004, `automated: false`) runs on demand through the semantic evaluation gate for the prompt change (`Prompt.md` §9); evidence goes to `docs/test-reports/REQ-006.md`.
 
 ## 8. Definition of Done
 

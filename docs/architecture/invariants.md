@@ -111,6 +111,15 @@ Every entry uses the same fields:
 | S6 | When the outcome is `partial`, the limitations section naming each failed or partial task, each unanswered required question and any withheld findings is written by code from structured results and appended to the report; the report model is never asked to disclose it. When the outcome is `failed`, the report is empty and error text appears only in the failure fields. | `delivery.outcome.render_limitations`; `supervisor_tools` and `final_report_generation` | `::test_failed_task_makes_run_partial`, `::test_truncated_findings_make_run_partial`, `::test_no_finding_run_is_failed` |
 
 **Status:** Proposed. **Runtime monitor:** `false_complete_outcome_count == 0` (REQ-004 M-001).
+## INV-006 — The two research prompts state one identical citation format
+
+- **Statement:** `compress_research_system_prompt` and `final_report_generation_prompt` each state exactly one citation format, and both state the same one: numbered inline citations `[n]` and a closing `### Sources` section listing each cited URL once as `[n] Title: URL`, numbered without gaps, with the report prompt renumbering the citations of all findings into one sequence.
+- **Module:** citations
+- **Source:** REQ-006
+- **Status:** Proposed
+- **Enforcing component:** `src/open_deep_research/citations/contract.py` as the single source of truth, interpolated into both prompts in `prompts.py` (ADR-001).
+- **Verification:** `test/offline/test_prompt_citation_contract.py` (C-001, C-002, C-003, the format-safety guard `test_assembled_prompts_format_without_leftover_placeholders`, and the negative test `test_format_checks_detect_violations`); live check `test/live/test_report_citations_live.py` (C-004) monitors renumbering in generated reports.
+- **Fallback:** a CI failure of the offline inspection tests blocks the merge; revert to the last green prompt version. Renumbering correctness in generated reports is monitored, not enforced.
 
 ## Adding an Entry
 
