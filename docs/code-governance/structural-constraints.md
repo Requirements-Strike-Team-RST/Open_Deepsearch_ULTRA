@@ -3,7 +3,7 @@
 > **Purpose:** The rules every member follows when changing code structure, so that parallel work by six people can be merged.
 > **Authoritative for:** source layout, change rules, dependency direction and code-level traceability. *Which* modules exist is decided in `docs/architecture/architecture-blueprint.md` §4; where a specific requirement lands is decided in its ADR.
 > **Maintained by:** humans for §1–§9; each module owner writes their module's section in §10, integrated before SA Review.
-> **Last updated:** 2026-11-12
+> **Last updated:** 2026-11-13
 
 ## 1. Source Layout
 
@@ -130,3 +130,17 @@ Additional rules for this module:
 6. **One shared code region.** `supervisor_tools` is edited by this module and by orchestration. Only the fan-out region belongs to delivery; the exit conditions and the early return belong to orchestration, as tabulated in ADR-001 §5. The one permitted crossing is the early-return branch calling `run_delegations(..., unrun_reason="not_run")`: orchestration decides *which* calls are unrun and hands them over; the category and reason of each result come from `run_delegations`, so orchestration never classifies a task (ADR-001 §3.4). Changing the other region needs that owner's approval.
 7. **State is the only channel.** A node hands data forward only through state fields; a returned value without a matching field is dropped. `task_results` exists for that reason (ADR-002 §3.2), so `finalize` reads task results from state and never from a returned `DelegationOutcome`.
 8. **Routing with `Command` only.** Nodes decide their next node by returning `Command(goto=...)`, as every baseline node does. This module adds no `add_conditional_edges` and no duplicate edge: two places deciding the same destination would let a later edit change one and miss the other.
+### context (REQ-005, ADR-005)
+
+| Item | Constraint |
+|---|---|
+| Path | `src/open_deep_research/context/` with `__init__.py`, `messages.py`, `trimming.py`, `classification.py`, `recovery.py`; added to `[tool.setuptools] packages` in `pyproject.toml` in the same PR |
+| Responsibility | Decide, without calling a model, which whole research turns to remove when compression exceeds the model token limit, classify token-limit errors for the invoked compression model, and report an unreducible history as a typed failure instead of a summary |
+| Public interface | `segment_turns()`, `TurnLayout`, `ResearchTurn` (`messages.py`); `plan_trim()`, `TrimPlan` (`trimming.py`); `classify_token_limit()` (`classification.py`); `compress_with_recovery()`, `CompressionOutcome`, `TokenLimitExceeded` (`recovery.py`); exported through `context/__init__.py` only |
+| Called from | `compress_research` in `deep_researcher.py` (the token-limit branch), and nothing else |
+| May depend on | `langchain_core.messages`, `configuration.py` (`Configuration` values passed in as arguments, not constructed), `utils.py` (`is_token_limit_exceeded`, `filter_messages` usage pattern) |
+| Must not depend on | `deep_researcher.py`, `prompts.py`, any other extension module (`orchestration/`, `delivery/`, `search/`, `citations/`), any model client, any network call, and `src/security/` |
+| Shared contracts | Reads `ResearcherState.researcher_messages`; returns `compressed_research` and `raw_notes` in their existing types and format. Adds exactly one declared output field, `ResearcherOutputState.research_outcome` (`ResearchOutcome \| None`), which is how a `failed` task leaves the researcher subgraph, with category `token_limit` or `provider_transient`; its only reader is the guard added to `supervisor_tools` at `deep_researcher.py` L308-313. ADR-005 §5 requires the orchestration owner's approval before implementation, and the field is recorded in `memory-design.md` §5 |
+| Purity rule | `segment_turns`, `plan_trim` and `classify_token_limit` are pure: no I/O, no model, no logging of message content, no mutation of the input list. `compress_with_recovery` is the only coroutine and the only place that awaits a model |
+| Configuration flag | `context_trimming: bool = False` (baseline behaviour preserved until REQ-005 is `verified`; the flipping PR is separate) |
+| Baseline code touched | `compress_research` body in `deep_researcher.py` (becomes thin, baseline branch kept byte-for-byte under `context_trimming = False`, including its placeholder); `ResearcherOutputState` gains the declared `research_outcome` field in `state.py`; `supervisor_tools` (L308-313) gains one guard that reads `research_outcome` and whose `else` branch is the baseline line unchanged — the condition cannot hold while `context_trimming = False`, so baseline behaviour is preserved; docstring correction only in `utils.remove_up_to_last_ai_message`. `prompts.py` unchanged; `utils.is_token_limit_exceeded` behaviour unchanged because `final_report_generation` also uses it |
