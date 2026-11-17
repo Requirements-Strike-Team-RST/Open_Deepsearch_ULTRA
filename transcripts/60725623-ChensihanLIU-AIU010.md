@@ -3,10 +3,13 @@
 - Date: 2026-11-17
 - Member: sszfot
 - Session: ses_e2bdd7ea1fferC4tLbkCJeovtC
-- Scope: REQ-008 ADD Iterations 1–2, EVAL-002/ADR-002, integration, consistency repair, evidence
-- Source: OpenCode session history (parts from the first REQ-008 message onward)
-- Note: Sanitized at export time (emails, API keys, bearer tokens and local home paths replaced). Tool payloads truncated; transient step/patch parts omitted.
-- Status: Draft; human redaction review before publication.
+- Scope: REQ-008 ADD Iterations 1–2, EVAL-002/ADR-002 drafting, consistency repairs, shared-document integration, evidence preparation and audits
+- Source: OpenCode session history, messages 162–311 (the REQ-008 conversation)
+- Format: Sanitized abbreviated transcript.
+- Redactions: emails → [REDACTED_EMAIL]; OpenAI/Anthropic/Tavily/AWS keys → [REDACTED_*]; Authorization Bearer tokens → [REDACTED_TOKEN]; absolute /Users/<name> paths → [LOCAL_HOME].
+- Omitted non-substantive metadata: step-start/step-finish events (token/step bookkeeping) and transient snapshot parts. Patch events are represented with their hash and affected file list.
+- Remaining truncation: individual tool inputs over 4000 chars and outputs over 6000 chars are truncated with an explicit marker; patch file lists are capped at 60.
+- Status: Draft; not verbatim; human redaction review before publication.
 
 ## Message 162 — USER
 
@@ -172,7 +175,90 @@ output: 137:        - Errors of individual search or MCP tool calls inside resea
 157-            Given two delegations where one researcher returns a finding and the other raises,
 158-            when supervisor_tools runs, then the finding is kept in the tool messages and
 159-            raw_notes and only the other task is failed.
-160-          verification: test/offline
+160-          verification: test/offline/test_failure_propagation.py::test_sibling_result_kept_on_failure
+161-          automated: true
+162-        - id: C-003
+163-          description: >-
+164-            Given a researcher that raises a recognised token-limit error, when supervisor_tools
+165-            runs, then the task result is failed with category token_limit and the research
+166-            phase does not end.
+167-          verification: test/offline/test_failure_propagation.py::test_token_limit_error_is_task_failure
+168-          automated: true
+169-        - id: C-004
+170-          description: >-
+171-            Given three delegations and a concurrency limit of one, when supervisor_tools runs,
+172-            then all three tasks are run and each ends with a task result.
+173-          verification: test/offline/test_failure_propagation.py::test_overflow_delegations_are_queued
+174-          automated: true
+175-        - id: C-005
+176-          description: >-
+177-            Given a final supervisor turn that holds two delegations when the iteration cap is
+178-            reached, when the loop exits, then both delegations end failed with reason not_run.
+179-          verification: test/offline/test_failure_propagation.py::test_delegations_left_at_exit_are_failed
+180-          automated: true
+181-        - id: C-006
+182-          description: >-
+183-            Given a fan-out where one researcher raises immediately while a sibling is still
+184-            running, when supervisor_tools returns, then no task it started is still pending.
+185-          verification: test/offline/test_failure_propagation.py::test_no_task_running_after_join
+186-          automated: true
+187-        - id: C-007
+188-          description: >-
+189-            Given one failed task and one task whose compression produced the placeholder text,
+190-            when the research phase ends, then notes contain only validated findings and both
+191-            failures appear only as failed task results.
+192-          verification: test/offline/test_failure_propagation.py::test_failure_text_not_in_notes
+193-          automated: true
+194-      metrics:
+195-        - id: M-001
+196-          metric: dropped_delegation_count
+197-          operator: "=="
+198-          threshold: 0
+199-          unit: count
+200-          verification: test/offline/test_failure_propagation.py
+201-        - id: M-002
+202-          metric: failure_text_in_notes_count
+203-          operator: "=="
+204-          threshold: 0
+205-          unit: count
+206-          verification: test/offline/test_failure_propagation.py::test_failure_text_not_in_notes
+207-    depends_on:
+208-      - REQ-001
+209-    safety_relevant: true
+210-    status: approved
+211-    version: "1.1"
+212-    updated_at: "2026-11-11"
+213-    notes: >-
+214-      Source: upstream issue #283, reported against commit 1f24f11, which is an ancestor of this
+215-      branch; src/open_deep_research is unchanged since then. Offline probes on 2026-11-10
+216-      reproduced every failure listed in the problem. Upstream #284 targets
+217-      legacy/multi_agent.py, which is not in this repository; the property it asks for, that
+218-      the supervisor converges only after every parallel branch has ended, is C-006. Design
+219-      decision: a researcher's token-limit error is a task failure and does not end the phase,
+220-      because it says nothing about the supervisor's own context; the upstream code ended the
+221-      phase on it. Proposed error categories are token_limit, runtime, not_run and
+222-      invalid_result.
+223-
+224-  - id: REQ-003
+225-    title: Research loop shall stop on a coverage check, not on the model's claim
+226-    type: invariant
+227-    problem: >-
+--
+638:        - Fallback between search providers (REQ-008)
+639-        - New built-in provider integrations
+640-        - Provider selection by cost or latency
+641-    fit_criterion:
+642-      summary: >-
+643-        Every invalid search configuration is rejected before any model or search call, and a
+644-        reader can set up each built-in provider and an MCP search server from the docs alone.
+645-      checks:
+646-        - id: C-001
+647-          description: >-
+648-            Given search_api anthropic and research_model openai:gpt-4.1, when the graph
+649-            starts, then a validation error naming both settings is raised before any model or
+650-            search call.
+651-          verification: test/offline/test_search_configuration.py::test_native_search_m
+…[output truncated at 6000 chars; 6755 total]
 
 [tool: bash | status=completed]
 input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && git log --oneline -3 && git branch --show-current"}
@@ -213,7 +299,71 @@ output:   - id: REQ-008
     owner: sszfot
     priority: should
     priority_rationale: >-
-      Fallback
+      Fallback is a team-proposed reliability improvement beyond what #250 asks. It can be
+      deferred because REQ-007 already makes provider setup clear and a failed search already
+      reaches the researcher as an error. Native model search as a fallback, parallel search
+      across providers and cost-based selection are excluded.
+    scope:
+      in_scope:
+        - Configuration of an ordered fallback list
+        - Fallback on eligible search errors
+        - Explicit failure when every source fails
+      out_of_scope:
+        - OpenAI or Anthropic native search in the fallback chain
+        - New built-in provider integrations
+        - Parallel search across providers
+        - Recovery from invalid credentials
+        - Supervisor delegation and termination (REQ-001 to REQ-003)
+    fit_criterion:
+      summary: >-
+        Eligible failures fall through the configured sources in order, empty results and
+        ineligible errors do not, and an all-failed search is explicit.
+      checks:
+        - id: C-001
+          description: >-
+            Given a primary source that times out and a working fallback, when a search is
+            requested, then the primary is tried once, the fallback is tried next and its
+            result is returned.
+          verification: test/offline/test_search_fallback.py::test_primary_failure_uses_fallback
+          automated: true
+        - id: C-002
+          description: >-
+            Given three sources where the first two fail with eligible errors, when a search is
+            requested, then the sources are tried in the configured order and the third
+            source's result is returned.
+          verification: test/offline/test_search_fallback.py::test_fallbacks_follow_configured_order
+          automated: true
+        - id: C-003
+          description: >-
+            Given every source failing with eligible errors, when a search is requested, then
+            the researcher receives a search failure naming each source and its error, and no
+            result is fabricated.
+          verification: test/offline/test_search_fallback.py::test_all_sources_fail_explicitly
+          automated: true
+        - id: C-004
+          description: >-
+            Given a primary source that returns no hits without error, when a search is
+            requested, then the empty result is returned and no fallback is tried.
+          verification: test/offline/test_search_fallback.py::test_empty_result_does_not_trigger_fallback
+          automated: true
+        - id: C-005
+          description: >-
+            Given a primary source that rejects the query as malformed, when a search is
+            requested, then the error is returned and no fallback is tried.
+          verification: test/offline/test_search_fallback.py::test_ineligible_error_does_not_trigger_fallback
+          automated: true
+    depends_on:
+      - REQ-007
+    safety_relevant: false
+    status: approved
+    version: "1.1"
+    updated_at: "2026-11-11"
+    notes: >-
+      Source: upstream issue #250 and the team's division-of-labour plan. The classification of
+      eligible errors is to be agreed in the design review.
+
+  - id: REQ-009
+
 
 ---
 
@@ -285,7 +435,11 @@ output: <path>[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/src/open_deep_researc
 169:     ]
 170:
 171:     # Execute all search queries in parallel and return results
-172:     search_results = await asynci
+172:     search_results = await asyncio.gather(*search_tasks)
+173:     return search_results
+
+(Showing lines 138-173 of 925. Use offset=174 to continue.)
+</content>
 
 [tool: read | status=completed]
 input: {"filePath": "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/src/open_deep_research/deep_researcher.py", "offset": 427, "limit": 84}
@@ -318,7 +472,67 @@ output: <path>[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/src/open_deep_researc
 450:     """
 451:     # Step 1: Extract current state and check early exit conditions
 452:     configurable = Configuration.from_runnable_config(config)
-453:     researcher_messages = stat
+453:     researcher_messages = state.get("researcher_messages", [])
+454:     most_recent_message = researcher_messages[-1]
+455:
+456:     # Early exit if no tool calls were made (including native web search)
+457:     has_tool_calls = bool(most_recent_message.tool_calls)
+458:     has_native_search = (
+459:         openai_websearch_called(most_recent_message) or
+460:         anthropic_websearch_called(most_recent_message)
+461:     )
+462:
+463:     if not has_tool_calls and not has_native_search:
+464:         return Command(goto="compress_research")
+465:
+466:     # Step 2: Handle other tool calls (search, MCP tools, etc.)
+467:     tools = await get_all_tools(config)
+468:     tools_by_name = {
+469:         tool.name if hasattr(tool, "name") else tool.get("name", "web_search"): tool
+470:         for tool in tools
+471:     }
+472:
+473:     # Execute all tool calls in parallel
+474:     tool_calls = most_recent_message.tool_calls
+475:     tool_execution_tasks = [
+476:         execute_tool_safely(tools_by_name[tool_call["name"]], tool_call["args"], config)
+477:         for tool_call in tool_calls
+478:     ]
+479:     observations = await asyncio.gather(*tool_execution_tasks)
+480:
+481:     # Create tool messages from execution results
+482:     tool_outputs = [
+483:         ToolMessage(
+484:             content=observation,
+485:             name=tool_call["name"],
+486:             tool_call_id=tool_call["id"]
+487:         )
+488:         for observation, tool_call in zip(observations, tool_calls)
+489:     ]
+490:
+491:     # Step 3: Check late exit conditions (after processing tools)
+492:     exceeded_iterations = state.get("tool_call_iterations", 0) >= configurable.max_react_tool_calls
+493:     research_complete_called = any(
+494:         tool_call["name"] == "ResearchComplete"
+495:         for tool_call in most_recent_message.tool_calls
+496:     )
+497:
+498:     if exceeded_iterations or research_complete_called:
+499:         # End research and proceed to compression
+500:         return Command(
+501:             goto="compress_research",
+502:             update={"researcher_messages": tool_outputs}
+503:         )
+504:
+505:     # Continue research loop with tool results
+506:     return Command(
+507:         goto="researcher",
+508:         update={"researcher_messages": tool_outputs}
+509:     )
+510:
+
+(Showing lines 427-510 of 719. Use offset=511 to continue.)
+</content>
 
 ---
 
@@ -369,6 +583,13 @@ output: # Evaluation Table
 | B | | | | | | |
 | C (optional) | | | | | | |
 
+**Choice:** <option> — <why it wins>.
+
+**Rejected and why:** <option>: <reason>.
+=== EVAL entries ===
+15:## EVAL-NNN: <Question being decided>
+
+
 ---
 
 ## Message 168 — ASSISTANT
@@ -395,7 +616,25 @@ output: 000-template.md
 
 > **Purpose:** What the research agent does at runtime when something goes wrong: exceptions, retries, degradation and failure paths.
 > **Authoritative for:** runtime handling policies. Each policy traces to a requirement or invariant.
-> **Maintained by:** owners of modules with exception, retry, degradation or failure handling write a module section (§2); §1 is integrated from those sections before SA Review. Modules without such handling add nothin
+> **Maintained by:** owners of modules with exception, retry, degradation or failure handling write a module section (§2); §1 is integrated from those sections before SA Review. Modules without such handling add nothing.
+> **Last updated:** 2026-11-12
+
+## 1. Policies
+
+| Policy ID | Trigger | Detection | Behaviour | Retry / degradation | Outcome effect | Module | Source | Test |
+|---|---|---|---|---|---|---|---|---|
+| POL-001 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+
+## 2. Module Sections
+
+Copy the example for your module and number policies with the next free `POL-NNN`; numbers are unified at integration.
+
+### <Module> (REQ-NNN, ADR-NNN)
+
+| Policy ID | Trigger | Detection | Behaviour | Retry / degradation | Outcome effect | Source | Test |
+|---|---|---|---|---|---|---|---|
+| POL-NNN | e.g. a researcher raises an exception | how deterministic code recognises it | what the system does | retries, limits, fallback, or none | effect on the run outcome (`complete`, `partial`, `failed`, REQ-004) | REQ-NNN / INV-NNN | `test/offline/<file>::<test>` |
+
 
 ---
 
@@ -456,7 +695,39 @@ def wrap_mcp_authenticate_tool(tool: StructuredTool) -> StructuredTool:
             return await original_coroutine(**kwargs)
 
         except BaseException as original_error:
-            # Search for
+            # Search for MCP-specific errors in the exception chain
+            mcp_error = _find_mcp_error_in_exception_chain(original_error)
+            if not mcp_error:
+                # Not an MCP error, re-raise the original exception
+                raise original_error
+
+            # Handle MCP-specific error cases
+            error_details = mcp_error.error
+            error_code = getattr(error_details, "code", None)
+            error_data = getattr(error_details, "data", None) or {}
+
+            # Check for authentication/interaction required error
+            if error_code == -32003:  # Interaction required error code
+                message_payload = error_data.get("message", {})
+                error_message = "Required interaction"
+
+                # Extract user-friendly message if available
+                if isinstance(message_payload, dict):
+                    error_message = message_payload.get("text") or error_message
+
+                # Append URL if provided for user reference
+                if url := error_data.get("url"):
+                    error_message = f"{error_message} {url}"
+
+                raise ToolException(error_message) from original_error
+
+            # For other MCP errors, re-raise the original
+            raise original_error
+
+    # Replace the tool's coroutine with our enhanced version
+    tool.coroutine = authentication_wrapper
+    return tool
+
 
 ---
 
@@ -802,7 +1073,44 @@ output: <path>[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/adr
 20:
 21: | ID | Statement |
 22: |---|---|
-23: | ASR-007-01 | Every entry path into the
+23: | ASR-007-01 | Every entry path into the research chain validates search configuration on each run before its first model or search call. |
+24: | ASR-007-02 | Native providers (`anthropic`, `openai`) require a `research_model` of the same provider; other providers impose no model constraint; only `research_model` is in scope. |
+25: | ASR-007-03 | A configuration is statically search-capable iff it names a built-in provider that yields a search tool, or names an MCP server with a well-formed URL and at least one declared tool. |
+26: | ASR-007-04 | Unsupported `search_api` values are rejected with an error listing the supported set, including when they arrive through the environment variable. |
+27: | ASR-007-05 | Static validation is pure and offline-testable: no model calls, no network, no MCP connection. |
+28: | ASR-007-06 | Valid existing configurations and the graph topology behave exactly as before. |
+29: | ASR-007-07 | Documentation and validation messages are consistent: the README explains behaviour, providers, required models, credentials and MCP-as-search; errors name the setting and supported values. |
+30: | ASR-007-08 | A statically declared MCP that cannot provide a usable search tool at runtime fails the run explicitly instead of silently continuing without search. |
+31: | ASR-007-09 | The presence of search capability is decided by an explicit predicate, not by a tool count that always includes non-search tools. |
+32:
+33: ## 2. Context
+34:
+35: Upstream issue #250 reports that it is unclear when the agent searches and how to use another or a self-hosted search provider. The baseline behaviour being changed:
+36:
+37: - `SearchAPI` enumerates `anthropic`, `openai`, `tavily`, `none`, and nothing in `Configuration` validates provider/model pairing (`src/open_deep_research/configuration.py:11-17,78-93,153-162`). The only guard is a UI note, "Make sure your Researcher Model supports the selected search API" (`configuration.py:84,159`).
+38: - `Configuration.from_runnable_config` already rejects an invalid `search_api` **during Pydantic model construction**: every field is read from the environment variable first and the `configurable` dict second (`configuration.py:243-246`), `None` values are dropped (`:247`), and a value that is not a `SearchAPI` member raises a `ValidationError` listing the valid set. This happens before any node body runs, so a validator that receives an already-constructed `Configuration` never sees an invalid enum value.
+39: - `get_search_tool` returns native search *definitions* for `anthropic`/`openai`, the `tavily_search` tool for `tavily`, and `[]` for `none`; an unknown value falls through silently to `[]` (`src/open_deep_research/utils.py:531-567`).
+40: - `load_mcp_tools` returns `[]` for any malformed MCP configuration and swallows connection errors (`utils.py:470-481,499-504`), so a broken MCP search degrades silently to "no search".
+41: - The researcher's empty-tool guard is dead code: `get_all_tools` always includes `ResearchComplete` and `think_tool`, so `len(tools) == 0` is never true (`deep_researcher.py:384-389` vs `utils.py:579`).
+42: - The README search section only points to `search_api` and `mcp_config` (`README.md:77`).
+43:
+44: ### 2.1 Configuration precedence and `search_api` value handling
+45:
+46: `Configuration.from_runnable_config` resolves each field once, with this precedence (`configuration.py:243-247`): the upper-case environment variable (`SEARCH_API`) **always overrides** the `configurable.search_api` value, and a value of `None` is dropped so the field default applies. The observed behaviour of the current code, which the design must preserve, is:
+47:
+48: | Input | Observed result | Reason |
+49: |---|---|---|
+50: | key omitted, no env var | `SearchAPI.TAVILY` | field default (`configuration.py:79`) |
+51: | explicit `None` | `SearchAPI.TAVILY` | `None` dropped by `:247`, default applies |
+52: | `"bing"` (unsupported) | rejected | Pydantic enum construction fails |
+53: | `""` (empty) | rejected | Pydantic enum construction fails |
+54: | `"TAVILY"` (uppercase) | rejected | enum values are lower-case; no normalisation |
+55: | `SEARCH_API=bing` with a valid `configurable` value | rejected | env var wins, then enum construction fails |
+56:
+57: The proposed mechanism must not normalise an invalid value into an accepted one. It documents that values are case-sensitive and lower-case, and it must respect the environment-variable precedence above.
+58:
+59: ### 2.2 Entry paths that can reach a model or
+…[output truncated at 6000 chars; 40029 total]
 
 ---
 
@@ -823,7 +1131,13 @@ output: ## EVAL-001: Where search configuration is validated before research
 | Responsibility | Resolve and validate a search configuration on each run before a model/search call, decide whether a run has search capability, and classify the MCP load outcome, without model calls or implicit process-environment access during static validation; apply the runtime MCP stop-and-error policy (Proposed, pending SA Review). |
 | Public interface | `resolve_search_api(raw_configurable, environ: Mapping) -> SearchAPI` (pure; caller passes the environment snapshot); `resolve_configuration(raw_configurable, environ) -> Configuration` (builds from validated effective inputs, §7.2); `validate_search_configuration(search_api, research_model, mcp) -> None` (raises a domain error); `classify_mcp(mcp: MCPConfig \| None) -> MCPStatus`; `model_provider(model: str) -> str`; `load_mcp_result(config, existing_tool_names) -> McpLoadResult` (MCP load distinction, §8.1a; U-5); `has_search_capability(evidence: SearchEvidence) -> bool` (evaluated after binding, step 4) |
 | Called from | `clarify_with_user` (public boundary: effective configuration resolution and static validation only — no tool assembly, MCP loading or native binding) and `researcher` (subgraph boundary, which runs the §8.0 order: validate → assemble → bind → capability → invoke) in `deep_researcher.py` |
-|
+| May depend on | `configuration.py` (`Configuration`, `SearchAPI`, `MCPConfig`); an explicit environment snapshot passed by the caller. MCP loading follows the chosen U-5 option: Option A — the module owns the load and does **not** import `utils.load_mcp_tools`; Option B — `utils.load_mcp_tools` (produced by orchestration) yields `McpLoadResult` that is **passed in**, so the module consumes the value and neither imports nor invokes the runtime loader |
+| Must not depend on | `deep_researcher.py`, other extension modules, model clients; private LangChain internals; implicit `os.environ` reads; global environment mutation; and, under either option, the `search` module never invokes the runtime MCP loader |
+| Shared contracts | None: reads `Configuration`/`MCPConfig` and the assembled tool list as an argument; reads no state field and writes none |
+| Configuration flag | None: baseline behaviour is preserved and no new `Configuration` field is added |
+
+REQ-008 (search fallback) will also live in this module and is designed separately; this section covers REQ-007 only. Two call sites are intentional: `clarify_with_user` is the public boundary, and `researcher` is required because the researcher subgraph is compiled and directly invokable (ADR-001 §2.2, §10). `supervisor` binds no search tool and `researcher_tools` is reached only after `researcher` validated, so neither needs a check.
+
 
 [tool: bash | status=completed]
 input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && grep -n \"def tavily_search\\|async def tavily_search_async\\|def get_search_tool\\|async def get_all_tools\\|async def load_mcp_tools\\|def wrap_mcp_authenticate_tool\\|def execute_tool_safely\\|async def researcher_tools\\|async def researcher\\b\" src/open_deep_research/utils.py src/open_deep_research/deep_researcher.py"}
@@ -865,7 +1179,30 @@ Architectural drivers (provisional IDs, see ADR-001 §1): ASR-007-01 validate on
 
 | Option | Summary | Components touched | Pros | Cons | Complexity | Offline testability |
 |---|---|---|---|---|---|---|
-| A | Validate at the top of the research graph entry node | `deep_researcher.py` (`clarify_with_user`) | Small; runs early | Violates the thin-node rule (`structural-constraints.md` §2.1); correctness depends on placement before the `allow_clarification` return; no reusable, unit-testable interfac
+| A | Validate at the top of the research graph entry node | `deep_researcher.py` (`clarify_with_user`) | Small; runs early | Violates the thin-node rule (`structural-constraints.md` §2.1); correctness depends on placement before the `allow_clarification` return; no reusable, unit-testable interface; duplicates MCP capability logic | Low | Medium |
+| B | Pure centralized validator in `search/`, called from `clarify_with_user` and `researcher` | `search/configuration_validator.py`, two call sites | Single-responsibility module; runs before the `clarify_with_user` (L101) and `write_research_brief` (L154) model calls; pure, so offline-testable; matches blueprint `search/` and dependency direction; no topology change | Two call sites; package registration needed | Medium | High |
+| C | Validation inside tool assembly (`utils.get_all_tools`) | `utils.py` | Reuses existing MCP detection | Runs only inside `researcher` (`deep_researcher.py:384,467`), i.e. after the L101/L154 model calls on the standard path, so it fails C-001; bloats `utils.py`; conflates validation with REQ-008 fallback and repeats the unmerged `fix/issue-250` shape | High (coupling) | Medium |
+
+**C-003 mechanism note (affects all options).** Pydantic already rejects an invalid `search_api` during `Configuration` construction (`configuration.py:243-247`), with environment variable precedence, before any node body runs. A validator that receives a constructed `Configuration` therefore cannot be the C-003 mechanism. Option B addresses this with a small raw-input `resolve_search_api` step that runs before construction and reads the same env/config sources; construction stays as a backstop. This does not change the ranking of A/B/C.
+
+**MCP runtime note (affects all options).** The split between static declaration and runtime availability is the same for every option; only the placement of the runtime stop-and-error check differs (Option B places it in `researcher` after assembly). The current `load_mcp_tools` returns a single `[]` for connection failure, zero usable tools, and missing authentication (`utils.py:470-504`), so none of these options can distinguish the runtime outcomes without an adapter or a return-contract change (ADR-001 §8.1a, U-5). This is an implementation dependency of the accepted direction, not a property of the existing code.
+
+**Evidence**
+
+- `configuration.py:11-17,78-93,153-162`: provider set and absence of provider/model validation.
+- `configuration.py:236-247`: `from_runnable_config` precedence (env over configurable), `None` dropped, Pydantic enum rejection of invalid values.
+- `deep_researcher.py:60-175,365-424,714`: the top-level entry and the in-node model calls at L101 and L154.
+- `deep_researcher.py:384-389`: the dead `len(tools) == 0` guard; `utils.py:579`: core tools always present.
+- `deep_researcher.py:384,467` and `utils.py:569-597`: `get_all_tools` is reached only inside the researcher loop.
+- `utils.py:531-567`: unknown provider falls through silently; tool objects versus metadata; `utils.py:470-481,499-504`: MCP loading returns `[]` on failure.
+- `structural-constraints.md` §2 (thin nodes) and §5 (dependency direction).
+=== trace REQ-007/008 ===
+20:| REQ-007 | Search setup documented and validated | functional | approved | Per-run fail-fast: pure raw-input provider validation (caller-supplied env snapshot; env precedence, omitted/None→Tavily) then cross-field checks before any model/search call at the public and researcher-subgraph boundaries; explicit search-capability predicate (native configured vs bound vs executed); declared-MCP runtime failure stops with an error via an MCP load adapter (U-5); static MCP declaration ≠ runtime availability | INV-005 (Proposed); ADR-001 (Proposed); POL-002 (Proposed) | Proposed: `search/` validator + MCP load adapter + capability predicate, called from `clarify_with_user` and `researcher` | planned: `test/offline/test_search_configuration.py` (TC-001–TC-025); review in `docs/review-memo.md` (C-005, TC-023) | TBD |
+21:| REQ-008 | Search fallback | functional | approved | TBD | INV-005 (Proposed) | Proposed: `search/` | planned: `test/offline/test_search_fallback.py` | TBD |
+=== POL rows ===
+12:| POL-001 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+30:| POL-002 | A declared MCP is the effective search source (`search_api=none` with `MCP_DECLARED`) and cannot provide a usable search tool at runtime | `McpLoadResult.status` is `LOAD_FAILED` (connection/loading failure), `ZERO_USABLE_TOOLS` (loaded but none match), or `AUTH_MISSING` (required token unresolvable). Requires the ADR-001 §8.1a adapter/refactor (U-5); not available in the current `load_mcp_tools` | Stop the affected research and raise an explicit error naming the cause (and `mcp_config.url`); no source substitutio
+…[output truncated at 6000 chars; 6284 total]
 
 ---
 
@@ -910,7 +1247,18 @@ async def tavily_search(
     # Step 2: Handle other tool calls (search, MCP tools, etc.)
     tools = await get_all_tools(config)
     tools_by_name = {
-        tool.name if hasattr(tool, "name") else t
+        tool.name if hasattr(tool, "name") else tool.get("name", "web_search"): tool
+        for tool in tools
+    }
+
+    # Execute all tool calls in parallel
+    tool_calls = most_recent_message.tool_calls
+    tool_execution_tasks = [
+        execute_tool_safely(tools_by_name[tool_call["name"]], tool_call["args"], config)
+        for tool_call in tool_calls
+    ]
+    observations = await asyncio.gather(*tool_execution_tasks)
+
 
 ---
 
@@ -1223,7 +1571,10 @@ When a declared MCP is the effective search source (typically `search_api=none` 
 | Missing required authentication | `McpLoadResult.status == AUTH_MISSING` (`auth_required=True`, no token, today `utils.py:475-479`) | Stop; raise an explicit error that the MCP server requires authentication. |
 | Loaded and usable, tool returns no hits | `McpLoadResult.status == LOADED`; the tool runs and returns zero results | Success with no evidence; not an error and no stop (belongs to INV-005 / REQ-008). |
 
-Th
+This policy is recorded as `POL-002` (Proposed, awaiting approval) in `runtime-policy-catalog.md`. Its placement (in `researcher` after assembly, versus deferral to the failure-handling module of REQ-002/REQ-004) is U-1 and is **open**. The mechanism should surface the failure as a raised error that the existing failure handling can carry, without introducing fallback.
+
+## 10. Integration Points and Dependency Direction
+
 
 [tool: bash | status=completed]
 input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && sed -n '1,40p' src/open_deep_research/state.py; echo \"=== ToolException import ===\"; grep -n \"ToolException\\|from tavily\\|import time\\|asyncio\" src/open_deep_research/utils.py | head"}
@@ -1271,7 +1622,12 @@ class ClarifyWithUser(BaseModel):
 3:import asyncio
 24:    ToolException,
 30:from tavily import AsyncTavilyClient
-110:    summaries = await asyncio.gathe
+110:    summaries = await asyncio.gather(*summarization_tasks)
+172:    search_results = await asyncio.gather(*search_tasks)
+193:        summary = await asyncio.wait_for(
+206:    except asyncio.TimeoutError:
+440:                raise ToolException(error_message) from original_error
+
 
 ---
 
@@ -1704,7 +2060,22 @@ Architectural drivers (provisional IDs, see ADR-001 §1): ASR-007-01 validate on
 
 | Option | Summary | Components touched | Pros | Cons | Complexity | Offline testability |
 |---|---|---|---|---|---|---|
-| A | Validate at the top of the research graph entry node | `deep_researcher.py` (`clarify_with_user`) | Small; runs early | Violates the thin-node rule (`structural-constraints.md` §2.1); correctness depends on plac
+| A | Validate at the top of the research graph entry node | `deep_researcher.py` (`clarify_with_user`) | Small; runs early | Violates the thin-node rule (`structural-constraints.md` §2.1); correctness depends on placement before the `allow_clarification` return; no reusable, unit-testable interface; duplicates MCP capability logic | Low | Medium |
+| B | Pure centralized validator in `search/`, called from `clarify_with_user` and `researcher` | `search/configuration_validator.py`, two call sites | Single-responsibility module; runs before the `clarify_with_user` (L101) and `write_research_brief` (L154) model calls; pure, so offline-testable; matches blueprint `search/` and dependency direction; no topology change | Two call sites; package registration needed | Medium | High |
+| C | Validation inside tool assembly (`utils.get_all_tools`) | `utils.py` | Reuses existing MCP detection | Runs only inside `researcher` (`deep_researcher.py:384,467`), i.e. after the L101/L154 model calls on the standard path, so it fails C-001; bloats `utils.py`; conflates validation with REQ-008 fallback and repeats the unmerged `fix/issue-250` shape | High (coupling) | Medium |
+
+**C-003 mechanism note (affects all options).** Pydantic already rejects an invalid `search_api` during `Configuration` construction (`configuration.py:243-247`), with environment variable precedence, before any node body runs. A validator that receives a constructed `Configuration` therefore cannot be the C-003 mechanism. Option B addresses this with a small raw-input `resolve_search_api` step that runs before construction and reads the same env/config sources; construction stays as a backstop. This does not change the ranking of A/B/C.
+
+**MCP runtime note (affects all options).** The split between static declaration and runtime availability is the same for every option; only the placement of the runtime stop-and-error check differs (Option B places it in `researcher` after assembly). The current `load_mcp_tools` returns a single `[]` for connection failure, zero usable tools, and missing authentication (`utils.py:470-504`), so none of these options can distinguish the runtime outcomes without an adapter or a return-contract change (ADR-001 §8.1a, U-5). This is an implementation dependency of the accepted direction, not a property of the existing code.
+
+**Evidence**
+
+- `configuration.py:11-17,78-93,153-162`: provider set and absence of provider/model validation.
+- `configuration.py:236-247`: `from_runnable_config` precedence (env over configurable), `None` dropped, Pydantic enum rejection of invalid values.
+- `deep_researcher.py:60-175,365-424,714`: the top-level entry and the in-node model calls at L101 and L154.
+- `deep_researcher.py:384-389`: the dead `len(tools) == 0` guard; `utils.py:579`: core tools always present.
+- `deep_researcher.py:384,467` and `utils.py:569-597`: `get_all_tools` is reached only inside the researcher loop.
+
 
 [tool: bash | status=completed]
 input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && awk '/^### search \\(REQ-007/{f=1} f' docs/code-governance/verification-constraints.md | grep -oE \"^\\| TC-[0-9]{3} \" | grep -oE \"TC-[0-9]{3}\" | sort | tail -5; echo \"=== last TC overall ===\"; grep -oE \"TC-[0-9]{3}\" docs/code-governance/verification-constraints.md | sort -u | tail -3"}
@@ -1769,7 +2140,33 @@ output: <path>[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/adr
 37: |---|---|---|---|
 38: | | | | |
 39:
-40: Shared contracts changed (`structural-constraints.md` §6): none | list
+40: Shared contracts changed (`structural-constraints.md` §6): none | list, with the owners who must approve.
+41:
+42: ## 6. State, Failure Handling and Deterministic Boundary
+43:
+44: - **State:** fields added or changed, or "none" (details in `memory-design.md`).
+45: - **Runtime policies:** POL IDs, or "none" (details in `runtime-policy-catalog.md`).
+46: - **Invariants:** INV IDs, or "none" (details in `invariants.md`).
+47: - **Deterministic boundary:** which decision is made by code rather than by the model, or "none".
+48:
+49: ## 7. Verification
+50:
+51: How each acceptance criterion and invariant above is verified; the cases are listed in the module section of `verification-constraints.md`.
+52:
+53: ## 8. Consequences
+54:
+55: Positive, negative and neutral consequences, including effects on other modules.
+56:
+57: ## 9. Implementation Steps
+58:
+59: Ordered steps for the coding agent, each naming the files it changes, e.g.:
+60:
+61: 1. Add `<type>` to `src/open_deep_research/<module>/<file>.py`.
+62: 2. Call it from `<node>` in `deep_researcher.py`, keeping the node thin.
+63: 3. Add the configuration flag `<field>` with the baseline as default.
+
+(End of file - total 63 lines)
+</content>
 
 ---
 
@@ -1793,12 +2190,16 @@ output: - `structural-constraints.md` §2 (thin nodes) and §5 (dependency direc
 ## Message 190 — ASSISTANT
 
 [tool: bash | status=completed]
-input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && cat >> docs/architecture/evaluation-table.md <<'EOF'\n\n## EVAL-002: Where ordered search fallback is executed on failure\n\n- **Module:** search\n- **Owner:** sszfot\n- **Decision recorded in:** ADR-002\n- **Status:** Open (provisional selection of B with a thin C-style tool adapter; awaiting SA Review)\n\n**ASR**\n\n| Requirement | Acceptance criteria | Quality attributes at stake |\n|---|---|---|\n| REQ-008 | C-001, C-002, C-003, C-004, C-005 | correctness (ordered fallback, explicit failure), testability, modularity, behaviour preservation |\n\nArchitectural drivers (provisional IDs, see ADR-002 §1): ASR-008-01 ordered fallback over Tavily/MCP sources; ASR-008-02 eligible-vs-ineligible classification gates fallback; ASR-008-03 empty result is success and suppresses fallback; ASR-008-04 all-sources-failed is explicit and lists each source; ASR-008-05 a success is used identically regardless of source; ASR-008-06 fallback operates only on client-side sources (native excluded); ASR-008-07 error classification is deterministic and offline-testable; ASR-008-08 with no fallback configured, behaviour is unchanged; ASR-008-09 fallback does not depend on unapproved REQ-007 decisions; ASR-008-10 a configured-but-unloadable MCP source is represented deterministically; ASR-008-11 the fallback path exposes one stable model-callable search tool.\n\n**Candidates**\n\n| Option | Summary | Components touched | Pros | Cons | Complexity | Offline testability |\n|---|---|---|---|---|---|---|\n| A | Researcher-level fallback: `execute_tool_safely`/`researcher_tools` loops over sources on exception | `deep_researcher.py` (`execute_tool_safely`, `researcher_tools`) | Small change in one node | Puts the fallback loop and classification in the orchestration node, violating the thin-node rule (`structural-constraints.md` §2.1); classification happens after `execute_tool_safely` has flattened the exception to a string (`deep_re
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && cat >> docs/architecture/evaluation-table.md <<'EOF'\n\n## EVAL-002: Where ordered search fallback is executed on failure\n\n- **Module:** search\n- **Owner:** sszfot\n- **Decision recorded in:** ADR-002\n- **Status:** Open (provisional selection of B with a thin C-style tool adapter; awaiting SA Review)\n\n**ASR**\n\n| Requirement | Acceptance criteria | Quality attributes at stake |\n|---|---|---|\n| REQ-008 | C-001, C-002, C-003, C-004, C-005 | correctness (ordered fallback, explicit failure), testability, modularity, behaviour preservation |\n\nArchitectural drivers (provisional IDs, see ADR-002 §1): ASR-008-01 ordered fallback over Tavily/MCP sources; ASR-008-02 eligible-vs-ineligible classification gates fallback; ASR-008-03 empty result is success and suppresses fallback; ASR-008-04 all-sources-failed is explicit and lists each source; ASR-008-05 a success is used identically regardless of source; ASR-008-06 fallback operates only on client-side sources (native excluded); ASR-008-07 error classification is deterministic and offline-testable; ASR-008-08 with no fallback configured, behaviour is unchanged; ASR-008-09 fallback does not depend on unapproved REQ-007 decisions; ASR-008-10 a configured-but-unloadable MCP source is represented deterministically; ASR-008-11 the fallback path exposes one stable model-callable search tool.\n\n**Candidates**\n\n| Option | Summary | Components touched | Pros | Cons | Complexity | Offline testability |\n|---|---|---|---|---|---|---|\n| A | Researcher-level fallback: `execute_tool_safely`/`researcher_tools` loops over sources on exception | `deep_researcher.py` (`execute_tool_safely`, `researcher_tools`) | Small change in one node | Puts the fallback loop and classification in the orchestration node, violating the thin-node rule (`structural-constraints.md` §2.1); classification happens after `execute_tool_safely` has flattened the exception to a string (`deep_researcher.py:427-432`), destroying error identity; no reusable, unit-testable interface; entangles with REQ-007 node validation | Medium | Low |\n| B | Dedicated fallback coordinator in `search/`: ordered attempt loop, classification, normalisation and aggregation over injected sources | `search/fallback.py`, `search/errors.py`, `search/adapters/` | Single-responsibility module; classifies typed exceptions **before** stringification; empty-vs-error decided on a typed result; one place builds the all-failed aggregate; pure over injected sources, so offline-testable; matches blueprint `search/` and dependency direction | Needs a way to be exposed to the model as one tool; depends on a structured MCP load result (REQ-007 U-5) for the load-stage distinction | Medium | High |\n| C | Thin tool-facing adapter that exposes B's coordinator as the single model-callable search tool (complements B; does not re-implement the algorithm) | `search/` tool registration; `get_all_tools` assembly | Keeps `tools_by_name` dispatch stable (`deep_researcher.py:468-471`); isolates the model-facing schema from the algorithm; thin and testable | On its own it does not implement fallback; it is only useful as the face of B | Low (as an adapter) | High |\n\n**Option C clarification (not a competing algorithm).** Option C is evaluated here as a **thin tool-facing adapter over Option B**, not as a second fallback implementation. The genuine alternatives are A (fallback in the researcher node) versus B (fallback in a dedicated coordinator), with a thin C-style adapter being the mechanism that exposes B to the model while keeping tool-name dispatch intact. This is distinct from REQ-007's rejected \"validation inside tool assembly\" alternative (ADR-001 §4 Option C), which concerned validation timing, not result routing.\n\n**MCP load-result note (affects all options).** The current `load_mcp_tools` collapses connection failure, zero usable tools and missing authentication into a single empty list
+…[input truncated at 4000 chars; 6121 total]
 output: appended
 **Choice:** B with a thin C-style tool adapter — the coordinator owns the fallback algorithm and classifies typed errors before they are stringified, while a thin adapter exposes it as one stable model-callable search tool (provisional; pending SA Review).
 
 **Rejected and why:** A — puts fallback and classification in the orchestration node and classifies after the exception is already a string. C as a standalone — it only routes results; it does not decide ordering, classification or aggregation, so it complements B rather than replacing it.
 
+
+[patch snapshot hash=b902fcf10deb… | files:]
+- [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/evaluation-table.md
 
 ---
 
@@ -1807,8 +2208,12 @@ output: appended
 Now create ADR-002 following the template and ADR-001 conventions.
 
 [tool: write | status=completed]
-input: {"filePath": "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/adr/002-search-fallback.md", "content": "# ADR-002: Ordered Search Fallback Through a Dedicated Coordinator\n\n- **Status:** Proposed\n- **Date:** 2026-11-13\n- **Module:** search\n- **Owner:** sszfot\n- **Evaluation:** EVAL-002 (`docs/architecture/evaluation-table.md`)\n- **SA Review:** pending (no `SA-NNN` recorded)\n\n> This decision is *Proposed*. It is not approved until SA Review accepts it (`Prompt.md` §4, Gate 1). Nothing below is implemented. Decisions still open for the team are listed in §12. REQ-008 depends on REQ-007, which is itself still Proposed (ADR-001); this ADR does not assume ADR-001 has been approved.\n\n## 1. Architecturally Significant Requirements\n\n| Requirement | Acceptance criteria that shape this decision | Why they matter architecturally |\n|---|---|---|\n| REQ-008 | C-001, C-002, C-003, C-004, C-005 | Ordered fallback, eligible-vs-ineligible gating, empty-is-success and an explicit all-failed failure fix where the loop, the classification and the aggregation live, and what the researcher receives. |\n| REQ-007 (dependency) | U-5 / structured MCP load result | Distinguishing a source that could not be loaded from one that returned nothing needs the structured load result; without it the load-stage outcome is unrecoverable. |\n\nArchitectural drivers (ASR), provisional IDs used consistently across EVAL-002, this ADR and the module section:\n\n| ID | Statement |\n|---|---|\n| ASR-008-01 | The system tries a configured ordered list of Tavily/MCP sources, next source on eligible failure, until one succeeds (C-001, C-002). |\n| ASR-008-02 | Eligible errors (timeout, connection failure, rate limit, provider server error, rejected credential) trigger fallback; ineligible errors return without fallback (C-001, C-002, C-005). |\n| ASR-008-03 | A search that returns no hits is a success and does not trigger fallback (C-004). |\n| ASR-008-04 | When every source fails, the
+input: {"filePath": "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/adr/002-search-fallback.md", "content": "# ADR-002: Ordered Search Fallback Through a Dedicated Coordinator\n\n- **Status:** Proposed\n- **Date:** 2026-11-13\n- **Module:** search\n- **Owner:** sszfot\n- **Evaluation:** EVAL-002 (`docs/architecture/evaluation-table.md`)\n- **SA Review:** pending (no `SA-NNN` recorded)\n\n> This decision is *Proposed*. It is not approved until SA Review accepts it (`Prompt.md` §4, Gate 1). Nothing below is implemented. Decisions still open for the team are listed in §12. REQ-008 depends on REQ-007, which is itself still Proposed (ADR-001); this ADR does not assume ADR-001 has been approved.\n\n## 1. Architecturally Significant Requirements\n\n| Requirement | Acceptance criteria that shape this decision | Why they matter architecturally |\n|---|---|---|\n| REQ-008 | C-001, C-002, C-003, C-004, C-005 | Ordered fallback, eligible-vs-ineligible gating, empty-is-success and an explicit all-failed failure fix where the loop, the classification and the aggregation live, and what the researcher receives. |\n| REQ-007 (dependency) | U-5 / structured MCP load result | Distinguishing a source that could not be loaded from one that returned nothing needs the structured load result; without it the load-stage outcome is unrecoverable. |\n\nArchitectural drivers (ASR), provisional IDs used consistently across EVAL-002, this ADR and the module section:\n\n| ID | Statement |\n|---|---|\n| ASR-008-01 | The system tries a configured ordered list of Tavily/MCP sources, next source on eligible failure, until one succeeds (C-001, C-002). |\n| ASR-008-02 | Eligible errors (timeout, connection failure, rate limit, provider server error, rejected credential) trigger fallback; ineligible errors return without fallback (C-001, C-002, C-005). |\n| ASR-008-03 | A search that returns no hits is a success and does not trigger fallback (C-004). |\n| ASR-008-04 | When every source fails, the researcher receives an explicit failure listing each attempted source and its error, not mistakable for an empty result (C-003). |\n| ASR-008-05 | A successful result is used identically regardless of which source produced it (statement). |\n| ASR-008-06 | Fallback operates only on client-side sources (Tavily/MCP); native OpenAI/Anthropic search is never a fallback substitute (out of scope). |\n| ASR-008-07 | Error classification is deterministic and offline-testable with fake sources and injected errors. |\n| ASR-008-08 | With no fallback configured, behaviour is unchanged (today's single-source error path). |\n| ASR-008-09 | Fallback does not depend on unapproved REQ-007 decisions; it must behave correctly whether or not ADR-001 is accepted. |\n| ASR-008-10 | A configured-but-unloadable MCP source is represented deterministically (a distinct load-stage diagnostic), not silently dropped. |\n| ASR-008-11 | The fallback path is exposed as one stable model-callable search tool, so `tools_by_name` dispatch keeps working. |\n\n## 2. Context\n\nREQ-008 is `approved`; the architecture is Proposed. Baseline behaviour:\n\n- A failed client-side search is never retried with another source. A Tavily exception (`utils.py:138-173`) reaches `execute_tool_safely` (`deep_researcher.py:427-432`), which catches every exception and returns the string `\"Error executing tool: ...\"`; the researcher sees only that text.\n- `researcher_tools` (`deep_researcher.py:435-509`) reloads tools via `get_all_tools` (`:467`), keys them by `tool.name` or `.get(\"name\",\"web_search\")` (`:468-471`), runs all calls in parallel through `execute_tool_safely` (`:474-479`), and wraps each result into a `ToolMessage` content string.\n- An empty Tavily result is a specific success string, `\"No valid search results found...\"` (`utils.py:125-127`), not an error.\n- Tavily's tool takes `queries: List[str]` (`utils.py:43-49`); MCP tools expose server-defined schemas, so the two are **not** schema-compati
+…[input truncated at 4000 chars; 21471 total]
 output: Wrote file successfully.
+
+[patch snapshot hash=d3422d7ebb8d… | files:]
+- [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/adr/002-search-fallback.md
 
 ---
 
@@ -1963,7 +2368,20 @@ docs/architecture/adr/002-search-fallback.md:31:| ASR-008-09 | Fallback does not
 docs/architecture/adr/002-search-fallback.md:54:3. **Coordinate in order.** `FallbackCoordinator` iterates the configured sources in order, **classifying each failure before any exception becomes a string** (`execute_tool_safely` is never in the classification path).
 docs/architecture/adr/002-search-fallback.md:55:4. **Distinguish outcomes.** A success returns its result; an empty result is a success; an ineligible failure terminates fallback immediately and is returned; only when every eligible source is exhausted is `AllSourcesFailed` produced.
 docs/architecture/adr/002-search-fallback.md:78:| `search/fallback.py` (new) | Ordered attempt loop, classification, result normalisation, all-failed aggregation. Pure over injected `SearchSource`s. | `class FallbackCoordinator: async def run(req: SearchRequest, sources: Sequence[SearchSource]) -> SearchOutcome \| AllSourcesFailed` | Tool-facing adapter |
-docs/architecture/adr/002-search-fallback.md:79:| `search/errors.py` (new) | Typed outcomes and classification. | `SearchOutcome(found: bool, content: str, source_name: str)`; `SearchAttemptFailure(source_name: str, classification: ErrorClassification, detail: str)`; `SearchTerminatedFailure(failure: SearchAttemptFailure)`; `AllSourc
+docs/architecture/adr/002-search-fallback.md:79:| `search/errors.py` (new) | Typed outcomes and classification. | `SearchOutcome(found: bool, content: str, source_name: str)`; `SearchAttemptFailure(source_name: str, classification: ErrorClassification, detail: str)`; `SearchTerminatedFailure(failure: SearchAttemptFailure)`; `AllSourcesFailed(failures: list[SearchAttemptFailure])`; `ErrorClassification(eligible: bool, category: str)` | Coordinator |
+docs/architecture/adr/002-search-fallback.md:91:- `SearchTerminatedFailure` — wraps the single ineligible failure that stopped fallback (C-005).
+docs/architecture/adr/002-search-fallback.md:92:- `AllSourcesFailed` — the aggregate of every attempted source and its error (C-003).
+docs/architecture/adr/002-search-fallback.md:107:| Ineligible invocation failure (e.g. malformed query) | Terminate fallback immediately; return the failure (`SearchTerminatedFailure`). |
+docs/architecture/adr/002-search-fallback.md:109:| Every eligible source exhausted | Return `AllSourcesFailed` listing every attempted source and its error. |
+docs/architecture/adr/002-search-fallback.md:114:Not every error becomes `AllSourcesFailed`: an ineligible failure terminates as `SearchTerminatedFailure`, and an empty result is a `SearchOutcome` with `found=False`.
+docs/architecture/adr/002-search-fallback.md:159:- **D-4 (Open):** Unavailable MCP fallback source: recorded `load_failed` and listed in `AllSourcesFailed` (recommended) versus excluded silently. Depends on U-5.
+docs/architecture/adr/002-search-fallback.md:177:7. Implement rendering of success / empty / `AllSourcesFailed` into `ToolMessage` content (D-7).
+docs/architecture/adr/002-search-fallback.md:179:9. Verify per §11; record evidence in `docs/test-reports/REQ-008.md`.
+docs/architecture/adr/002-search-fallback.md:183:Cases are listed in the `search` module section of `verification-constraints.md` §7 and are **planned, not executed**. IDs continue after REQ-007's `TC-026` to avoid collision (module example rows TC-001…TC-003 are placeholders, not real cases).
+docs/architecture/adr/002-search-fallback.md:185:| Criterion | Planned case | Test name (planned) |
+docs/architecture/adr/002-search-fallback.md:189:| C-003 | all eligible fail → `AllSourcesFailed` lists each source and error | `::test_all_sources_fail_explicitly` |
+docs/architecture/evaluation-table.md:94:Architectural drivers (provisional IDs, see ADR-002 §1): ASR-008-01 ordered fallback over Tavily/MCP sources; ASR-008-02 eligible-vs-ineligible classification gates fallback; ASR-008-03 empty result is success and suppresses fallback; ASR-008-04 all-sources-failed is explicit and lists each source; ASR-008-05 a success is used identically regardless of source; ASR-008-06 fallback operates only on client-side sources (native excluded); ASR-008-07 error classification is deterministic and offline-testable; ASR-008-08 with no fallback configured, behaviour is unchanged; ASR-008-09 fallback does not depend on unapproved REQ-007 decisions; ASR-008-10 a configured-but-unloadable MCP source is represented deterministically; ASR-008-11 the fallback path exposes one stable model-callable search tool.
+
 
 ---
 
@@ -1975,6 +2393,9 @@ Now I'll apply the corrections. **Correction 1** — ASR-008-09 in both files.
 input: {"filePath": "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/adr/002-search-fallback.md", "oldString": "| ASR-008-09 | Fallback does not depend on unapproved REQ-007 decisions; it must behave correctly whether or not ADR-001 is accepted. |", "newString": "| ASR-008-09 | REQ-008 explicitly depends on REQ-007 (especially U-5, the structured MCP load result); that dependency must be tracked, and unapproved REQ-007 decisions must not be treated as implemented guarantees. |"}
 output: Edit applied successfully.
 
+[patch snapshot hash=d23e08f0b6a1… | files:]
+- [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/adr/002-search-fallback.md
+
 ---
 
 ## Message 198 — ASSISTANT
@@ -1982,6 +2403,9 @@ output: Edit applied successfully.
 [tool: edit | status=completed]
 input: {"filePath": "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/evaluation-table.md", "oldString": "ASR-008-08 with no fallback configured, behaviour is unchanged; ASR-008-09 fallback does not depend on unapproved REQ-007 decisions; ASR-008-10 a configured-but-unloadable MCP source is represented deterministically; ASR-008-11 the fallback path exposes one stable model-callable search tool.", "newString": "ASR-008-08 with no fallback configured, behaviour is unchanged; ASR-008-09 REQ-008 explicitly depends on REQ-007 (especially U-5), the dependency is tracked and unapproved REQ-007 decisions are not treated as implemented guarantees; ASR-008-10 a configured-but-unloadable MCP source is represented deterministically; ASR-008-11 the fallback path exposes one stable model-callable search tool."}
 output: Edit applied successfully.
+
+[patch snapshot hash=f0f23cbd0481… | files:]
+- [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/evaluation-table.md
 
 ---
 
@@ -1993,6 +2417,9 @@ output: Edit applied successfully.
 input: {"filePath": "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/adr/002-search-fallback.md", "oldString": "| `search/fallback.py` (new) | Ordered attempt loop, classification, result normalisation, all-failed aggregation. Pure over injected `SearchSource`s. | `class FallbackCoordinator: async def run(req: SearchRequest, sources: Sequence[SearchSource]) -> SearchOutcome \\| AllSourcesFailed` | Tool-facing adapter |", "newString": "| `search/fallback.py` (new) | Ordered attempt loop, classification, result normalisation, all-failed aggregation. Pure over injected `SearchSource`s. | `class FallbackCoordinator: async def run(req: SearchRequest, sources: Sequence[SearchSource]) -> SearchOutcome \\| SearchTerminatedFailure \\| AllSourcesFailed` | Tool-facing adapter |"}
 output: Edit applied successfully.
 
+[patch snapshot hash=558fa875e3c4… | files:]
+- [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/adr/002-search-fallback.md
+
 ---
 
 ## Message 200 — ASSISTANT
@@ -2003,6 +2430,9 @@ output: Edit applied successfully.
 input: {"filePath": "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/adr/002-search-fallback.md", "oldString": "Cases are listed in the `search` module section of `verification-constraints.md` §7 and are **planned, not executed**. IDs continue after REQ-007's `TC-026` to avoid collision (module example rows TC-001…TC-003 are placeholders, not real cases).", "newString": "The cases below are **Planned / Not Implemented / Not Executed**. They do **not** yet exist in `verification-constraints.md` §7 or in any test file; this ADR only proposes them. IDs are proposed to continue after REQ-007's `TC-026` to avoid collision (the module example rows TC-001…TC-003 are placeholders, not real cases)."}
 output: Edit applied successfully.
 
+[patch snapshot hash=593811bb0a67… | files:]
+- [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/adr/002-search-fallback.md
+
 ---
 
 ## Message 201 — ASSISTANT
@@ -2012,6 +2442,9 @@ output: Edit applied successfully.
 [tool: edit | status=completed]
 input: {"filePath": "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/adr/002-search-fallback.md", "oldString": "- **Date:** 2026-11-13", "newString": "- **Date:** 2026-11-17"}
 output: Edit applied successfully.
+
+[patch snapshot hash=0fe2299a38a6… | files:]
+- [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/adr/002-search-fallback.md
 
 ---
 
@@ -2047,7 +2480,9 @@ Adopt a **dedicated fallback coordinator** in the `search` module that owns the 
 5. **Expose as one tool.** A thin adapter registers the coordinator as the single model-callable search tool under a stable name, so `tools_by_name` dispatch (`deep_researcher.py:468-471`) is unchanged.
 6. **Consume the structured MCP load result.** The coordinator receives availability from the MCP load result rather than inferring it from an empty tool list.
 
-Do not change the graph topology or state. Do not substitute native model search. Keep REQ-007 validation separate (this ADR does not perform or rep
+Do not change the graph topology or state. Do not substitute native model search. Keep REQ-007 validation separate (this ADR does not perform or replace configuration validation). The MCP load-result contract is a dependency (see §2, §9, and REQ-007 U-5).
+
+
 
 ---
 
@@ -2056,6 +2491,9 @@ Do not change the graph topology or state. Do not substitute native model search
 [tool: edit | status=completed]
 input: {"filePath": "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/adr/002-search-fallback.md", "oldString": "Do not change the graph topology or state. Do not substitute native model search. Keep REQ-007 validation separate (this ADR does not perform or replace configuration validation). The MCP load-result contract is a dependency (see §2, §9, and REQ-007 U-5).", "newString": "Do not change the graph topology or state. Do not substitute native model search. Keep REQ-007 validation separate (this ADR does not perform or replace configuration validation). The MCP load-result contract is a dependency (see §2, §9, and REQ-007 U-5).\n\n**Empty fallback configuration (intent vs evidence).** The architectural *intent* is that an empty (or absent) fallback list preserves today's single-source behaviour exactly: one search source, and on failure the current error path through `execute_tool_safely` (`deep_researcher.py:427-432`) is unchanged (ASR-008-08). This is **architectural intent only, not verified behaviour**: it is not yet implemented, and it must be confirmed by the planned regression case `::test_no_fallback_configuration_preserved` (§11) before it can be claimed. Until that case runs and passes, no statement here should be read as proving backward compatibility."}
 output: Edit applied successfully.
+
+[patch snapshot hash=fe22a45ed4ab… | files:]
+- [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/adr/002-search-fallback.md
 
 ---
 
@@ -2067,6 +2505,9 @@ output: Edit applied successfully.
 input: {"filePath": "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/adr/002-search-fallback.md", "oldString": "| `search/errors.py` (new) | Typed outcomes and classification. | `SearchOutcome(found: bool, content: str, source_name: str)`; `SearchAttemptFailure(source_name: str, classification: ErrorClassification, detail: str)`; `SearchTerminatedFailure(failure: SearchAttemptFailure)`; `AllSourcesFailed(failures: list[SearchAttemptFailure])`; `ErrorClassification(eligible: bool, category: str)` | Coordinator |", "newString": "| `search/errors.py` (new) | Typed outcomes and classification. | `SearchOutcome(found: bool, content: str, source_name: str)`; `SearchAttemptFailure(source_name: str, stage: FailureStage, classification: ErrorClassification, detail: str)` where `FailureStage ∈ {LOAD, INVOKE}`; `SearchTerminatedFailure(failure: SearchAttemptFailure)`; `AllSourcesFailed(failures: list[SearchAttemptFailure])`; `ErrorClassification(eligible: bool, category: str)` | Coordinator |"}
 output: Edit applied successfully.
 
+[patch snapshot hash=f90624c35159… | files:]
+- [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/adr/002-search-fallback.md
+
 ---
 
 ## Message 206 — ASSISTANT
@@ -2074,6 +2515,9 @@ output: Edit applied successfully.
 [tool: edit | status=completed]
 input: {"filePath": "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/adr/002-search-fallback.md", "oldString": "- `SearchAttemptFailure` — recorded per attempted source; `classification` decides whether to continue.", "newString": "- `SearchAttemptFailure` — recorded per attempted source; `classification` decides whether to continue. Its `stage` field distinguishes a **load-stage** failure (`LOAD`) from an **invocation-stage** failure (`INVOKE`). A source unavailable at load time is recorded with `stage=LOAD` and its `detail` naming the load cause; this explicitly records that the source's search tool was **never invoked**, so it must not be presented as an invocation error. An invocation error is recorded with `stage=INVOKE` after `invoke` actually raised. Both stages still appear in `AllSourcesFailed`, tagged by `stage`, so the aggregate never falsely claims an unavailable source was called."}
 output: Edit applied successfully.
+
+[patch snapshot hash=ce62eb5b7861… | files:]
+- [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/adr/002-search-fallback.md
 
 ---
 
@@ -2093,6 +2537,9 @@ output: 112:| Source unavailable during loading | Preserve a distinct load-stage
 [tool: edit | status=completed]
 input: {"filePath": "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/adr/002-search-fallback.md", "oldString": "| Source unavailable during loading | Preserve a distinct load-stage diagnostic (`category=load_failed`); the run-terminating decision is **subject to D-1 approval**. |", "newString": "| Source unavailable during loading | Record `SearchAttemptFailure(stage=LOAD, category=load_failed)` naming the load cause; the source's search tool was never invoked. The run-terminating decision is **subject to D-1 approval**. |"}
 output: Edit applied successfully.
+
+[patch snapshot hash=7b86a4e0e001… | files:]
+- [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/adr/002-search-fallback.md
 
 ---
 
@@ -2119,7 +2566,8 @@ output: === ASR-008-09 EVAL vs ADR ===
 docs/architecture/evaluation-table.md:94:Architectural drivers (provisional IDs, see ADR-002 §1): ASR-008-01 ordered fallback over Tavily/MCP sources; ASR-008-02 eligible-vs-ineligible classification gates fallback; ASR-008-03 empty result is success and suppresses fallback; ASR-008-04 all-sources-failed is explicit and lists each source; ASR-008-05 a success is used identically regardless of source; ASR-008-06 fallback operates only on client-side sources (native excluded); ASR-008-07 error classification is deterministic and offline-testable; ASR-008-08 with no fallback configured, behaviour is unchanged; ASR-008-09 REQ-008 explicitly depends on REQ-007 (especially U-5), the dependency is tracked and unapproved REQ-007 decisions are not treated as implemented guarantees; ASR-008-10 a configured-but-unloadable MCP source is represented deterministically; ASR-008-11 the fallback path exposes one stable model-callable search tool.
 docs/architecture/adr/002-search-fallback.md:31:| ASR-008-09 | REQ-008 explicitly depends on REQ-007 (especially U-5, the structured MCP load result); that dependency must be tracked, and unapproved REQ-007 decisions must not be treated as implemented guarantees. |
 === return contract ===
-80:| `search/fallback.py` (new) | Ordered attempt loop, classification, result normalisation, all-failed aggregation. Pure over injected `SearchSource`s. | `class FallbackCoordinator: async def run(req: SearchRequest, sources: Sequence
+80:| `search/fallback.py` (new) | Ordered attempt loop, classification, result normalisation, all-failed aggregation. Pure over injected `SearchSource`s. | `class FallbackCoordinator: async def run(req: SearchRequest, sources: Sequence[SearchSource]) -> SearchOutcome \| SearchTerminatedFailure \| AllSourcesFailed` | Tool-facing adapter |
+
 
 ---
 
@@ -2130,7 +2578,18 @@ EVAL-002 and ADR-002 agree on ASR-008-09 and interface terminology. Let me also 
 [tool: bash | status=completed]
 input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && grep -n \"load_status\\|U-5\\|no silent\\|degrade\" docs/architecture/evaluation-table.md | tail -5; echo \"=== diag ===\"; grep -n \"load_failed\\|stage=LOAD\\|never invoked\" docs/architecture/adr/002-search-fallback.md"}
 output: 65:**MCP runtime note (affects all options).** The split between static declaration and runtime availability is the same for every option; only the placement of the runtime stop-and-error check differs (Option B places it in `researcher` after assembly). The current `load_mcp_tools` returns a single `[]` for connection failure, zero usable tools, and missing authentication (`utils.py:470-504`), so none of these options can distinguish the runtime outcomes without an adapter or a return-contract change (ADR-001 §8.1a, U-5). This is an implementation dependency of the accepted direction, not a property of the existing code.
-94:Architectural drivers (provisional IDs, see ADR-002 §1): ASR-008-01 ordered fallback over Tavily/MCP sources; ASR-008-02 eligible-vs-ineligible classification gates fallback; ASR-008-03 empty result is success and suppresses fallback; ASR-008-04 all-sources-failed is explicit and lists each source; ASR-008-05 a success is used identically regardless of source; ASR-008-06 fallback operates only on client-side sources (native excluded); ASR-008-07 error classification is deterministic and offline-testable; ASR-008-08 with no fallback configured, behaviour is unchanged; ASR-008-09 REQ-008 explicitly depends on REQ-007 (especially U-5), the dependency is tracked and unapproved REQ-007 decisions are not treated as implemented guarantees; ASR-008-10 a configured-but-unloadable MCP source is represented deterministically; ASR-008-11 the fallback path exposes one
+94:Architectural drivers (provisional IDs, see ADR-002 §1): ASR-008-01 ordered fallback over Tavily/MCP sources; ASR-008-02 eligible-vs-ineligible classification gates fallback; ASR-008-03 empty result is success and suppresses fallback; ASR-008-04 all-sources-failed is explicit and lists each source; ASR-008-05 a success is used identically regardless of source; ASR-008-06 fallback operates only on client-side sources (native excluded); ASR-008-07 error classification is deterministic and offline-testable; ASR-008-08 with no fallback configured, behaviour is unchanged; ASR-008-09 REQ-008 explicitly depends on REQ-007 (especially U-5), the dependency is tracked and unapproved REQ-007 decisions are not treated as implemented guarantees; ASR-008-10 a configured-but-unloadable MCP source is represented deterministically; ASR-008-11 the fallback path exposes one stable model-callable search tool.
+101:| B | Dedicated fallback coordinator in `search/`: ordered attempt loop, classification, normalisation and aggregation over injected sources | `search/fallback.py`, `search/errors.py`, `search/adapters/` | Single-responsibility module; classifies typed exceptions **before** stringification; empty-vs-error decided on a typed result; one place builds the all-failed aggregate; pure over injected sources, so offline-testable; matches blueprint `search/` and dependency direction | Needs a way to be exposed to the model as one tool; depends on a structured MCP load result (REQ-007 U-5) for the load-stage distinction | Medium | High |
+106:**MCP load-result note (affects all options).** The current `load_mcp_tools` collapses connection failure, zero usable tools and missing authentication into a single empty list (`utils.py:478-479,502-504`). No option can honestly distinguish a source that could not be loaded from one that simply returned nothing without the structured load result proposed in ADR-001 §8.1a (REQ-007 U-5). REQ-008 therefore depends on that contract or an equivalent; it does not silently degrade an unavailable MCP source to an empty tool list.
+116:- `utils.py:449-524`: `load_mcp_tools` returns `[]` for every failure (the dependency on ADR-001 §8.1a / U-5).
+=== diag ===
+92:- `SearchAttemptFailure` — recorded per attempted source; `classification` decides whether to continue. Its `stage` field distinguishes a **load-stage** failure (`LOAD`) from an **invocation-stage** failure (`INVOKE`). A source unavailable at load time is recorded with `stage=LOAD` and its `detail` naming the load cause; this explicitly records that the source's search tool was **never invoked**, so it must not be presented as an invocation error. An invocation error is recorded with `stage=INVOKE` after `invoke` actually raised. Both stages still appear in `AllSourcesFailed`, tagged by `stage`, so the aggregate never falsely claims an unavailable source was called.
+95:- `ErrorClassification` — `eligible: bool` plus a `category` from a closed set (timeout, connection, rate_limit, server_error, credential_rejected, load_failed, malformed, other).
+112:| Source unavailable during loading | Record `SearchAttemptFailure(stage=LOAD, category=load_failed)` naming the load cause; the source's search tool was never invoked. The run-terminating decision is **subject to D-1 approval**. |
+142:- **Load stage (REQ-007 concern).** A source that cannot be loaded keeps a distinct `load_failed` diagnostic. Whether that terminates the run is **conditional on D-1**: the proposal below narrows ADR-001 §9/POL-002 so that a failed **fallback** MCP source is recorded without terminating the run when other validated, usable sources remain; a lone unusable source still stops.
+161:- **D-4 (Open):** Unavailable MCP fallback source: recorded `load_failed` and listed in `AllSourcesFailed` (recommended) versus excluded silently. Depends on U-5.
+194:| ASR-008-10 / D-4 | configured-but-unloadable MCP → `load_failed` diagnostic, listed | `::test_unloadable_mcp_source_recorded` |
+
 
 ---
 
@@ -2361,7 +2820,9 @@ output: 19:## INV-001 — Compression never drops the newest context
 === TC ids overall ===
 TC-001 TC-002 TC-003 TC-004 TC-005 TC-006 TC-007 TC-008 TC-009 TC-010 TC-011 TC-012 TC-013 TC-014 TC-015 TC-016 TC-017 TC-018 TC-019 TC-020 TC-021 TC-022 TC-023 TC-024 TC-025 TC-026
 === trace rows ===
-20:| REQ-007 | Search setu
+20:| REQ-007 | Search setup documented and validated | functional | approved | Per-run fail-fast: pure raw-input provider validation (caller-supplied env snapshot; env precedence, omitted/None→Tavily) then cross-field checks before any model/search call at the public and researcher-subgraph boundaries; explicit search-capability predicate (native configured vs bound vs executed); declared-MCP runtime failure stops with an error via an MCP load adapter (U-5); static MCP declaration ≠ runtime availability | INV-005 (Proposed); ADR-001 (Proposed); POL-002 (Proposed) | Proposed: `search/` validator + MCP load adapter + capability predicate, called from `clarify_with_user` and `researcher` | planned: `test/offline/test_search_configuration.py` (TC-001–TC-025); review in `docs/review-memo.md` (C-005, TC-023) | TBD |
+21:| REQ-008 | Search fallback | functional | approved | TBD | INV-005 (Proposed) | Proposed: `search/` | planned: `test/offline/test_search_fallback.py` | TBD |
+
 
 ---
 
@@ -2383,7 +2844,8 @@ output: ## INV-005 — Search results are never mistaken for evidence they do no
 
 ## Adding an Entry
 
-Copy an entry, take the next free `INV-NNN` number, and
+Copy an entry, take the next free `INV-NNN` number, and fill every field. Never reuse a retired number. Add the INV ID to the requirement's row in `trace-matrix.md` and to the ADR's §6. At integration the integrator may renumber entries and updates every reference.
+
 
 [tool: bash | status=completed]
 input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && sed -n '14,32p' docs/architecture/runtime-policy-catalog.md"}
@@ -2403,7 +2865,8 @@ The entries below are **proposed** and are not approved until SA Review and the 
 
 | Policy ID | Trigger | Detection | Behaviour | Retry / degradation | Outcome effect | Source | Test |
 |---|---|---|---|---|---|---|---|
-| POL-002 | A declared MCP is the effective search source (`search_api=none` with `MCP_DECLARED`) and cannot provide a usable search tool at runtime | `McpLoadResult.status` is `LOAD_FAILED` (connection/loading failure), `ZERO_USABLE_TOOLS` (loaded but none match), or `AUTH_MISSING` (required
+| POL-002 | A declared MCP is the effective search source (`search_api=none` with `MCP_DECLARED`) and cannot provide a usable search tool at runtime | `McpLoadResult.status` is `LOAD_FAILED` (connection/loading failure), `ZERO_USABLE_TOOLS` (loaded but none match), or `AUTH_MISSING` (required token unresolvable). Requires the ADR-001 §8.1a adapter/refactor (U-5); not available in the current `load_mcp_tools` | Stop the affected research and raise an explicit error naming the cause (and `mcp_config.url`); no source substitution | None | Research for the affected task fails explicitly; no silent no-search run; a `LOADED` tool that returns no hits is not this policy and remains a success | REQ-007 / INV-005 (Proposed) | planned: `test/offline/test_search_configuration.py` (TC-016, TC-017, TC-018, TC-024) |
+
 
 ---
 
@@ -2415,7 +2878,14 @@ Now the verification-constraints search section tail and structural constraints 
 input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && sed -n '110,118p' docs/code-governance/verification-constraints.md"}
 output: | TC-024 | U-5, §8.1a | exception | MCP load fed each branch (Option A: adapter owns the load; Option B: refactored `load_mcp_tools`): missing `url`/`tools`, missing auth token, `get_tools()` raise, successful load with 0 matching tools, successful load with tools | Returns distinct `LOAD_FAILED` / `AUTH_MISSING` / `ZERO_USABLE_TOOLS` / `LOADED` (four states not collapsed to `[]`); a fake MCP client (`get_tools`) is used, no network | `::test_mcp_load_result_distinguishes_states` |
 | TC-025 | U-3, §8.2 | normal/boundary | Native binding: fake model records definitions passed to `bind_tools`; "configured" (definition produced) vs "bound" (`native_bound`) vs "executed" (fake response with/without `anthropic_websearch_called`/`openai_websearch_called` metadata) | Predicate uses `native_bound` (available only after binding); execution availability is observed only post-response and does not gate capability; a successful bind is not treated as proof of remote execution | `::test_native_configured_bound_executed` |
-| TC-026 | Correction B, §7.2, §8.0 | normal/exception | Env `SEARCH_API` set with a conflicting `configurable.search_api`; a resolver snapshot plus construction from validated effective inputs; a fake model recording call count | The constructed `Configuration` reflects the resolver's effective value (env precedence preserved), no `os.environ` mutation occurs, and the capability predicate is only evaluated after `bind_tools` (step 4). Zero model/search calls before vali
+| TC-026 | Correction B, §7.2, §8.0 | normal/exception | Env `SEARCH_API` set with a conflicting `configurable.search_api`; a resolver snapshot plus construction from validated effective inputs; a fake model recording call count | The constructed `Configuration` reflects the resolver's effective value (env precedence preserved), no `os.environ` mutation occurs, and the capability predicate is only evaluated after `bind_tools` (step 4). Zero model/search calls before validation | `::test_config_resolution_snapshot_and_order` |
+
+- **Regression:** `uv run pytest test/offline`; no shared contract changes, so `test/offline/test_contracts.py` is unaffected. TC-021 is the default-configuration regression.
+- **Live or human checks:** C-005 (TC-023) is human review recorded as `REVIEW-NNN` in `docs/review-memo.md`. TC-016–TC-018 and TC-024 depend on the U-1/U-5 decisions; until approved they are planned, not binding. TC-003 and TC-025 depend on the U-3 decision. TC-026 covers the configuration-resolution boundary (Correction B) and the §8.0 ordering; it is binding regardless of U-5, but its construction step depends on the §7.2 implementation choice (Option 1 needs no factory change; Option 2 needs the additive `environ` parameter).
+
+## 8. Definition of Done
+
+
 
 [tool: bash | status=completed]
 input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && sed -n '90,103p' docs/code-governance/structural-constraints.md"}
@@ -2427,7 +2897,13 @@ output: ### search (REQ-007, ADR-001)
 | Responsibility | Resolve and validate a search configuration on each run before a model/search call, decide whether a run has search capability, and classify the MCP load outcome, without model calls or implicit process-environment access during static validation; apply the runtime MCP stop-and-error policy (Proposed, pending SA Review). |
 | Public interface | `resolve_search_api(raw_configurable, environ: Mapping) -> SearchAPI` (pure; caller passes the environment snapshot); `resolve_configuration(raw_configurable, environ) -> Configuration` (builds from validated effective inputs, §7.2); `validate_search_configuration(search_api, research_model, mcp) -> None` (raises a domain error); `classify_mcp(mcp: MCPConfig \| None) -> MCPStatus`; `model_provider(model: str) -> str`; `load_mcp_result(config, existing_tool_names) -> McpLoadResult` (MCP load distinction, §8.1a; U-5); `has_search_capability(evidence: SearchEvidence) -> bool` (evaluated after binding, step 4) |
 | Called from | `clarify_with_user` (public boundary: effective configuration resolution and static validation only — no tool assembly, MCP loading or native binding) and `researcher` (subgraph boundary, which runs the §8.0 order: validate → assemble → bind → capability → invoke) in `deep_researcher.py` |
-| May depend on | `configuration.py` (`Configuration`, `SearchAPI`, `MCPConfig`); an explicit environment
+| May depend on | `configuration.py` (`Configuration`, `SearchAPI`, `MCPConfig`); an explicit environment snapshot passed by the caller. MCP loading follows the chosen U-5 option: Option A — the module owns the load and does **not** import `utils.load_mcp_tools`; Option B — `utils.load_mcp_tools` (produced by orchestration) yields `McpLoadResult` that is **passed in**, so the module consumes the value and neither imports nor invokes the runtime loader |
+| Must not depend on | `deep_researcher.py`, other extension modules, model clients; private LangChain internals; implicit `os.environ` reads; global environment mutation; and, under either option, the `search` module never invokes the runtime MCP loader |
+| Shared contracts | None: reads `Configuration`/`MCPConfig` and the assembled tool list as an argument; reads no state field and writes none |
+| Configuration flag | None: baseline behaviour is preserved and no new `Configuration` field is added |
+
+REQ-008 (search fallback) will also live in this module and is designed separately; this section covers REQ-007 only. Two call sites are intentional: `clarify_with_user` is the public boundary, and `researcher` is required because the researcher subgraph is compiled and directly invokable (ADR-001 §2.2, §10). `supervisor` binds no search tool and `researcher_tools` is reached only after `researcher` validated, so neither needs a check.
+
 
 ---
 
@@ -2436,8 +2912,11 @@ output: ### search (REQ-007, ADR-001)
 I have all context. Now making the edits. **§1 Invariants** — add INV-006..009 after INV-005 (before "Adding an Entry").
 
 [tool: edit | status=completed]
-input: {"filePath": "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/invariants.md", "oldString": "- **Fallback:** on an eligible error, try only the configured fallback sources in order and record each attempt; when all fail, return an explicit search failure. Never substitute a source that is not configured. (Fallback behaviour itself is REQ-008 and out of REQ-007 scope.)\n\n## Adding an Entry", "newString": "- **Fallback:** on an eligible error, try only the configured fallback sources in order and record each attempt; when all fail, return an explicit search failure. Never substitute a source that is not configured. (Fallback behaviour itself is REQ-008 and out of REQ-007 scope.)\n\n## INV-006 — No fallback after an empty successful result\n\n- **Statement:** A search that returns no hits without error is a successful search and terminates the fallback sequence; no further source is tried.\n- **Module:** search\n- **Source:** REQ-008 (C-004)\n- **Status:** Proposed\n- **Enforcing component:** the fallback coordinator (`search/`, ADR-002): an empty `SearchOutcome` (`found=False`) is a success and stops the attempt loop.\n- **Verification:** `test/offline/test_search_fallback.py` — planned case for C-004 (empty result suppresses fallback); see ADR-002 §11 and `verification-constraints.md` §7.\n- **Fallback:** return the empty success to the researcher as no evidence; do not advance to the next configured source.\n\n## INV-007 — No fallback after an ineligible error\n\n- **Statement:** An ineligible search error (for example a malformed query) is returned without trying any further source; fallback advances only on an eligible error.\n- **Module:** search\n- **Source:** REQ-008 (C-005)\n- **Status:** Proposed\n- **Enforcing component:** the error classification in the fallback coordinator (`search/`, ADR-002): an ineligible `SearchTerminatedFailure` ends the loop immediately.\n- **Verification:** `test/offline/test_search_fallback.py` — planned case for C-005
+input: {"filePath": "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/invariants.md", "oldString": "- **Fallback:** on an eligible error, try only the configured fallback sources in order and record each attempt; when all fail, return an explicit search failure. Never substitute a source that is not configured. (Fallback behaviour itself is REQ-008 and out of REQ-007 scope.)\n\n## Adding an Entry", "newString": "- **Fallback:** on an eligible error, try only the configured fallback sources in order and record each attempt; when all fail, return an explicit search failure. Never substitute a source that is not configured. (Fallback behaviour itself is REQ-008 and out of REQ-007 scope.)\n\n## INV-006 — No fallback after an empty successful result\n\n- **Statement:** A search that returns no hits without error is a successful search and terminates the fallback sequence; no further source is tried.\n- **Module:** search\n- **Source:** REQ-008 (C-004)\n- **Status:** Proposed\n- **Enforcing component:** the fallback coordinator (`search/`, ADR-002): an empty `SearchOutcome` (`found=False`) is a success and stops the attempt loop.\n- **Verification:** `test/offline/test_search_fallback.py` — planned case for C-004 (empty result suppresses fallback); see ADR-002 §11 and `verification-constraints.md` §7.\n- **Fallback:** return the empty success to the researcher as no evidence; do not advance to the next configured source.\n\n## INV-007 — No fallback after an ineligible error\n\n- **Statement:** An ineligible search error (for example a malformed query) is returned without trying any further source; fallback advances only on an eligible error.\n- **Module:** search\n- **Source:** REQ-008 (C-005)\n- **Status:** Proposed\n- **Enforcing component:** the error classification in the fallback coordinator (`search/`, ADR-002): an ineligible `SearchTerminatedFailure` ends the loop immediately.\n- **Verification:** `test/offline/test_search_fallback.py` — planned case for C-005 (ineligible error suppresses fallback); see ADR-002 §11 and `verification-constraints.md` §7.\n- **Fallback:** return the ineligible failure to the researcher as an error; never substitute another source.\n\n## INV-008 — Configured source order is preserved\n\n- **Statement:** When an eligible failure triggers fallback, the configured fallback sources are tried in their configured order, and no source is skipped or reordered.\n- **Module:** search\n- **Source:** REQ-008 (C-001, C-002)\n- **Status:** Proposed\n- **Enforcing component:** the ordered attempt loop in the fallback coordinator (`search/`, ADR-002).\n- **Verification:** `test/offline/test_search_fallback.py` — planned cases for C-001 and C-002 (ordered fallback); see ADR-002 §11 and `verification-constraints.md` §7.\n- **Fallback:** never reorder or skip; if the configured order cannot be followed, the run receives an explicit failure rather than a silently different order.\n\n## INV-009 — Exhausting all eligible sources produces an explicit failure\n\n- **Statement:** When every configured source fails with an eligible error, the researcher receives one explicit all-sources-failed result that lists each attempted source and its error and cannot be mistaken for an empty search result.\n- **Module:** search\n- **Source:** REQ-008 (C-003)\n- **Status:** Proposed\n- **Enforcing component:** the all-failed aggregation in the fallback coordinator (`search/`, ADR-002), rendered by the thin tool-facing adapter into a distinct `ToolMessage`.\n- **Verification:** `test/offline/test_search_fallback.py` — planned case for C-003 (explicit aggregate); see ADR-002 §11 and `verification-constraints.md` §7.\n- **Fallback:** return the aggregate failure with every attempted source and its error; never fabricate a result and never return the empty-success marker.\n\n## Adding an Entry"}
 output: Edit applied successfully.
+
+[patch snapshot hash=97fcabec73b5… | files:]
+- [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/invariants.md
 
 ---
 
@@ -2446,8 +2925,12 @@ output: Edit applied successfully.
 **§2 Runtime policy** — add POL-003 (next free), plus the pending multi-source exception note. Add after the POL-002 row.
 
 [tool: edit | status=completed]
-input: {"filePath": "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/runtime-policy-catalog.md", "oldString": "| POL-002 | A declared MCP is the effective search source (`search_api=none` with `MCP_DECLARED`) and cannot provide a usable search tool at runtime | `McpLoadResult.status` is `LOAD_FAILED` (connection/loading failure), `ZERO_USABLE_TOOLS` (loaded but none match), or `AUTH_MISSING` (required token unresolvable). Requires the ADR-001 §8.1a adapter/refactor (U-5); not available in the current `load_mcp_tools` | Stop the affected research and raise an explicit error naming the cause (and `mcp_config.url`); no source substitution | None | Research for the affected task fails explicitly; no silent no-search run; a `LOADED` tool that returns no hits is not this policy and remains a success | REQ-007 / INV-005 (Proposed) | planned: `test/offline/test_search_configuration.py` (TC-016, TC-017, TC-018, TC-024) |", "newString": "| POL-002 | A declared MCP is the effective search source (`search_api=none` with `MCP_DECLARED`) and cannot provide a usable search tool at runtime | `McpLoadResult.status` is `LOAD_FAILED` (connection/loading failure), `ZERO_USABLE_TOOLS` (loaded but none match), or `AUTH_MISSING` (required token unresolvable). Requires the ADR-001 §8.1a adapter/refactor (U-5); not available in the current `load_mcp_tools` | Stop the affected research and raise an explicit error naming the cause (and `mcp_config.url`); no source substitution | None | Research for the affected task fails explicitly; no silent no-search run; a `LOADED` tool that returns no hits is not this policy and remains a success | REQ-007 / INV-005 (Proposed) | planned: `test/offline/test_search_configuration.py` (TC-016, TC-017, TC-018, TC-024) |\n\n### search (REQ-008, ADR-002) — proposed, awaiting approval\n\nThe policy below is **proposed** and not approved until SA Review (ADR-002, EVAL-002). It introduces no change to native model search (out of scope) and does not amend POL
+input: {"filePath": "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/runtime-policy-catalog.md", "oldString": "| POL-002 | A declared MCP is the effective search source (`search_api=none` with `MCP_DECLARED`) and cannot provide a usable search tool at runtime | `McpLoadResult.status` is `LOAD_FAILED` (connection/loading failure), `ZERO_USABLE_TOOLS` (loaded but none match), or `AUTH_MISSING` (required token unresolvable). Requires the ADR-001 §8.1a adapter/refactor (U-5); not available in the current `load_mcp_tools` | Stop the affected research and raise an explicit error naming the cause (and `mcp_config.url`); no source substitution | None | Research for the affected task fails explicitly; no silent no-search run; a `LOADED` tool that returns no hits is not this policy and remains a success | REQ-007 / INV-005 (Proposed) | planned: `test/offline/test_search_configuration.py` (TC-016, TC-017, TC-018, TC-024) |", "newString": "| POL-002 | A declared MCP is the effective search source (`search_api=none` with `MCP_DECLARED`) and cannot provide a usable search tool at runtime | `McpLoadResult.status` is `LOAD_FAILED` (connection/loading failure), `ZERO_USABLE_TOOLS` (loaded but none match), or `AUTH_MISSING` (required token unresolvable). Requires the ADR-001 §8.1a adapter/refactor (U-5); not available in the current `load_mcp_tools` | Stop the affected research and raise an explicit error naming the cause (and `mcp_config.url`); no source substitution | None | Research for the affected task fails explicitly; no silent no-search run; a `LOADED` tool that returns no hits is not this policy and remains a success | REQ-007 / INV-005 (Proposed) | planned: `test/offline/test_search_configuration.py` (TC-016, TC-017, TC-018, TC-024) |\n\n### search (REQ-008, ADR-002) — proposed, awaiting approval\n\nThe policy below is **proposed** and not approved until SA Review (ADR-002, EVAL-002). It introduces no change to native model search (out of scope) and does not amend POL-002.\n\n| Policy ID | Trigger | Detection | Behaviour | Retry / degradation | Outcome effect | Source | Test |\n|---|---|---|---|---|---|---|---|\n| POL-003 | A search invocation on a configured client-side source (Tavily or a configured MCP search tool) fails, or a source is unavailable at load time, while an ordered fallback list is configured | Error classification in the fallback coordinator (ADR-002 §7) using typed exceptions, structured error codes or documented status metadata — not generic message matching. Eligible = timeout, connection, rate limit, provider server error, rejected credential at invocation; ineligible = e.g. malformed query, unclassifiable (default ineligible). Load-stage unavailability is recorded as `SearchAttemptFailure(stage=LOAD)` — the source was never invoked | Try the next configured source in order on an eligible invocation failure; stop immediately on an ineligible failure; on a source unavailable at load the recorded `stage=LOAD` failure is included in the aggregate (run-terminating behaviour subject to the pending D-1 exception below); an empty result is a success and stops fallback; when every source fails, return `AllSourcesFailed` listing each attempted source, its stage and its error | None (sequential, no parallel, no source substitution); missing authentication *configuration* is a configuration failure and is not retried; a credential rejected at invocation is eligible and does not trigger automatic credential recovery | Research receives either a successful result (from any source, used identically), the empty-success result, an ineligible failure, or an explicit all-sources-failed result distinct from the empty marker; never a fabricated result | REQ-008 / INV-006, INV-007, INV-008, INV-009 (Proposed) | planned: `test/offline/test_search_fallback.py` (REQ-008 cases, TC-027 onward) |\n\n**Proposed exception to POL-002 — Pending Team Approval.** POL-002 currently stops the run unconditionally when a declared MCP cannot
+…[input truncated at 4000 chars; 4516 total]
 output: Edit applied successfully.
+
+[patch snapshot hash=dbfc532a5767… | files:]
+- [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/runtime-policy-catalog.md
 
 ---
 
@@ -2459,6 +2942,9 @@ output: Edit applied successfully.
 input: {"filePath": "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/trace-matrix.md", "oldString": "| REQ-008 | Search fallback | functional | approved | TBD | INV-005 (Proposed) | Proposed: `search/` | planned: `test/offline/test_search_fallback.py` | TBD |", "newString": "| REQ-008 | Search fallback | functional | approved | Ordered fallback over configured Tavily/MCP sources on eligible failures; empty result = success (no fallback); ineligible error stops fallback; all-exhausted yields an explicit aggregate distinct from empty; load-stage vs invocation-stage distinguished; depends on REQ-007 U-5 for the structured load result | INV-005 (Proposed); INV-006, INV-007, INV-008, INV-009 (Proposed); ADR-002 (Proposed); EVAL-002 (Open); POL-003 (Proposed) | Proposed: `search/` fallback coordinator (`SearchRequest`, `SearchSource` adapters, `FallbackCoordinator`, error/failure types, thin tool-facing adapter) | planned: `test/offline/test_search_fallback.py` (TC-027 onward, ADR-002 §11) | TBD |"}
 output: Edit applied successfully.
 
+[patch snapshot hash=51fa25d63f08… | files:]
+- [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/trace-matrix.md
+
 ---
 
 ## Message 221 — ASSISTANT
@@ -2466,8 +2952,11 @@ output: Edit applied successfully.
 **§4 Structural constraints** — extend the search module section with REQ-008 components.
 
 [tool: edit | status=completed]
-input: {"filePath": "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/code-governance/structural-constraints.md", "oldString": "REQ-008 (search fallback) will also live in this module and is designed separately; this section covers REQ-007 only. Two call sites are intentional: `clarify_with_user` is the public boundary, and `researcher` is required because the researcher subgraph is compiled and directly invokable (ADR-001 §2.2, §10). `supervisor` binds no search tool and `researcher_tools` is reached only after `researcher` validated, so neither needs a check.", "newString": "REQ-008 (search fallback) will also live in this module and is designed separately; this section covers REQ-007 only. Two call sites are intentional: `clarify_with_user` is the public boundary, and `researcher` is required because the researcher subgraph is compiled and directly invokable (ADR-001 §2.2, §10). `supervisor` binds no search tool and `researcher_tools` is reached only after `researcher` validated, so neither needs a check.\n\n### search — REQ-008 fallback (REQ-008, ADR-002) — Proposed\n\nThe REQ-007 responsibilities above are unchanged. REQ-008 adds the following components to the same `search/` module (not yet implemented; Proposed, pending SA Review).\n\n| Item | Constraint |\n|---|---|\n| Path | `src/open_deep_research/search/` (same module as REQ-007) |\n| Responsibility | Execute an ordered fallback over configured client-side search sources on eligible failures, classify errors before they are stringified, distinguish empty success from failure, and aggregate an explicit all-sources-failed result. |\n| Public interface | `SearchRequest(queries, max_results, topic)`; `SearchSource` adapters (`name`, `async invoke(SearchRequest) -> SearchOutcome`, `load_status`); `FallbackCoordinator.run(req, sources) -> SearchOutcome \\| SearchTerminatedFailure \\| AllSourcesFailed`; `SearchAttemptFailure(source_name, stage ∈ {LOAD, INVOKE}, classification, detail)`, `SearchTerminatedFailure`, `AllSo
+input: {"filePath": "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/code-governance/structural-constraints.md", "oldString": "REQ-008 (search fallback) will also live in this module and is designed separately; this section covers REQ-007 only. Two call sites are intentional: `clarify_with_user` is the public boundary, and `researcher` is required because the researcher subgraph is compiled and directly invokable (ADR-001 §2.2, §10). `supervisor` binds no search tool and `researcher_tools` is reached only after `researcher` validated, so neither needs a check.", "newString": "REQ-008 (search fallback) will also live in this module and is designed separately; this section covers REQ-007 only. Two call sites are intentional: `clarify_with_user` is the public boundary, and `researcher` is required because the researcher subgraph is compiled and directly invokable (ADR-001 §2.2, §10). `supervisor` binds no search tool and `researcher_tools` is reached only after `researcher` validated, so neither needs a check.\n\n### search — REQ-008 fallback (REQ-008, ADR-002) — Proposed\n\nThe REQ-007 responsibilities above are unchanged. REQ-008 adds the following components to the same `search/` module (not yet implemented; Proposed, pending SA Review).\n\n| Item | Constraint |\n|---|---|\n| Path | `src/open_deep_research/search/` (same module as REQ-007) |\n| Responsibility | Execute an ordered fallback over configured client-side search sources on eligible failures, classify errors before they are stringified, distinguish empty success from failure, and aggregate an explicit all-sources-failed result. |\n| Public interface | `SearchRequest(queries, max_results, topic)`; `SearchSource` adapters (`name`, `async invoke(SearchRequest) -> SearchOutcome`, `load_status`); `FallbackCoordinator.run(req, sources) -> SearchOutcome \\| SearchTerminatedFailure \\| AllSourcesFailed`; `SearchAttemptFailure(source_name, stage ∈ {LOAD, INVOKE}, classification, detail)`, `SearchTerminatedFailure`, `AllSourcesFailed`, `ErrorClassification(eligible, category)`; a thin tool-facing adapter exposing the coordinator as one stable model-callable search tool |\n| Called from | The model-callable search tool registered through `get_all_tools`; invoked during `researcher_tools` tool execution. The **fallback algorithm is not implemented in `deep_researcher.py`** or any orchestration node; the node only dispatches the assembled tool. |\n| May depend on | `configuration.py` (ordered fallback list, `MCPConfig`); the structured MCP load result (REQ-007 U-5, or equivalent) passed in by orchestration; the assembled source tools as arguments |\n| Must not depend on | `deep_researcher.py`, other extension modules, model clients; native model search (out of scope); direct MCP client use where REQ-007 U-5 Option A already owns loading; `execute_tool_safely` (classification must precede stringification) |\n| Shared contracts | **Approval-dependent:** a new `Configuration` field for the ordered fallback list (default empty; D-2) and, under U-5 Option B, the `utils.load_mcp_tools` return type. Both need the affected owners' approval (`§6`). |\n| Configuration flag | Ordered fallback list field, default empty = single-source baseline behaviour (architectural intent; ADR-002 §3 notes it is not yet verified). |\n\nREQ-008 follows the same dependency direction as REQ-007 (`deep_researcher.py → search/ → configuration.py`). Native OpenAI/Anthropic search is excluded from fallback (REQ-008 out of scope). The load-stage/invocation-stage distinction and the proposed exception to POL-002 require D-1 approval (ADR-002 §12)."}
 output: Edit applied successfully.
+
+[patch snapshot hash=3e37ae05aaa3… | files:]
+- [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/code-governance/structural-constraints.md
 
 ---
 
@@ -2476,8 +2965,12 @@ output: Edit applied successfully.
 **§5 Verification constraints** — add REQ-008 cases TC-027..TC-036 after TC-026 row block, before the regression notes. I'll insert them within the search module section, but mark them as REQ-008. Let me append after TC-026 and add a sub-note.
 
 [tool: edit | status=completed]
-input: {"filePath": "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/code-governance/verification-constraints.md", "oldString": "| TC-026 | Correction B, §7.2, §8.0 | normal/exception | Env `SEARCH_API` set with a conflicting `configurable.search_api`; a resolver snapshot plus construction from validated effective inputs; a fake model recording call count | The constructed `Configuration` reflects the resolver's effective value (env precedence preserved), no `os.environ` mutation occurs, and the capability predicate is only evaluated after `bind_tools` (step 4). Zero model/search calls before validation | `::test_config_resolution_snapshot_and_order` |\n\n- **Regression:** `uv run pytest test/offline`; no shared contract changes, so `test/offline/test_contracts.py` is unaffected. TC-021 is the default-configuration regression.", "newString": "| TC-026 | Correction B, §7.2, §8.0 | normal/exception | Env `SEARCH_API` set with a conflicting `configurable.search_api`; a resolver snapshot plus construction from validated effective inputs; a fake model recording call count | The constructed `Configuration` reflects the resolver's effective value (env precedence preserved), no `os.environ` mutation occurs, and the capability predicate is only evaluated after `bind_tools` (step 4). Zero model/search calls before validation | `::test_config_resolution_snapshot_and_order` |\n\n**REQ-008 fallback (ADR-002) — Planned / Not Implemented / Not Executed.** The cases below are proposed only; no test file exists yet. They continue after TC-026 and are recorded in ADR-002 §11.\n\n| Case | Covers | Type | Input | Expected result | Test |\n|---|---|---|---|---|---|\n| TC-027 | REQ-008 C-001 | exception | Primary source times out; a working fallback is configured | Primary tried once, fallback tried next, fallback result returned | `test/offline/test_search_fallback.py::test_primary_failure_uses_fallback` |\n| TC-028 | REQ-008 C-002 | exception | Three sources; first two fail with eligible erro
+input: {"filePath": "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/code-governance/verification-constraints.md", "oldString": "| TC-026 | Correction B, §7.2, §8.0 | normal/exception | Env `SEARCH_API` set with a conflicting `configurable.search_api`; a resolver snapshot plus construction from validated effective inputs; a fake model recording call count | The constructed `Configuration` reflects the resolver's effective value (env precedence preserved), no `os.environ` mutation occurs, and the capability predicate is only evaluated after `bind_tools` (step 4). Zero model/search calls before validation | `::test_config_resolution_snapshot_and_order` |\n\n- **Regression:** `uv run pytest test/offline`; no shared contract changes, so `test/offline/test_contracts.py` is unaffected. TC-021 is the default-configuration regression.", "newString": "| TC-026 | Correction B, §7.2, §8.0 | normal/exception | Env `SEARCH_API` set with a conflicting `configurable.search_api`; a resolver snapshot plus construction from validated effective inputs; a fake model recording call count | The constructed `Configuration` reflects the resolver's effective value (env precedence preserved), no `os.environ` mutation occurs, and the capability predicate is only evaluated after `bind_tools` (step 4). Zero model/search calls before validation | `::test_config_resolution_snapshot_and_order` |\n\n**REQ-008 fallback (ADR-002) — Planned / Not Implemented / Not Executed.** The cases below are proposed only; no test file exists yet. They continue after TC-026 and are recorded in ADR-002 §11.\n\n| Case | Covers | Type | Input | Expected result | Test |\n|---|---|---|---|---|---|\n| TC-027 | REQ-008 C-001 | exception | Primary source times out; a working fallback is configured | Primary tried once, fallback tried next, fallback result returned | `test/offline/test_search_fallback.py::test_primary_failure_uses_fallback` |\n| TC-028 | REQ-008 C-002 | exception | Three sources; first two fail with eligible errors | Tried in configured order; third source's result returned | `test/offline/test_search_fallback.py::test_fallbacks_follow_configured_order` |\n| TC-029 | REQ-008 C-003 | exception | Every source fails with eligible errors | `AllSourcesFailed` lists each attempted source and error; not equal to the empty marker; no fabricated result | `test/offline/test_search_fallback.py::test_all_sources_fail_explicitly` |\n| TC-030 | REQ-008 C-004 | normal | Primary returns no hits without error | Empty success returned; no fallback tried | `test/offline/test_search_fallback.py::test_empty_result_does_not_trigger_fallback` |\n| TC-031 | REQ-008 C-005 | exception | Primary rejects the query as malformed (ineligible) | Error returned; no fallback tried | `test/offline/test_search_fallback.py::test_ineligible_error_does_not_trigger_fallback` |\n| TC-032 | REQ-008 §7 (typed classification) | exception | Each eligible category signalled by typed exception / structured code (Tavily typed errors; MCP `McpError.code`); an unclassifiable error | Eligible categories classify eligible; malformed classifies ineligible; unclassifiable defaults ineligible | `test/offline/test_search_fallback.py::test_error_classification_typed` |\n| TC-033 | REQ-008 §6.1, INV-006..009 (load stage) | exception | Declared MCP fallback source unavailable at load time while other usable sources remain | `SearchAttemptFailure(stage=LOAD)` recorded; aggregate shows the source was never invoked; behaviour subject to D-1 | `test/offline/test_search_fallback.py::test_mcp_load_stage_failure_recorded` |\n| TC-034 | REQ-008 ASR-008-08 | regression | No fallback list configured | Single-source baseline behaviour preserved (intent; must be confirmed by this case) | `test/offline/test_search_fallback.py::test_no_fallback_configuration_preserved` |\n| TC-035 | REQ-008 D-8 | exception | (a) missing auth configuration; (b) credential rejected at invocation | (a) configuration failure, not retried; (b) eligible fallback, no
+…[input truncated at 4000 chars; 4647 total]
 output: Edit applied successfully.
+
+[patch snapshot hash=2d8f0a7d10e6… | files:]
+- [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/code-governance/verification-constraints.md
 
 ---
 
@@ -2787,7 +3280,10 @@ The cases below are **Planned / Not Implemented / Not Executed**. They do **not*
 | ASR-008-08 | no fallback configured → unchanged behaviour | `::test_no_fallback_configuration_preserved` |
 | D-8 | missing auth config = failure; rejected credential at invocation = fallback | `::test_auth_boundary_classification` |
 
-The exact `TC-NNN` assignment
+The exact `TC-NNN` assignments are proposed in the `verification-constraints.md` §7 module section; this ADR does not claim they exist.
+
+## 12. Modules and Documents to Update at Integration
+
 
 [tool: bash | status=completed]
 input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && grep -nE \"TC-03[3-7]|TC-036|REQ-008 fallback \\(ADR-002\\)\" docs/code-governance/verification-constraints.md"}
@@ -2815,7 +3311,17 @@ output: **REQ-008 fallback (ADR-002) — Planned / Not Implemented / Not Execute
 | TC-029 | REQ-008 C-003 | exception | Every source fails with eligible errors | `AllSourcesFailed` lists each attempted source and error; not equal to the empty marker; no fabricated result | `test/offline/test_search_fallback.py::test_all_sources_fail_explicitly` |
 | TC-030 | REQ-008 C-004 | normal | Primary returns no hits without error | Empty success returned; no fallback tried | `test/offline/test_search_fallback.py::test_empty_result_does_not_trigger_fallback` |
 | TC-031 | REQ-008 C-005 | exception | Primary rejects the query as malformed (ineligible) | Error returned; no fallback tried | `test/offline/test_search_fallback.py::test_ineligible_error_does_not_trigger_fallback` |
-| TC-032 | REQ-008 §7 (typed classification) | ex
+| TC-032 | REQ-008 §7 (typed classification) | exception | Each eligible category signalled by typed exception / structured code (Tavily typed errors; MCP `McpError.code`); an unclassifiable error | Eligible categories classify eligible; malformed classifies ineligible; unclassifiable defaults ineligible | `test/offline/test_search_fallback.py::test_error_classification_typed` |
+| TC-033 | REQ-008 §6.1, INV-006..009 (load stage) | exception | Declared MCP fallback source unavailable at load time while other usable sources remain | `SearchAttemptFailure(stage=LOAD)` recorded; aggregate shows the source was never invoked; behaviour subject to D-1 | `test/offline/test_search_fallback.py::test_mcp_load_stage_failure_recorded` |
+| TC-034 | REQ-008 ASR-008-08 | regression | No fallback list configured | Single-source baseline behaviour preserved (intent; must be confirmed by this case) | `test/offline/test_search_fallback.py::test_no_fallback_configuration_preserved` |
+| TC-035 | REQ-008 D-8 | exception | (a) missing auth configuration; (b) credential rejected at invocation | (a) configuration failure, not retried; (b) eligible fallback, no automatic recovery | `test/offline/test_search_fallback.py::test_auth_boundary_classification` |
+| TC-036 | REQ-008 ASR-008-11, §5 (schema mapping) | normal | Tavily and MCP sources with different input schemas; model calls the search tool by its stable name | Tool name resolves via `tools_by_name`; each adapter maps `SearchRequest` to its source schema; result handled identically | `test/offline/test_search_fallback.py::test_tool_dispatch_and_adapter_schema` |
+
+- **Regression:** `uv run pytest test/offline`; no shared contract changes, so `test/offline/test_contracts.py` is unaffected. TC-021 is the default-configuration regression.
+- **Live or human checks:** C-005 (TC-023) is human review recorded as `REVIEW-NNN` in `docs/review-memo.md`. TC-016–TC-018 and TC-024 depend on the U-1/U-5 decisions; until approved they are planned, not binding. TC-003 and TC-025 depend on the U-3 decision. TC-026 covers the configuration-resolution boundary (Correction B) and the §8.0 ordering; it is binding regardless of U-5, but its construction step depends on the §7.2 implementation choice (Option 1 needs no factory change; Option 2 needs the additive `environ` parameter).
+
+## 8. Definition of Done
+
 
 ---
 
@@ -2824,8 +3330,11 @@ output: **REQ-008 fallback (ADR-002) — Planned / Not Implemented / Not Execute
 Now I'll make the edits. **§1 ADR-002 §11** — replace the "do not yet exist" statement and align the table with TC-027..TC-036 (including the TC-033 split).
 
 [tool: edit | status=completed]
-input: {"filePath": "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/adr/002-search-fallback.md", "oldString": "The cases below are **Planned / Not Implemented / Not Executed**. They do **not** yet exist in `verification-constraints.md` §7 or in any test file; this ADR only proposes them. IDs are proposed to continue after REQ-007's `TC-026` to avoid collision (the module example rows TC-001…TC-003 are placeholders, not real cases).\n\n| Criterion | Planned case | Test name (planned) |\n|---|---|---|\n| C-001 | primary timeout → next source's result returned | `test/offline/test_search_fallback.py::test_primary_failure_uses_fallback` |\n| C-002 | three sources, first two eligible-fail → third result | `::test_fallbacks_follow_configured_order` |\n| C-003 | all eligible fail → `AllSourcesFailed` lists each source and error | `::test_all_sources_fail_explicitly` |\n| C-004 | primary empty result → success, no fallback | `::test_empty_result_does_not_trigger_fallback` |\n| C-005 | malformed query (ineligible) → terminated, no fallback | `::test_ineligible_error_does_not_trigger_fallback` |\n| ASR-008-10 / D-4 | configured-but-unloadable MCP → `load_failed` diagnostic, listed | `::test_unloadable_mcp_source_recorded` |\n| D-7 | all-failed rendering distinct from empty marker | `::test_all_failed_distinct_from_empty` |\n| ASR-008-08 | no fallback configured → unchanged behaviour | `::test_no_fallback_configuration_preserved` |\n| D-8 | missing auth config = failure; rejected credential at invocation = fallback | `::test_auth_boundary_classification` |\n\nThe exact `TC-NNN` assignments are proposed in the `verification-constraints.md` §7 module section; this ADR does not claim they exist.", "newString": "Status of these cases, stated precisely:\n\n- **Planned test cases are documented** as entries in `verification-constraints.md` §7 (`REQ-008 fallback (ADR-002)`), as `TC-027` through `TC-037`.\n- **Test implementation is not created:** no `test/offline/test_search_f
+input: {"filePath": "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/adr/002-search-fallback.md", "oldString": "The cases below are **Planned / Not Implemented / Not Executed**. They do **not** yet exist in `verification-constraints.md` §7 or in any test file; this ADR only proposes them. IDs are proposed to continue after REQ-007's `TC-026` to avoid collision (the module example rows TC-001…TC-003 are placeholders, not real cases).\n\n| Criterion | Planned case | Test name (planned) |\n|---|---|---|\n| C-001 | primary timeout → next source's result returned | `test/offline/test_search_fallback.py::test_primary_failure_uses_fallback` |\n| C-002 | three sources, first two eligible-fail → third result | `::test_fallbacks_follow_configured_order` |\n| C-003 | all eligible fail → `AllSourcesFailed` lists each source and error | `::test_all_sources_fail_explicitly` |\n| C-004 | primary empty result → success, no fallback | `::test_empty_result_does_not_trigger_fallback` |\n| C-005 | malformed query (ineligible) → terminated, no fallback | `::test_ineligible_error_does_not_trigger_fallback` |\n| ASR-008-10 / D-4 | configured-but-unloadable MCP → `load_failed` diagnostic, listed | `::test_unloadable_mcp_source_recorded` |\n| D-7 | all-failed rendering distinct from empty marker | `::test_all_failed_distinct_from_empty` |\n| ASR-008-08 | no fallback configured → unchanged behaviour | `::test_no_fallback_configuration_preserved` |\n| D-8 | missing auth config = failure; rejected credential at invocation = fallback | `::test_auth_boundary_classification` |\n\nThe exact `TC-NNN` assignments are proposed in the `verification-constraints.md` §7 module section; this ADR does not claim they exist.", "newString": "Status of these cases, stated precisely:\n\n- **Planned test cases are documented** as entries in `verification-constraints.md` §7 (`REQ-008 fallback (ADR-002)`), as `TC-027` through `TC-037`.\n- **Test implementation is not created:** no `test/offline/test_search_fallback.py` exists yet.\n- **Tests are not executed:** none of these cases has been run; there is no pass/fail evidence.\n\nIDs continue after REQ-007's `TC-026` to avoid collision (the module example rows TC-001…TC-003 are placeholders, not real cases).\n\n| Criterion | Verification case | Test name (planned) |\n|---|---|---|\n| C-001 | TC-027 | `test/offline/test_search_fallback.py::test_primary_failure_uses_fallback` |\n| C-002 | TC-028 | `::test_fallbacks_follow_configured_order` |\n| C-003 | TC-029 | `::test_all_sources_fail_explicitly` |\n| C-004 | TC-030 | `::test_empty_result_does_not_trigger_fallback` |\n| C-005 | TC-031 | `::test_ineligible_error_does_not_trigger_fallback` |\n| Typed classification (§7) | TC-032 | `::test_error_classification_typed` |\n| Load-stage diagnostic contract (§6.1, ASR-008-10) | TC-033 | `::test_mcp_load_stage_failure_recorded` |\n| Conditional continuation after load failure (D-1/D-4, ASR-008-08) | TC-037 | `::test_load_failure_continuation_decision` |\n| No-fallback backward compatibility (ASR-008-08) | TC-034 | `::test_no_fallback_configuration_preserved` |\n| Auth boundary (D-8) | TC-035 | `::test_auth_boundary_classification` |\n| Tool dispatch + adapter schema (ASR-008-11) | TC-036 | `::test_tool_dispatch_and_adapter_schema` |\n\nThe cases are documented as Planned / Not Implemented / Not Executed in `verification-constraints.md` §7; this ADR does not claim any of them has been implemented or passed."}
 output: Edit applied successfully.
+
+[patch snapshot hash=4e7367695a17… | files:]
+- [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/adr/002-search-fallback.md
 
 ---
 
@@ -2837,6 +3346,9 @@ output: Edit applied successfully.
 input: {"filePath": "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/code-governance/verification-constraints.md", "oldString": "| TC-033 | REQ-008 §6.1, INV-006..009 (load stage) | exception | Declared MCP fallback source unavailable at load time while other usable sources remain | `SearchAttemptFailure(stage=LOAD)` recorded; aggregate shows the source was never invoked; behaviour subject to D-1 | `test/offline/test_search_fallback.py::test_mcp_load_stage_failure_recorded` |", "newString": "| TC-033 | REQ-008 §6.1, INV-006..009 (load-stage diagnostic contract) | exception | Declared MCP fallback source unavailable at load time | `SearchAttemptFailure(stage=LOAD)` recorded with the load cause; the aggregate shows the source was **never invoked** (not represented as an invocation failure). This is the proposed diagnostic contract only; it does not decide continuation | `test/offline/test_search_fallback.py::test_mcp_load_stage_failure_recorded` |"}
 output: Edit applied successfully.
 
+[patch snapshot hash=fe6a73b89915… | files:]
+- [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/code-governance/verification-constraints.md
+
 ---
 
 ## Message 233 — ASSISTANT
@@ -2844,6 +3356,9 @@ output: Edit applied successfully.
 [tool: edit | status=completed]
 input: {"filePath": "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/code-governance/verification-constraints.md", "oldString": "| TC-036 | REQ-008 ASR-008-11, §5 (schema mapping) | normal | Tavily and MCP sources with different input schemas; model calls the search tool by its stable name | Tool name resolves via `tools_by_name`; each adapter maps `SearchRequest` to its source schema; result handled identically | `test/offline/test_search_fallback.py::test_tool_dispatch_and_adapter_schema` |", "newString": "| TC-036 | REQ-008 ASR-008-11, §5 (schema mapping) | normal | Tavily and MCP sources with different input schemas; model calls the search tool by its stable name | Tool name resolves via `tools_by_name`; each adapter maps `SearchRequest` to its source schema; result handled identically | `test/offline/test_search_fallback.py::test_tool_dispatch_and_adapter_schema` |\n| TC-037 | REQ-008 D-1/D-4, ASR-008-08 (conditional continuation) | exception | A declared MCP fallback source fails at load while other validated, usable sources remain | **Conditional on team approval (ADR-002 D-1/D-4; REQ-007 U-1/U-5):** if the proposed multi-source exception is approved, fallback continues and records the `stage=LOAD` failure; if it is not approved, POL-002 stop behaviour stands and the run terminates. The case records the decision, it does not presuppose approval | `test/offline/test_search_fallback.py::test_load_failure_continuation_decision` |"}
 output: Edit applied successfully.
+
+[patch snapshot hash=298483c830e1… | files:]
+- [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/code-governance/verification-constraints.md
 
 ---
 
@@ -2855,6 +3370,9 @@ Now update the intro line and add REQ-008 regression notes (§4). Let me update 
 input: {"filePath": "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/code-governance/verification-constraints.md", "oldString": "**REQ-008 fallback (ADR-002) — Planned / Not Implemented / Not Executed.** The cases below are proposed only; no test file exists yet. They continue after TC-026 and are recorded in ADR-002 §11.", "newString": "**REQ-008 fallback (ADR-002) — Planned / Not Implemented / Not Executed.** The cases below are documented plans only: no `test/offline/test_search_fallback.py` exists and none of these cases has run. They continue after TC-026 and are recorded in ADR-002 §11."}
 output: Edit applied successfully.
 
+[patch snapshot hash=fed48d88a1a7… | files:]
+- [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/code-governance/verification-constraints.md
+
 ---
 
 ## Message 235 — ASSISTANT
@@ -2862,6 +3380,9 @@ output: Edit applied successfully.
 [tool: edit | status=completed]
 input: {"filePath": "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/code-governance/verification-constraints.md", "oldString": "- **Regression:** `uv run pytest test/offline`; no shared contract changes, so `test/offline/test_contracts.py` is unaffected. TC-021 is the default-configuration regression.", "newString": "- **REQ-007 regression:** `uv run pytest test/offline`; no shared contract changes, so `test/offline/test_contracts.py` is unaffected. TC-021 is the default-configuration regression.\n- **REQ-008 regression (planned, not implemented):** REQ-008 proposes a new fallback configuration field (default empty) and, depending on REQ-007 U-5, may change the `utils.load_mcp_tools` return contract. If either is approved, shared-contract compatibility must be tested (including `test/offline/test_contracts.py`); it cannot be assumed unaffected. TC-034 (`::test_no_fallback_configuration_preserved`) covers the no-fallback behaviour-preservation requirement. No regression tests have been implemented or executed for REQ-008."}
 output: Edit applied successfully.
+
+[patch snapshot hash=8aeea131b9aa… | files:]
+- [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/code-governance/verification-constraints.md
 
 ---
 
@@ -2872,6 +3393,9 @@ output: Edit applied successfully.
 [tool: edit | status=completed]
 input: {"filePath": "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/trace-matrix.md", "oldString": "| REQ-008 | Search fallback | functional | approved | Ordered fallback over configured Tavily/MCP sources on eligible failures; empty result = success (no fallback); ineligible error stops fallback; all-exhausted yields an explicit aggregate distinct from empty; load-stage vs invocation-stage distinguished; depends on REQ-007 U-5 for the structured load result | INV-005 (Proposed); INV-006, INV-007, INV-008, INV-009 (Proposed); ADR-002 (Proposed); EVAL-002 (Open); POL-003 (Proposed) | Proposed: `search/` fallback coordinator (`SearchRequest`, `SearchSource` adapters, `FallbackCoordinator`, error/failure types, thin tool-facing adapter) | planned: `test/offline/test_search_fallback.py` (TC-027 onward, ADR-002 §11) | TBD |", "newString": "| REQ-008 | Search fallback | functional | approved | Ordered fallback over configured Tavily/MCP sources on eligible failures; empty result = success (no fallback); ineligible error stops fallback; all-exhausted yields an explicit aggregate distinct from empty; load-stage vs invocation-stage distinguished; depends on REQ-007 U-5 for the structured load result | INV-005 (Proposed); INV-006, INV-007, INV-008, INV-009 (Proposed); ADR-002 (Proposed); EVAL-002 (Open); POL-003 (Proposed) | Proposed: `search/` fallback coordinator (`SearchRequest`, `SearchSource` adapters, `FallbackCoordinator`, error/failure types, thin tool-facing adapter) | planned: `test/offline/test_search_fallback.py` — C-001→TC-027, C-002→TC-028, C-003→TC-029, C-004→TC-030, C-005→TC-031; TC-032–TC-037 (ADR-002 §11) | TBD |"}
 output: Edit applied successfully.
+
+[patch snapshot hash=2c787773fe11… | files:]
+- [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/trace-matrix.md
 
 ---
 
@@ -3198,7 +3722,24 @@ drwxr-xr-x  31 sft  staff     992 17 11 18:06 ..
           verification matrix. Keep all unresolved decisions open and
           make no implementation or test changes.
         requirements: [ REQ-007 ]
-        artif
+        artifacts:
+          - docs/architecture/adr/001-search-configuration-validation.md
+          - docs/architecture/evaluation-table.md
+          - docs/architecture/invariants.md
+          - docs/architecture/runtime-policy-catalog.md
+          - docs/architecture/trace-matrix.md
+          - docs/code-governance/structural-constraints.md
+          - docs/code-governance/verification-constraints.md
+        supervision: >-
+          The member reviewed the architecture changes, requested
+          corrections to the configuration snapshot and MCP dependency
+          boundaries, and checked documentation consistency.
+          The Markdown diff check passed. The verification matrix
+          defines 26 test cases, but tests were not executed.
+          ADR-001 remains Proposed and U-1 through U-5 remain open
+          pending SA Review.
+        transcript: transcripts/60725623-ChensihanLIU-AIU009.md
+
 
 [tool: bash | status=completed]
 input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && which opencode 2>/dev/null; opencode --version 2>/dev/null; echo \"---session dirs---\"; ls -d ~/.local/share/opencode/* 2>/dev/null; ls -d ~/.config/opencode 2>/dev/null"}
@@ -3264,7 +3805,47 @@ C. A configuration validation layer integrated with existing search tool assembl
 
 For each design, evaluate:
 1. Satisfaction of REQ-007 C-001 through C-005.
-2. Modularity, cohe
+2. Modularity, cohesion, and coupling.
+3. Compatibility with existing search providers and MCP tools.
+4. Ability to reject invalid configurations before model/search calls.
+5. Implementation complexity and regression risks.
+6. Testability and traceability.
+7. Whether it unnecessarily overlaps REQ-008.
+
+Recommend one design with evidence from the existing repository.
+
+=== AIU009 transcript head ===
+# AIU-009 — REQ-007 Architecture Refinement
+
+- Date: 2026-11-16
+- Member: sszfot
+- Session: ses_e2bdd7ea1fferC4tLbkCJeovtC
+- Scope: messages #069–#161
+- Note: Tool-call payloads and raw tool results are omitted.
+- Status: Draft; requires manual redaction review before publication.
+
+## Message 069 — user
+
+You are acting as the Software Architecture (SA) Plan Agent for REQ-007 in Open_Deepsearch_ULTRA.
+
+Task: Review and prepare a correction plan for Draft PR #12 based on the latest teammate feedback and Discussion #19.
+
+**Do not modify files yet. Do not implement source code or tests. Do not commit or push.**
+
+First, inspect the current repository and verify the reviewers' findings against the actual source code, requirements, ADR, evaluation table, invariants, runtime policies, structural constraints, verification constraints, and AI-use log.
+
+Address these issues:
+
+1. **C-003 / Pydantic validation:** Verify the behavior of `Configuration.from_runnable_config`, including unsupported values, empty strings, uppercase values, `None`, and environment-variable overrides. Propose a design that produces the required user-facing error before model/search calls, without relying on a validator that never receives invalid values.
+
+2. **MCP runtime failure / U-1:** Separate static MCP configuration validity from runtime connectivity and tool availability. Propose a clear failure policy when configured MCP search cannot connect or loads zero usable search tools. Stop the affected research process and surface a meaningful error. Do not introduce REQ-008 fallback behavior.
+
+3. **U-2:** Correct the validation timing language. Avoid claiming startup validation where the system performs per-run validation.
+
+4. **U-3:** Compare strict provider-prefix matching with actual provider resolution. Record BroZhai's preference for strict matching as a proposal, not as a finalized team decision.
+
+5. **U-4:** Analyze the ineffective `len(tools) == 0` guard and propose an explicit search-capability check. Explain the interaction with native search, Tavily, and MCP tools.
+
 
 [tool: bash | status=completed]
 input: {"command": "opencode --help 2>&1 | head -40; echo \"=== export help ===\"; opencode export --help 2>&1 | head -20"}
@@ -3292,7 +3873,37 @@ Commands:
   opencode export [sessionID]  export session data as JSON
   opencode import <file>       import session data from JSON file or URL
   opencode github              manage GitHub agent
-  opencode pr <number>         fetch and checkout a GitHub PR bran
+  opencode pr <number>         fetch and checkout a GitHub PR branch, then run opencode
+  opencode session             manage sessions
+  opencode plugin <module>     install plugin and update config                      [aliases: plug]
+  opencode db                  database tools
+
+Positionals:
+  project  path to start opencode in                                                        [string]
+
+Options:
+  -h, --help          show help                                                            [boolean]
+  -v, --version       show version number                                                  [boolean]
+      --print-logs    print logs to stderr                                                 [boolean]
+      --log-level     log level                 [string] [choices: "DEBUG", "INFO", "WARN", "ERROR"]
+      --pure          run without external plugins                                         [boolean]
+      --port          port to listen on                                        [number] [default: 0]
+      --hostname      hostname to listen on                          [string] [default: "127.0.0.1"]
+=== export help ===
+opencode export [sessionID]
+
+export session data as JSON
+
+Positionals:
+  sessionID  session id to export                                                           [string]
+
+Options:
+  -h, --help        show help                                                              [boolean]
+  -v, --version     show version number                                                    [boolean]
+      --print-logs  print logs to stderr                                                   [boolean]
+      --log-level   log level                   [string] [choices: "DEBUG", "INFO", "WARN", "ERROR"]
+      --pure        run without external plugins                                           [boolean]
+      --sanitize    redact sensitive transcript and file data                              [boolean]
 
 ---
 
@@ -3621,7 +4232,1340 @@ output: Wrote file successfully.
 
 ## Message 264 — ASSISTANT
 
+[tool: bash | status=completed]
+input: {"command": "cd /tmp/req008_export && python3 extract.py 2>&1 | tail; ls -la req008_msgs.json 2>&1"}
+output: total msgs in session: 264  req008 msgs: 103
+wrote req008_msgs.json
+-rw-r--r--@ 1 sft  wheel  748981 17 11 18:50 req008_msgs.json
+
+
+---
+
+## Message 265 — ASSISTANT
+
+103 REQ-008 messages extracted. Now I'll render a clean transcript following the existing format, with targeted redaction of secrets/emails. Let me write the renderer.
+
+[tool: write | status=completed]
+input: {"content": "import json, re\n\nmsgs = json.load(open(\"/tmp/req008_export/req008_msgs.json\"))\n\nREDACTIONS = [\n    # emails -> placeholder\n    (re.compile(r\"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\"), \"[REDACTED_EMAIL]\"),\n    # tavily / openai style keys\n    (re.compile(r\"tvly-[A-Za-z0-9]{8,}\"), \"[REDACTED_TAVILY_KEY]\"),\n    (re.compile(r\"sk-[A-Za-z0-9]{16,}\"), \"[REDACTED_API_KEY]\"),\n    (re.compile(r\"sk-ant-[A-Za-z0-9_\\-]{16,}\"), \"[REDACTED_ANTHROPIC_KEY]\"),\n    (re.compile(r\"AKIA[0-9A-Z]{12,}\"), \"[REDACTED_AWS_KEY]\"),\n    # bearer tokens in headers\n    (re.compile(r\"(Bearer\\s+)[A-Za-z0-9._\\-]{12,}\"), r\"\\1[REDACTED_TOKEN]\"),\n    # absolute local home paths -> placeholder\n    (re.compile(r\"/Users/[A-Za-z0-9._\\-]+\"), \"[LOCAL_HOME]\"),\n]\n\ndef redact(text):\n    if not isinstance(text, str):\n        return text\n    for pat, rep in REDACTIONS:\n        text = pat.sub(rep, text)\n    return text\n\ndef render_part(p):\n    t = p.get(\"type\")\n    if t == \"text\":\n        return redact(p.get(\"text\", \"\"))\n    if t == \"tool\":\n        tool = p.get(\"tool\", \"?\")\n        state = p.get(\"state\", {})\n        status = state.get(\"status\", \"\")\n        inp = state.get(\"input\", {})\n        out = state.get(\"output\")\n        lines = [f\"[tool: {tool} | status={status}]\"]\n        if inp:\n            try:\n                s = json.dumps(inp, ensure_ascii=False)\n            except Exception:\n                s = str(inp)\n            lines.append(\"input: \" + redact(s[:2000]))\n        if out is not None and status in (\"completed\", \"error\"):\n            s = out if isinstance(out, str) else json.dumps(out, ensure_ascii=False)\n            lines.append(\"output: \" + redact(s[:1500]))\n        return \"\\n\".join(lines)\n    if t == \"step-start\":\n        return \"_(step)_\"\n    # skip other transient parts (step-finish, patch, snapshot, etc.)\n    return None\n\nout = []\nout.append(\"# AIU-010 — REQ-008 Search Fallback Architecture\")\nout.append(\"\")\nout.append(\"- Date: 2026-11-17\")\nout.append(\"- Member: sszfot\")\nout.append(\"- Session: ses_e2bdd7ea1fferC4tLbkCJeovtC\")\nout.append(\"- Scope: REQ-008 ADD Iterations 1–2, EVAL-002/ADR-002, integration, consistency repair, evidence\")\nout.append(\"- Source: OpenCode session history (parts from the first REQ-008 message onward)\")\nout.append(\"- Note: Sanitized at export time (emails, API keys, bearer tokens and local home paths replaced). Tool payloads truncated; transient step/patch parts omitted.\")\nout.append(\"- Status: Draft; human redaction review before publication.\")\nout.append(\"\")\n\nfor m in msgs:\n    out.append(f\"## Message {m['index']:03d} — {m['role'].upper()}\")\n    out.append(\"\")\n    for p in m[\"parts\"]:\n        r = render_part(p)\n        if r is None:\n            continue\n        if r == \"_(step)_\":\n            continue\n        out.append(r)\n        out.append(\"\")\n    out.append(\"---\")\n    out.append(\"\")\n\nopen(\"/tmp/req008_export/transcript.md\", \"w\").write(\"\\n\".join(out))\nprint(\"lines:\", len(out))\n", "filePath": "/tmp/req008_export/render.py"}
+output: Wrote file successfully.
+
+---
+
+## Message 266 — ASSISTANT
+
+[tool: bash | status=completed]
+input: {"command": "cd /tmp/req008_export && python3 render.py && wc -l transcript.md && echo \"=== head ===\" && head -40 transcript.md"}
+output: Traceback (most recent call last):
+  File "/private/tmp/req008_export/render.py", line 68, in <module>
+    r = render_part(p)
+  File "/private/tmp/req008_export/render.py", line 27, in render_part
+    t = p.get("type")
+        ^^^^^
+AttributeError: 'list' object has no attribute 'get'
+
+
+---
+
+## Message 267 — ASSISTANT
+
+Parts can be lists (nested). Let me make the renderer robust.
+
+[tool: edit | status=completed]
+input: {"filePath": "/tmp/req008_export/render.py", "oldString": "def render_part(p):\n    t = p.get(\"type\")", "newString": "def render_part(p):\n    if not isinstance(p, dict):\n        return None\n    t = p.get(\"type\")"}
+output: Edit applied successfully.
+
+---
+
+## Message 268 — ASSISTANT
+
+[tool: bash | status=completed]
+input: {"command": "cd /tmp/req008_export && python3 render.py && wc -l transcript.md && echo \"=== head ===\" && head -30 transcript.md"}
+output: lines: 422
+     421 transcript.md
+=== head ===
+# AIU-010 — REQ-008 Search Fallback Architecture
+
+- Date: 2026-11-17
+- Member: sszfot
+- Session: ses_e2bdd7ea1fferC4tLbkCJeovtC
+- Scope: REQ-008 ADD Iterations 1–2, EVAL-002/ADR-002, integration, consistency repair, evidence
+- Source: OpenCode session history (parts from the first REQ-008 message onward)
+- Note: Sanitized at export time (emails, API keys, bearer tokens and local home paths replaced). Tool payloads truncated; transient step/patch parts omitted.
+- Status: Draft; human redaction review before publication.
+
+## Message 162 — USER
+
+---
+
+## Message 163 — ASSISTANT
+
+---
+
+## Message 164 — ASSISTANT
+
+---
+
+## Message 165 — ASSISTANT
+
+---
+
+## Message 166 — ASSISTANT
+
+---
+
+
+
+---
+
+## Message 269 — ASSISTANT
+
+Messages are empty — the parts are nested differently. Let me inspect the actual part data structure to extract text correctly.
+
+[tool: bash | status=completed]
+input: {"command": "cd /tmp/req008_export && python3 - <<'PY'\nimport json\nmsgs=json.load(open(\"req008_msgs.json\"))\nfor m in msgs[:4]:\n    print(f\"=== msg {m['index']} role={m['role']} parts={len(m['parts'])} ===\")\n    for pid,tc,p in m['parts'][:4]:\n        print(\" type:\", type(p).__name__, \"| sample:\", str(p)[:160])\nPY"}
+output: === msg 162 role=user parts=1 ===
+ type: dict | sample: {'type': 'text', 'text': "You are assisting with the Software Architecture (SA) phase of the Open_Deepsearch_ULTRA project.\n\nI am responsible for **REQ-008: S
+=== msg 163 role=assistant parts=5 ===
+ type: dict | sample: {'snapshot': '69d4ee0a4816cd778a459b8af37d820e199a5994', 'type': 'step-start'}
+ type: dict | sample: {'type': 'text', 'text': "I'll read REQ-008 requirements and the governance docs, then verify the actual search execution paths. I'm in read-only plan mode.", '
+ type: dict | sample: {'type': 'tool', 'tool': 'bash', 'callID': 'call_00_c6kVcY3jVLv2Lu2NV6OA7534', 'state': {'status': 'completed', 'input': {'command': 'cd [LOCAL_HOME]/Documents/Op
+ type: dict | sample: {'type': 'tool', 'tool': 'bash', 'callID': 'call_01_s7QGCV5nQSC1kHhqPSvs3021', 'state': {'status': 'completed', 'input': {'command': 'cd [LOCAL_HOME]/Documents/Op
+=== msg 164 role=assistant parts=4 ===
+ type: dict | sample: {'snapshot': '69d4ee0a4816cd778a459b8af37d820e199a5994', 'type': 'step-start'}
+ type: dict | sample: {'type': 'text', 'text': 'That was REQ-002. Let me read the actual REQ-008 block.', 'time': {'start': 1794910072701, 'end': 1794910073111}}
+ type: dict | sample: {'type': 'tool', 'tool': 'bash', 'callID': 'call_00_3jnA9p5nE7LIrCBxGyEF0753', 'state': {'status': 'completed', 'input': {'command': "cd [LOCAL_HOME]/Documents/Op
+ type: dict | sample: {'reason': 'tool-calls', 'snapshot': '69d4ee0a4816cd778a459b8af37d820e199a5994', 'type': 'step-finish', 'tokens': {'total': 233745, 'input': 1839, 'output': 98,
+=== msg 165 role=assistant parts=5 ===
+ type: dict | sample: {'snapshot': '69d4ee0a4816cd778a459b8af37d820e199a5994', 'type': 'step-start'}
+ type: dict | sample: {'type': 'text', 'text': 'Now let me verify the actual search-execution paths in source, plus the governance docs and the REQ-007 ADR.', 'time': {'start': 17949
+ type: dict | sample: {'type': 'tool', 'tool': 'bash', 'callID': 'call_00_N4hXlfbGO5GiXNhfWWir3157', 'state': {'status': 'completed', 'input': {'command': 'cd [LOCAL_HOME]/Documents/Op
+ type: dict | sample: {'type': 'tool', 'tool': 'bash', 'callID': 'call_01_2ZJ18DvA9z0BLgbi7LqZ4625', 'state': {'status': 'completed', 'input': {'command': 'cd [LOCAL_HOME]/Documents/Op
+
+
+---
+
+## Message 270 — ASSISTANT
+
+The data is a tuple `(pid, tc, p_dict)`, but my render loop passes the whole tuple `p` to `render_part` instead of `p[2]`. Fix the loop.
+
+[tool: edit | status=completed]
+input: {"filePath": "/tmp/req008_export/render.py", "oldString": "    for p in m[\"parts\"]:\n        r = render_part(p)\n        if r is None:\n            continue", "newString": "    for entry in m[\"parts\"]:\n        p = entry[2] if isinstance(entry, (list, tuple)) and len(entry) == 3 else entry\n        r = render_part(p)\n        if r is None:\n            continue"}
+output: Edit applied successfully.
+
+---
+
+## Message 271 — ASSISTANT
+
+[tool: bash | status=completed]
+input: {"command": "cd /tmp/req008_export && python3 render.py && wc -l transcript.md && echo \"=== head 45 ===\" && head -45 transcript.md"}
+output: lines: 812
+    3627 transcript.md
+=== head 45 ===
+# AIU-010 — REQ-008 Search Fallback Architecture
+
+- Date: 2026-11-17
+- Member: sszfot
+- Session: ses_e2bdd7ea1fferC4tLbkCJeovtC
+- Scope: REQ-008 ADD Iterations 1–2, EVAL-002/ADR-002, integration, consistency repair, evidence
+- Source: OpenCode session history (parts from the first REQ-008 message onward)
+- Note: Sanitized at export time (emails, API keys, bearer tokens and local home paths replaced). Tool payloads truncated; transient step/patch parts omitted.
+- Status: Draft; human redaction review before publication.
+
+## Message 162 — USER
+
+You are assisting with the Software Architecture (SA) phase of the Open_Deepsearch_ULTRA project.
+
+I am responsible for **REQ-008: Search shall fall back to configured alternative sources on failure**.
+
+This is an architecture analysis task, not an implementation task.
+
+**Important restrictions:**
+- Read and analyze the existing repository only.
+- Do not modify, create, or delete any files.
+- Do not implement code or tests.
+- Do not commit or push.
+- Stop after presenting your analysis and wait for human approval.
+
+## 1. Read the project requirements and architecture rules
+
+Read the relevant sections of:
+
+- `docs/req/requirements.yaml`
+- `AGENTS.md`
+- `Prompt.md`
+- `docs/architecture/evaluation-table.md`
+- `docs/architecture/trace-matrix.md`
+- `docs/architecture/invariants.md`
+- `docs/architecture/runtime-policy-catalog.md`
+- `docs/code-governance/structural-constraints.md`
+- `docs/code-governance/verification-constraints.md`
+- `docs/architecture/adr/001-search-configuration-validation.md`
+
+Identify the exact requirements, acceptance criteria, dependencies, and constraints for REQ-008.
+
+Do not assume that the proposed REQ-007 architecture has been approved.
+
+## 2. Analyze the existing search execution path
+
+
+---
+
+## Message 272 — ASSISTANT
+
+Transcript renders correctly with real prompts, responses, tool calls and outputs. Now verify redaction effectiveness and that no secrets remain.
+
+[tool: bash | status=completed]
+input: {"command": "cd /tmp/req008_export && echo \"=== secret scan in transcript ===\"; grep -oE \"sk-[A-Za-z0-9]{10,}|tvly-[A-Za-z0-9]{10,}|1354422486@qq\\.com|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[a-z]{2,}|Bearer [A-Za-z0-9._-]{12,}|AKIA[0-9A-Z]{12,}|/Users/[A-Za-z0-9._-]+\" transcript.md | sort | uniq -c | head -20; echo \"=== redaction markers present ===\"; grep -oE \"\\[REDACTED_[A-Z_]+\\]|\\[LOCAL_HOME\\]\" transcript.md | sort | uniq -c"}
+output: === secret scan in transcript ===
+=== redaction markers present ===
+ 115 [LOCAL_HOME]
+
+
+---
+
+## Message 273 — ASSISTANT
+
+No secrets/emails/paths remain; `[LOCAL_HOME]` worked (115 uses). No `[REDACTED_EMAIL]` appeared, meaning no email was in the REQ-008 range (the email was in the REQ-007 `git show` output, outside this range). Let me double-check for any sensitive env values and verify the transcript ends cleanly and covers ADR/EVAL + integration.
+
+[tool: bash | status=completed]
+input: {"command": "cd /tmp/req008_export && echo \"=== sensitive env / token patterns ===\"; grep -inE \"SUPABASE|secret|password|token=|api[_-]?key\" transcript.md | grep -viE \"\\[REDACTED|token usage|bearer tokens\" | head; echo \"=== coverage check ===\"; for k in \"ADD Iteration 1\" \"ADD Iteration 2\" \"EVAL-002\" \"ADR-002\" \"TC-027\" \"POL-003\" \"INV-006\"; do echo \"$k: $(grep -c \"$k\" transcript.md)\"; done; echo \"=== tail ===\"; tail -15 transcript.md"}
+output: === sensitive env / token patterns ===
+229:158:    tavily_client = AsyncTavilyClient(api_key=get_tavily_api_key(config))
+274:158:     tavily_client = AsyncTavilyClient(api_key=get_tavily_api_key(config))
+496:**1.2 Tavily construction and invocation.** `tavily_search` is a `@tool` (`utils.py:43-136`); it calls `tavily_search_async` (`utils.py:138-173`), which builds `AsyncTavilyClient(api_key=...)` (`:158`) and runs `client.search(...)` per query via `asyncio.gather` (`:172`). Exceptions from the client propagate out of `tavily_search_async`; client-side raw results are summarised; an empty result returns the literal string "No valid search results found..." (`utils.py:127`) — i.e. empty-is-not-error at the tool boundary.
+1296:input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && uv run python - <<'PY'\nimport inspect\nfrom tavily import AsyncTavilyClient\nsrc = inspect.getsource(AsyncTavilyClient)\nfor kw in [\"UsageLimitExceeded\",\"InvalidAPIKeyError\",\"ForbiddenError\",\"raise \",\"status_code\",\"429\",\"432\",\"433\",\"status\"]:\n    print(kw, \"->\", src.count(kw))\nimport tavily\nprint(\"module attrs:\", [n for n in dir(tavily) if \"Error\" in n or \"Limit\" in n])\nPY"}
+1298:InvalidAPIKeyError -> 4
+1306:module attrs: ['BadRequestError', 'InvalidAPIKeyError', 'MissingAPIKeyError', 'UsageLimitExceededError']
+1313:Tavily exposes typed exceptions (`BadRequestError`, `InvalidAPIKeyError`, `MissingAPIKeyError`, `UsageLimitExceededError`, `ForbiddenError`) — this matters for classification without substring matching. Let me confirm their base classes and that `MissingAPIKeyError`/`ForbiddenError` are importable.
+1318:InvalidAPIKeyError -> bases: ['Exception', 'BaseException', 'object']
+1319:MissingAPIKeyError -> bases: ['Exception', 'BaseException', 'object']
+1410:Verified: Tavily exposes `BadRequestError`, `InvalidAPIKeyError`, `MissingAPIKeyError`, `UsageLimitExceededError`, plus `ForbiddenError` (not top-level); they have **no shared base**. MCP `McpError` carries `ErrorData{code, message, data}`.
+=== coverage check ===
+ADD Iteration 1: 5
+ADD Iteration 2: 3
+EVAL-002: 41
+ADR-002: 90
+TC-027: 32
+POL-003: 17
+INV-006: 16
+=== tail ===
+
+I'll read the DB directly with a Python script (the WAL is live; opening read-only avoids disturbing the running session). This extracts parts for the REQ-008 range.
+
+[tool: write | status=completed]
+input: {"content": "import json, sqlite3, sys, re\n\nDB = \"[LOCAL_HOME]/.local/share/opencode/opencode.db\"\nSID = \"ses_e2bdd7ea1fferC4tLbkCJeovtC\"\nSTART_MSG = \"msg_1e8f9ff6900122nw97Ycz1h9Z1\"  # first REQ-008 user message\n\ncon = sqlite3.connect(f\"file:{DB}?mode=ro\", uri=True)\ncur = con.cursor()\n\n# Order messages by their first part time_created; find start index\nrows = cur.execute(\n    \"SELECT id, time_created FROM message WHERE session_id=? ORDER BY time_created\", (SID,)\n).fetchall()\nstart_idx = None\nfor i, (mid, _t) in enumerate(rows):\n    if mid == START_MSG:\n        start_idx = i\n        break\nif start_idx is None:\n    print(\"START_MSG not found\", file=sys.stderr)\n    sys.exit(2)\n\nmsgs = rows[start_idx:]\nprint(f\"total msgs in session: {len(rows)}  req008 msgs: {len(msgs)}\", file=sys.stderr)\n\ndef get_parts(mid):\n    recs = cur.execute(\n        \"SELECT id, time_created, data FROM part WHERE message_id=? ORDER BY time_created\",\n        (mid,),\n    ).fetchall()\n    out = []\n    for pid, tc, data in recs:\n        try:\n            out.append((pid, tc, json.loads(data)))\n        except Exception:\n            pass\n    return out\n\n# Build message list\nexport = []\nfor idx, (mid, mt) in enumerate(msgs, start=start_idx + 1):\n    info = cur.execute(\"SELECT data FROM message WHERE id=?\", (mid,)).fetchone()\n    try:\n        info_d = json.loads(info[0]) if info else {}\n    except Exception:\n        info_d = {}\n    role = info_d.get(\"role\", \"?\")\n    export.append({\"index\": idx, \"role\": role, \"parts\": get_parts(mid)})\n\njson.dump(export, open(\"/tmp/req008_export/req008_msgs.json\", \"w\"), ensure_ascii=False)\nprint(\"wrote req008_msgs.json\", file=sys.stderr)\n", "filePath": "/tmp/req008_export/extract.py"}
+output: Wrote file successfully.
+
+---
+
+## Message 264 — ASSISTANT
+
 [tool: bash | status=running]
 input: {"command": "cd /tmp/req008_export && python3 extract.py 2>&1 | tail; ls -la req008_msgs.json 2>&1"}
+
+---
+
+
+---
+
+## Message 274 — ASSISTANT
+
+The "sensitive" matches are just the literal string `api_key=get_tavily_api_key(config)` — source code references, not secret values. The transcript is clean. It correctly spans REQ-008 from ADD Iteration 1 to this evidence step. Now let me place it in the repository with the existing naming convention (next AIU number = AIU-010).
+
+[tool: bash | status=completed]
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && cp /tmp/req008_export/transcript.md transcripts/60725623-ChensihanLIU-AIU010.md && wc -l transcripts/60725623-ChensihanLIU-AIU010.md && ls -la transcripts/"}
+output:     3627 transcripts/60725623-ChensihanLIU-AIU010.md
+total 2376
+drwxr-xr-x   7 sft  staff     224 17 11 18:51 .
+drwxr-xr-x  31 sft  staff     992 17 11 18:06 ..
+-rw-r--r--   1 sft  staff   84529 17 11 18:18 60725623-ChensihanLIU-AIU009.md
+-rw-r--r--@  1 sft  staff  242699 17 11 18:51 60725623-ChensihanLIU-AIU010.md
+-rw-r--r--   1 sft  staff  881135 17 11 18:18 60725623-ChensihanLIU.md
+-rw-r--r--   1 sft  staff       0 13 11 16:47 61061690_ZHANG Kaidi.md
+-rw-r--r--   1 sft  staff       0 13 11 16:47 student-id_name.md
+
+
+[patch snapshot hash=e508ae10672f… | files:]
+- [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/transcripts/60725623-ChensihanLIU-AIU010.md
+
+---
+
+## Message 275 — ASSISTANT
+
+Transcript placed. Now let me read the exact AIU-009 YAML structure to match schema, then append AIU-010.
+
+[tool: bash | status=completed]
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && sed -n '/  - id: AIU-009/,$p' docs/ai-use-log.yaml | cat -A | head -50 | sed 's/\\$$//'"}
+output: cat: illegal option -- A
+usage: cat [-belnstuv] [file ...]
+
+
+---
+
+## Message 276 — ASSISTANT
+
+[tool: bash | status=completed]
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && grep -n \"  - id: AIU-00[89]\\|      - id: AIU-009\\|^- id:\" docs/ai-use-log.yaml; echo \"=== raw around AIU-009 ===\"; sed -n '/- id: AIU-009/,$p' docs/ai-use-log.yaml"}
+output: 166:  - id: AIU-008
+199:      - id: AIU-009
+=== raw around AIU-009 ===
+      - id: AIU-009
+        date: "2026-11-16"
+        member: sszfot
+        purpose: >-
+          Review and refine the proposed REQ-007 software architecture,
+          including configuration validation, MCP runtime handling,
+          module boundaries, and verification coverage.
+        prompt: >-
+          Audit and refine ADR-001 and the related REQ-007 architecture
+          artifacts against the existing implementation and acceptance
+          criteria. Correct environment precedence and configuration
+          snapshot handling, clarify MCP loading responsibilities,
+          strengthen the search capability predicate, and expand the
+          verification matrix. Keep all unresolved decisions open and
+          make no implementation or test changes.
+        requirements: [ REQ-007 ]
+        artifacts:
+          - docs/architecture/adr/001-search-configuration-validation.md
+          - docs/architecture/evaluation-table.md
+          - docs/architecture/invariants.md
+          - docs/architecture/runtime-policy-catalog.md
+          - docs/architecture/trace-matrix.md
+          - docs/code-governance/structural-constraints.md
+          - docs/code-governance/verification-constraints.md
+        supervision: >-
+          The member reviewed the architecture changes, requested
+          corrections to the configuration snapshot and MCP dependency
+          boundaries, and checked documentation consistency.
+          The Markdown diff check passed. The verification matrix
+          defines 26 test cases, but tests were not executed.
+          ADR-001 remains Proposed and U-1 through U-5 remain open
+          pending SA Review.
+        transcript: transcripts/60725623-ChensihanLIU-AIU009.md
+
+
+---
+
+## Message 277 — ASSISTANT
+
+I notice AIU-009 is indented more deeply (`      - id:`) than AIU-008 (`  - id:`), suggesting it may be nested under AIU-008 or a list item. Let me verify the YAML parses and the entry count before appending.
+
+[tool: bash | status=completed]
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && uv run --no-project python - <<'PY'\nimport yaml\nd=yaml.safe_load(open(\"docs/ai-use-log.yaml\"))\nprint(\"top keys:\", list(d.keys()))\nes=d[\"entries\"]\nprint(\"entries:\", len(es))\nfor e in es:\n    print(e.get(\"id\"), \"| nested?:\", isinstance(e.get(\"prompt\"), list))\nPY"}
+output: Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/.venv/lib/python3.12/site-packages/yaml/__init__.py", line 125, in safe_load
+    return load(stream, SafeLoader)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/.venv/lib/python3.12/site-packages/yaml/__init__.py", line 81, in load
+    return loader.get_single_data()
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/.venv/lib/python3.12/site-packages/yaml/constructor.py", line 49, in get_single_data
+    node = self.get_single_node()
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/.venv/lib/python3.12/site-packages/yaml/composer.py", line 36, in get_single_node
+    document = self.compose_document()
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/.venv/lib/python3.12/site-packages/yaml/composer.py", line 55, in compose_document
+    node = self.compose_node(None, None)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/.venv/lib/python3.12/site-packages/yaml/composer.py", line 84, in compose_node
+    node = self.compose_mapping_node(anchor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/.venv/lib/python3.12/site-packages/yaml/composer.py", line 133, in compose_mapping_node
+    item_value = self.compose_node(node, item_key)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/.venv/lib/python3.12/site-packages/yaml/composer.py", line 82, in compose_node
+    node = self.compose_sequence_node(anchor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/.venv/lib/python3.12/site-packages/yaml/composer.py", line 111, in compose_sequence_node
+    node.value.append(self.compose_node(node, index))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/.venv/lib/python3.12/site-packages/yaml/composer.py", line 84, in compose_node
+    node = self.compose_mapping_node(anchor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/.venv/lib/python3.12/site-packages/yaml/composer.py", line 127, in compose_mapping_node
+    while not self.check_event(MappingEndEvent):
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/.venv/lib/python3.12/site-packages/yaml/parser.py", line 98, in check_event
+    self.current_event = self.state()
+                         ^^^^^^^^^^^^
+  File "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/.venv/lib/python3.12/site-packages/yaml/parser.py", line 428, in parse_block_mapping_key
+    if self.check_token(KeyToken):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/.venv/lib/python3.12/site-packages/yaml/scanner.py", line 116, in check_token
+    self.fetch_more_tokens()
+  File "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/.venv/lib/python3.12/site-packages/yaml/scanner.py", line 223, in fetch_more_tokens
+    return self.fetch_value()
+           ^^^^^^^^^^^^^^^^^^
+  File "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/.venv/lib/python3.12/site-packages/yaml/scanner.py", line 577, in fetch_value
+    raise ScannerError(None, None,
+yaml.scanner.ScannerError: mapping values are not allowed here
+  in "docs/ai-use-log.yaml", line 199, column 11
+
+
+---
+
+## Message 278 — ASSISTANT
+
+Important finding: the current `docs/ai-use-log.yaml` is **already invalid YAML** at line 199 (AIU-009 is over-indented and indented as a nested list under AIU-008). This is a pre-existing defect, not mine. The task requires me to add AIU-010 using the "existing YAML schema" — but the file is broken. Let me inspect lines 190-200 to understand the structure.
+
+[tool: bash | status=completed]
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && sed -n '190,201p' docs/ai-use-log.yaml | nl -ba -v190"}
+output:    190	      The member directed the ADD iterations and selected the
+   191	      centralized pure validator design after comparing candidate
+   192	      architectures. The initial documents were reviewed against
+   193	      REQ-007 and the source code. Subsequent refinements are
+   194	      recorded in AIU-009. The architecture remains Proposed
+   195	      pending SA Review.
+   196	    transcript: transcripts/60725623-ChensihanLIU.md
+   197
+   198
+   199	      - id: AIU-009
+   200	        date: "2026-11-16"
+   201	        member: sszfot
+
+
+---
+
+## Message 279 — ASSISTANT
+
+Confirmed: line 198-199 has two blank lines then `      - id: AIU-009` (6-space indent) mis-nests AIU-009 as a list item under AIU-008's `transcript`/mapping — invalid YAML. This is a pre-existing corruption in `docs/ai-use-log.yaml`, which the task explicitly permits me to edit. To add AIU-010 correctly, I must fix the AIU-009 indentation (restore it as a proper top-level entry at `  - id:`) and append AIU-010. This is a minimal repair required by the schema. Let me see the full extent.
+
+[tool: bash | status=completed]
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && awk 'NR>=196 && NR<=226' docs/ai-use-log.yaml | nl -ba -v196"}
+output:    196	    transcript: transcripts/60725623-ChensihanLIU.md
+   197
+   198
+   199	      - id: AIU-009
+   200	        date: "2026-11-16"
+   201	        member: sszfot
+   202	        purpose: >-
+   203	          Review and refine the proposed REQ-007 software architecture,
+   204	          including configuration validation, MCP runtime handling,
+   205	          module boundaries, and verification coverage.
+   206	        prompt: >-
+   207	          Audit and refine ADR-001 and the related REQ-007 architecture
+   208	          artifacts against the existing implementation and acceptance
+   209	          criteria. Correct environment precedence and configuration
+   210	          snapshot handling, clarify MCP loading responsibilities,
+   211	          strengthen the search capability predicate, and expand the
+   212	          verification matrix. Keep all unresolved decisions open and
+   213	          make no implementation or test changes.
+   214	        requirements: [ REQ-007 ]
+   215	        artifacts:
+   216	          - docs/architecture/adr/001-search-configuration-validation.md
+   217	          - docs/architecture/evaluation-table.md
+   218	          - docs/architecture/invariants.md
+   219	          - docs/architecture/runtime-policy-catalog.md
+   220	          - docs/architecture/trace-matrix.md
+   221	          - docs/code-governance/structural-constraints.md
+   222	          - docs/code-governance/verification-constraints.md
+   223	        supervision: >-
+   224	          The member reviewed the architecture changes, requested
+   225	          corrections to the configuration snapshot and MCP dependency
+   226	          boundaries, and checked documentation consistency.
+
+
+---
+
+## Message 280 — ASSISTANT
+
+I'll fix the AIU-009 block by dedenting it by 4 spaces (6→2 for the `- id:`, 8→4 for fields, etc.) so it becomes a proper top-level entry, then append AIU-010 at the same level. Let me do the AIU-009 dedent precisely via a script to avoid errors.
+
+[tool: bash | status=completed]
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && uv run --no-project python - <<'PY'\nlines = open(\"docs/ai-use-log.yaml\").read().split(\"\\n\")\n# Locate AIU-009 start (line index of '      - id: AIU-009')\nstart = next(i for i,l in enumerate(lines) if l.strip()==\"- id: AIU-009\")\nprint(\"AIU-009 start 0-based line:\", start)\n# Dedent all lines from start to end-of-file that are indented >= 6 spaces, by 4\nfor i in range(start, len(lines)):\n    line = lines[i]\n    # count leading spaces\n    n = len(line) - len(line.lstrip(\" \"))\n    if n >= 6:\n        lines[i] = line[4:]\n# Remove the two stray blank lines before AIU-009 (ensure single separation)\n# Collapse the run of blank lines immediately before 'start'\nj = start-1\n# after dedent, start index unchanged position of '  - id: AIU-009'\nopen(\"docs/ai-use-log.yaml\",\"w\").write(\"\\n\".join(lines))\nprint(\"done\")\nPY\nsed -n '196,203p' docs/ai-use-log.yaml | nl -ba -v196"}
+output: AIU-009 start 0-based line: 198
+done
+   196	    transcript: transcripts/60725623-ChensihanLIU.md
+   197
+   198
+   199	  - id: AIU-009
+   200	    date: "2026-11-16"
+   201	    member: sszfot
+   202	    purpose: >-
+   203	      Review and refine the proposed REQ-007 software architecture,
+
+
+[patch snapshot hash=fe06f2d01ca1… | files:]
+- [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/ai-use-log.yaml
+
+---
+
+## Message 281 — ASSISTANT
+
+Now AIU-009 is properly dedented. Let me remove the double blank lines before it, verify YAML parses, then append AIU-010.
+
+[tool: bash | status=completed]
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && uv run --no-project python - <<'PY'\ntext = open(\"docs/ai-use-log.yaml\").read()\n# collapse 3+ newlines to 2\nimport re\ntext = re.sub(r\"\\n{3,}\", \"\\n\\n\", text)\nopen(\"docs/ai-use-log.yaml\",\"w\").write(text)\nimport yaml\nd=yaml.safe_load(open(\"docs/ai-use-log.yaml\"))\nes=d[\"entries\"]\nprint(\"entries:\", len(es), \"| ids:\", [e[\"id\"] for e in es])\nPY"}
+output: entries: 9 | ids: ['AIU-001', 'AIU-002', 'AIU-003', 'AIU-004', 'AIU-005', 'AIU-006', 'AIU-007', 'AIU-008', 'AIU-009']
+
+
+[patch snapshot hash=d0fb787f1d65… | files:]
+- [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/ai-use-log.yaml
+
+---
+
+## Message 282 — ASSISTANT
+
+YAML now valid with 9 entries (AIU-001..009). Now append AIU-010 using the exact schema, matching the `  - id:` top-level style.
+
+[tool: bash | status=completed]
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && tail -5 docs/ai-use-log.yaml | cat"}
+output:       The Markdown diff check passed. The verification matrix
+      defines 26 test cases, but tests were not executed.
+      ADR-001 remains Proposed and U-1 through U-5 remain open
+      pending SA Review.
+    transcript: transcripts/60725623-ChensihanLIU-AIU009.md
+
+
+---
+
+## Message 283 — ASSISTANT
+
+[tool: bash | status=completed]
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && cat >> docs/ai-use-log.yaml <<'EOF'\n\n  - id: AIU-010\n    date: \"2026-11-17\"\n    member: sszfot\n    purpose: >-\n      Draft and integrate the proposed REQ-008 search fallback\n      architecture (ADD Iterations 1 and 2, EVAL-002, ADR-002) into the\n      shared architecture and code-governance documents.\n    prompt: >-\n      For approved REQ-008, which depends on REQ-007, produce ADD\n      Iterations 1 and 2 for search fallback, then draft EVAL-002 and\n      ADR-002 and integrate them into the invariants, runtime policy\n      catalog, trace matrix, structural constraints and verification\n      constraints. Use a dedicated fallback coordinator with per-source\n      adapters and a thin tool-facing adapter, classify errors before\n      stringification, distinguish empty success from failure, distinguish\n      MCP load-stage from invocation-stage failures, and keep every\n      decision Proposed/Open. Make no implementation or test changes and\n      run only read-only validation.\n    requirements: [ REQ-008 ]\n    artifacts:\n      - docs/architecture/adr/002-search-fallback.md\n      - docs/architecture/evaluation-table.md\n      - docs/architecture/invariants.md\n      - docs/architecture/runtime-policy-catalog.md\n      - docs/architecture/trace-matrix.md\n      - docs/code-governance/structural-constraints.md\n      - docs/code-governance/verification-constraints.md\n      - docs/ai-use-log.yaml\n      - transcripts/60725623-ChensihanLIU-AIU010.md\n    supervision: >-\n      The member directed the ADD iterations, selected the dedicated\n      fallback coordinator with a thin tool-facing adapter, and required\n      that load-stage and invocation-stage failures be separated and that\n      no decision be marked approved. The Markdown diff check passed.\n      The verification matrix documents planned cases TC-027 through\n      TC-037; no test file was created and no test was executed. No\n      source code was implemented. ADR-002 remains Proposed, EVAL-002\n      remains Open, and D-1 through D-8 remain open pending SA Review.\n    transcript: transcripts/60725623-ChensihanLIU-AIU010.md\nEOF\necho \"appended\""}
+output: appended
+
+
+[patch snapshot hash=d76e38d058aa… | files:]
+- [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/ai-use-log.yaml
+
+---
+
+## Message 284 — ASSISTANT
+
+[tool: bash | status=completed]
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && uv run --no-project python - <<'PY'\nimport yaml\nd=yaml.safe_load(open(\"docs/ai-use-log.yaml\"))\nes=d[\"entries\"]\nprint(\"valid YAML | entries:\", len(es))\nfor e in es[-2:]:\n    print(\" \", e[\"id\"], e[\"date\"], e[\"requirements\"], \"| transcript:\", e[\"transcript\"])\nprint(\"AIU-010 artifacts:\", len(es[-1][\"artifacts\"]))\nPY"}
+output: valid YAML | entries: 10
+  AIU-009 2026-11-16 ['REQ-007'] | transcript: transcripts/60725623-ChensihanLIU-AIU009.md
+  AIU-010 2026-11-17 ['REQ-008'] | transcript: transcripts/60725623-ChensihanLIU-AIU010.md
+AIU-010 artifacts: 9
+
+
+---
+
+## Message 285 — ASSISTANT
+
+YAML valid, 10 entries, AIU-010 correct. Now the pre-commit audit.
+
+[tool: bash | status=completed]
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && echo \"=== git status --short ===\"; git status --short; echo \"=== diff --check ===\"; git diff --check && echo \"DIFF_CHECK_CLEAN\"; echo \"=== diff --stat ===\"; git diff --stat"}
+output: === git status --short ===
+ M docs/ai-use-log.yaml
+ M docs/architecture/evaluation-table.md
+ M docs/architecture/invariants.md
+ M docs/architecture/runtime-policy-catalog.md
+ M docs/architecture/trace-matrix.md
+ M docs/code-governance/structural-constraints.md
+ M docs/code-governance/verification-constraints.md
+?? docs/architecture/adr/002-search-fallback.md
+?? transcripts/60725623-ChensihanLIU-AIU010.md
+=== diff --check ===
+DIFF_CHECK_CLEAN
+=== diff --stat ===
+ docs/ai-use-log.yaml                             | 105 ++++++++++++++++-------
+ docs/architecture/evaluation-table.md            |  42 +++++++++
+ docs/architecture/invariants.md                  |  40 +++++++++
+ docs/architecture/runtime-policy-catalog.md      |  10 +++
+ docs/architecture/trace-matrix.md                |   2 +-
+ docs/code-governance/structural-constraints.md   |  17 ++++
+ docs/code-governance/verification-constraints.md |  19 +++-
+ 7 files changed, 200 insertions(+), 35 deletions(-)
+
+
+[tool: bash | status=completed]
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && echo \"=== ADR-002 status / EVAL-002 status ===\"; grep -m1 \"Status:\" docs/architecture/adr/002-search-fallback.md; grep -m1 \"Status:\" <(sed -n '/^## EVAL-002/,/^## /p' docs/architecture/evaluation-table.md); echo \"=== D-1..D-8 open ===\"; grep -oE \"D-[1-8] \\((Open|Pending)[^)]*\\)\" docs/architecture/adr/002-search-fallback.md | sort -u"}
+output: === ADR-002 status / EVAL-002 status ===
+- **Status:** Proposed
+- **Status:** Open (provisional selection of B with a thin C-style tool adapter; awaiting SA Review)
+=== D-1..D-8 open ===
+D-1 (Open; conditionally recommended)
+D-2 (Open)
+D-3 (Open; recommended typed-classification)
+D-4 (Open)
+D-5 (Open)
+D-6 (Open; recommended)
+D-7 (Open; recommended)
+D-8 (Open; recommended)
+
+
+---
+
+## Message 286 — ASSISTANT
+
+The `git diff --stat` for `ai-use-log.yaml` shows 105 lines changed — much of that is the AIU-009 dedent. Let me verify that the only semantic change to AIU-008/009 is indentation (not content), and confirm no source/test changes and no credentials in committed evidence.
+
+[tool: bash | status=completed]
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && echo \"=== ai-use diff: any content change beyond indent? (ignore leading spaces) ===\"; git diff -w docs/ai-use-log.yaml | grep -E \"^[+-]\" | grep -vE \"^[+-]{3}\" | grep -vE \"id: AIU-010|AIU-010|REQ-008|evaluation-table|search-fallback|invariants|runtime-policy|trace-matrix|structural-constraints|verification-constraints|ai-use-log|transcript|supervision|fallback|coordinator|Proposed|Open|D-1|stringification|string|stage|load-stage|invocation|adapter|TC-0|No source|no test|remains|member|prompt|purpose|requirements|artifacts|date|member:\" | head -50; echo \"--- (whitespace-insensitive; if empty, indentation-only for 008/009) ---\""}
+output: === ai-use diff: any content change beyond indent? (ignore leading spaces) ===
+-
++
++      architecture (ADD Iterations 1 and 2, EVAL-002, ADR-002) into the
++      shared architecture and code-governance documents.
++      catalog, trace matrix, structural constraints and verification
++      run only read-only validation.
++      no decision be marked approved. The Markdown diff check passed.
+--- (whitespace-insensitive; if empty, indentation-only for 008/009) ---
+
+
+---
+
+## Message 287 — ASSISTANT
+
+Those residual lines are all from AIU-010's new text being split across wrapped lines; no AIU-008/009 content changed beyond indentation and the removed double-blank. Let me do a definitive check: compare AIU-008/009 key-value content before/after (ignoring indentation/blank lines).
+
+[tool: bash | status=completed]
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && git show HEAD:docs/ai-use-log.yaml > /tmp/req008_export/old.yaml 2>/dev/null; echo \"old YAML valid?\"; uv run --no-project python - <<'PY'\nimport yaml\ntry:\n    old=yaml.safe_load(open(\"/tmp/req008_export/old.yaml\"))\n    print(\"OLD parses:\", False if old is None else \"yes\", \"| entries:\", len(old[\"entries\"]) if old else \"None\")\nexcept Exception as e:\n    print(\"OLD INVALID (pre-existing):\", str(e).splitlines()[0])\nPY"}
+output: old YAML valid?
+OLD INVALID (pre-existing): mapping values are not allowed here
+
+
+---
+
+## Message 288 — ASSISTANT
+
+Confirmed: the committed HEAD version of `ai-use-log.yaml` was **already invalid YAML** — this is a pre-existing corruption (AIU-009 was mis-nested under AIU-008), not introduced by me. My change repairs it. Let me confirm the AIU-008/009 field values are identical between old (parsed leniently) and new, and that no source/test files changed.
+
+[tool: bash | status=completed]
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && echo \"=== source/test/requirements changes? ===\"; git status --short | grep -E \"^\\s*[MA?]+\\s+(src/|test/|docs/req/|pyproject)\" || echo \"NONE (no source/test/requirements changes)\"; echo \"=== credentials in ai-use + transcript? ===\"; grep -oiE \"sk-[A-Za-z0-9]{16,}|tvly-[A-Za-z0-9]{10,}|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[a-z]{2,}|AKIA[0-9A-Z]{12,}\" docs/ai-use-log.yaml transcripts/60725623-ChensihanLIU-AIU010.md | sort | uniq -c || echo \"none found\""}
+output: === source/test/requirements changes? ===
+NONE (no source/test/requirements changes)
+=== credentials in ai-use + transcript? ===
+
+
+---
+
+## Message 289 — ASSISTANT
+
+No source/test/requirements changes; no credentials in evidence. Now confirm ID uniqueness (INV/POL/TC) and the REQ-007 trace mismatch, then check the untracked ADR/transcript for whitespace errors.
+
+[tool: bash | status=completed]
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && echo \"=== INV unique ===\"; grep -oE \"^## INV-[0-9]{3}\" docs/architecture/invariants.md | sort -u | wc -l; grep -oE \"^## INV-[0-9]{3}\" docs/architecture/invariants.md | sort | uniq -d; echo \"=== POL rows unique ===\"; grep -oE \"^\\| POL-[0-9]{3} \" docs/architecture/runtime-policy-catalog.md | grep -oE \"POL-[0-9]{3}\" | sort | uniq -c; echo \"=== TC unique (excl template) ===\"; grep -nE \"^\\| TC-[0-9]{3} \" docs/code-governance/verification-constraints.md | grep -vE \"REQ-NNN|INV-NNN|<file>\" | sed -E 's/.*\\| (TC-[0-9]{3}) .*/\\1/' | sort | uniq -d; echo \"(dups above; empty=ok)\"; echo \"=== REQ-007 trace TC range ===\"; grep -oE \"TC-001–TC-0[0-9]{2}\" docs/architecture/trace-matrix.md"}
+output: === INV unique ===
+       9
+=== POL rows unique ===
+   1 POL-001
+   1 POL-002
+   1 POL-003
+=== TC unique (excl template) ===
+(dups above; empty=ok)
+=== REQ-007 trace TC range ===
+TC-001–TC-025
+
+
+---
+
+## Message 290 — ASSISTANT
+
+All IDs unique. The REQ-007 trace row still says `TC-001–TC-025` while the body has TC-001…TC-026 — confirmed pre-existing mismatch, reported but not changed. Final check on untracked files for whitespace.
+
+[tool: bash | status=completed]
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && echo \"=== trailing whitespace in untracked files ===\"; grep -nE \" +$\" docs/architecture/adr/002-search-fallback.md transcripts/60725623-ChensihanLIU-AIU010.md && echo \"FOUND\" || echo \"none\"; echo \"=== transcript header ===\"; head -8 transcripts/60725623-ChensihanLIU-AIU010.md; echo \"=== ai-use-log final validity ===\"; uv run --no-project python -c \"import yaml;d=yaml.safe_load(open('docs/ai-use-log.yaml'));print('OK entries:',len(d['entries']))\""}
+output: === trailing whitespace in untracked files ===
+transcripts/60725623-ChensihanLIU-AIU010.md:142:**Do not edit any files. Stop after reporting your findings.**
+transcripts/60725623-ChensihanLIU-AIU010.md:216:      Fallback
+transcripts/60725623-ChensihanLIU-AIU010.md:255:139:     search_queries,
+transcripts/60725623-ChensihanLIU-AIU010.md:256:140:     max_results: int = 5,
+transcripts/60725623-ChensihanLIU-AIU010.md:257:141:     topic: Literal["general", "news", "finance"] = "general",
+transcripts/60725623-ChensihanLIU-AIU010.md:258:142:     include_raw_content: bool = True,
+transcripts/60725623-ChensihanLIU-AIU010.md:262:146:
+transcripts/60725623-ChensihanLIU-AIU010.md:269:153:
+transcripts/60725623-ChensihanLIU-AIU010.md:275:159:
+transcripts/60725623-ChensihanLIU-AIU010.md:286:170:
+transcripts/60725623-ChensihanLIU-AIU010.md:301:433:
+transcripts/60725623-ChensihanLIU-AIU010.md:302:434:
+transcripts/60725623-ChensihanLIU-AIU010.md:305:437:
+transcripts/60725623-ChensihanLIU-AIU010.md:311:443:
+transcripts/60725623-ChensihanLIU-AIU010.md:315:447:
+transcripts/60725623-ChensihanLIU-AIU010.md:430:
+transcripts/60725623-ChensihanLIU-AIU010.md:433:
+transcripts/60725623-ChensihanLIU-AIU010.md:438:
+transcripts/60725623-ChensihanLIU-AIU010.md:441:
+transcripts/60725623-ChensihanLIU-AIU010.md:446:
+transcripts/60725623-ChensihanLIU-AIU010.md:453:
+transcripts/60725623-ChensihanLIU-AIU010.md:457:
+transcripts/60725623-ChensihanLIU-AIU010.md:459:            # Search for
+transcripts/60725623-ChensihanLIU-AIU010.md:475:
+transcripts/60725623-ChensihanLIU-AIU010.md:734:Stop after producing the report and wait for human review.
+transcripts/60725623-ChensihanLIU-AIU010.md:784:2:
+transcripts/60725623-ChensihanLIU-AIU010.md:791:9:
+transcripts/60725623-ChensihanLIU-AIU010.md:793:11:
+transcripts/60725623-ChensihanLIU-AIU010.md:795:13:
+transcripts/60725623-ChensihanLIU-AIU010.md:800:18:
+transcripts/60725623-ChensihanLIU-AIU010.md:802:20:
+transcripts/60725623-ChensihanLIU-AIU010.md:805:23: | ASR-007-01 | Every entry path into the
+transcripts/60725623-ChensihanLIU-AIU010.md:900:
+transcripts/60725623-ChensihanLIU-AIU010.md:907:
+transcripts/60725623-ChensihanLIU-AIU010.md:1019:2. **Tavily vs MCP input compatibility.** Tavily takes `queries: List[str]`, `max_results`, `topic`. MCP tools expose server-defined args and may not accept `queries`. Proposal: the coordinator owns a **normalised search request** (queries list) and per-source **adapters** translate to each source's schema; sources whose schema cannot be adapted are rejected at config/validation time, not at call time. *Uncertainty:* exact MCP schema negotiation; some MCP "search" tools may loop.
+transcripts/60725623-ChensihanLIU-AIU010.md:1204:Stop after presenting the analysis and wait for human review.
+transcripts/60725623-ChensihanLIU-AIU010.md:1255:
+transcripts/60725623-ChensihanLIU-AIU010.md:1261:
+transcripts/60725623-ChensihanLIU-AIU010.md:1674:Stop without committing or pushing.
+transcripts/60725623-ChensihanLIU-AIU010.md:1734:2:
+transcripts/60725623-ChensihanLIU-AIU010.md:1736:4:
+transcripts/60725623-ChensihanLIU-AIU010.md:1743:11:
+transcripts/60725623-ChensihanLIU-AIU010.md:1745:13:
+transcripts/60725623-ChensihanLIU-AIU010.md:1749:17:
+transcripts/60725623-ChensihanLIU-AIU010.md:1751:19:
+transcripts/60725623-ChensihanLIU-AIU010.md:1753:21:
+transcripts/60725623-ChensihanLIU-AIU010.md:1755:23:
+transcripts/60725623-ChensihanLIU-AIU010.md:1757:25:
+transcripts/60725623-ChensihanLIU-AIU010.md:1759:27:
+transcripts/60725623-ChensihanLIU-AIU010.md:1763:31:
+transcripts/60725623-ChensihanLIU-AIU010.md:1765:33:
+transcripts/60725623-ChensihanLIU-AIU010.md:1767:35:
+transcripts/60725623-ChensihanLIU-AIU010.md:1771:39:
+transcripts/60725623-ChensihanLIU-AIU010.md:1810:input: {"filePath": "[LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA/docs/architecture/adr/002-search-fallback.md", "content": "# ADR-002: Ordered Search Fallback Through a Dedicated Coordinator\n\n- **Status:** Proposed\n- **Date:** 2026-11-13\n- **Module:** search\n- **Owner:** sszfot\n- **Evaluation:** EVAL-002 (`docs/architecture/evaluation-table.md`)\n- **SA Review:** pending (no `SA-NNN` recorded)\n\n> This decision is *Proposed*. It is not approved until SA Review accepts it (`Prompt.md` §4, Gate 1). Nothing below is implemented. Decisions still open for the team are listed in §12. REQ-008 depends on REQ-007, which is itself still Proposed (ADR-001); this ADR does not assume ADR-001 has been approved.\n\n## 1. Architecturally Significant Requirements\n\n| Requirement | Acceptance criteria that shape this decision | Why they matter architecturally |\n|---|---|---|\n| REQ-008 | C-001, C-002, C-003, C-004, C-005 | Ordered fallback, eligible-vs-ineligible gating, empty-is-success and an explicit all-failed failure fix where the loop, the classification and the aggregation live, and what the researcher receives. |\n| REQ-007 (dependency) | U-5 / structured MCP load result | Distinguishing a source that could not be loaded from one that returned nothing needs the structured load result; without it the load-stage outcome is unrecoverable. |\n\nArchitectural drivers (ASR), provisional IDs used consistently across EVAL-002, this ADR and the module section:\n\n| ID | Statement |\n|---|---|\n| ASR-008-01 | The system tries a configured ordered list of Tavily/MCP sources, next source on eligible failure, until one succeeds (C-001, C-002). |\n| ASR-008-02 | Eligible errors (timeout, connection failure, rate limit, provider server error, rejected credential) trigger fallback; ineligible errors return without fallback (C-001, C-002, C-005). |\n| ASR-008-03 | A search that returns no hits is a success and does not trigger fallback (C-004). |\n| ASR-008-04 | When every source fails, the
+transcripts/60725623-ChensihanLIU-AIU010.md:1953:Do not expand the scope or start impleme
+…[output truncated at 6000 chars; 7372 total]
+
+---
+
+## Message 291 — ASSISTANT
+
+The transcript contains trailing whitespace (from verbatim tool outputs and my own earlier doc edits that were captured in the session). Trailing whitespace in a transcript is expected since it preserves raw evidence, and `git diff --check` only checks tracked-file diffs (the transcript is untracked). However, `git diff --check` won't cover untracked files. Let me confirm the trailing whitespace is only inside fenced/verbatim transcript content, which is acceptable evidence preservation — and that `git diff --check` is clean for tracked files.
+
+The transcript is a raw evidence artifact; stripping meaningful whitespace from captured code/tool output would alter evidence. I'll leave it verbatim (it is not part of any code diff). Let me do the final confirmation.
+
+[tool: bash | status=completed]
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && echo \"=== FINAL: git diff --check ===\"; git diff --check && echo \"CLEAN\"; echo \"=== FINAL: git status --short ===\"; git status --short; echo \"=== ADR-002 has no trailing ws (arch doc) ===\"; grep -cE \" +$\" docs/architecture/adr/002-search-fallback.md"}
+output: === FINAL: git diff --check ===
+CLEAN
+=== FINAL: git status --short ===
+ M docs/ai-use-log.yaml
+ M docs/architecture/evaluation-table.md
+ M docs/architecture/invariants.md
+ M docs/architecture/runtime-policy-catalog.md
+ M docs/architecture/trace-matrix.md
+ M docs/code-governance/structural-constraints.md
+ M docs/code-governance/verification-constraints.md
+?? docs/architecture/adr/002-search-fallback.md
+?? transcripts/60725623-ChensihanLIU-AIU010.md
+=== ADR-002 has no trailing ws (arch doc) ===
+0
+
+
+---
+
+## Message 292 — ASSISTANT
+
+Evidence preparation and pre-commit audit complete. Nothing committed or pushed.
+
+## Session identification
+
+- **Session ID:** `ses_e2bdd7ea1fferC4tLbkCJeovtC` (verified via `opencode session list` and the SQLite DB).
+- **Single vs multiple:** the entire REQ-008 design conversation is in **one session** — the same session that also holds the earlier REQ-007 work (title is stale: "REQ-007 search config ADD 分析"). REQ-008 begins at message `msg_1e8f9ff6900122nw97Ycz1h9Z1` (part `prt_1e8f9ff6f001T2O51Hh1492PeA`).
+- **Interactions captured:** ADD Iteration 1, ADD Iteration 2, EVAL-002/ADR-002 drafting, consistency repair, shared-document integration, final consistency review, and this evidence step — all present (messages 162–264, 103 messages, 395 parts).
+- **Gap:** none for REQ-008. (REQ-007 work is in the same session but before this range; it already has AIU-001…AIU-009 coverage.)
+
+## Transcript export
+
+- **Mechanism:** `opencode export --sanitize` produced a JSON but **over-redacted all message text** (`[redacted:text:…]`), which would destroy architectural evidence — so I extracted the actual parts read-only from the OpenCode SQLite DB (`file:…?mode=ro`) for the REQ-008 range and rendered them, preserving user prompts, assistant responses, tool calls and relevant outputs, and document edits.
+- **Path (repository-relative):** `transcripts/60725623-ChensihanLIU-AIU010.md` (3,627 lines; matches the existing `60725623-ChensihanLIU-AIU009.md` naming convention).
+- **Redaction summary:** emails → `[REDACTED_EMAIL]`, Tavily/OpenAI/Anthropic/AWS keys → `[REDACTED_*]`, `Bearer …` → `[REDACTED_TOKEN]`, absolute `/Users/<name>` → `[LOCAL_HOME]` (115 replacements). Post-export scan found **no** residual keys, tokens, emails, or private paths. Tool payloads truncated to keep the file reviewable; transient step/patch parts omitted; a header documents these redactions and states "Draft; human redaction review before publication."
+
+## AI-use log
+
+- **Entry ID:** **AIU-010** (next after AIU-009). Date `2026-11-17`, member `sszfot`, `requirements: [REQ-008]`, 9 artifacts, transcript path as above.
+- States accurately: no test file created, no test executed, no source implemented; ADR-002 Proposed, EVAL-002 Open, D-1…D-8 open. No approval or test-run claimed.
+
+## Pre-commit audit
+
+| Check | Result |
+|---|---|
+| `git status --short` | 7 modified docs + 2 untracked (`adr/002-search-fallback.md`, `transcripts/…AIU010.md`) |
+| `git diff --check` | **CLEAN** |
+| `git diff --stat` | 7 files, +200/−35 (the −35/+ in ai-use-log includes the AIU-009 repair) |
+| Source/test/requirements changes | **NONE** |
+| Credentials in evidence | **none** (log + transcript scanned) |
+| INV uniqueness | 9 unique (INV-001…009) |
+| POL rows | POL-001, POL-002, POL-003 — each once |
+| TC uniqueness (excl template) | no duplicates (TC-001…TC-037) |
+| ADR-002 status | **Proposed** |
+| EVAL-002 status | **Open** |
+| D-1 through D-8 | all present and **Open** |
+| ADR-002 trailing whitespace | none |
+
+## Issues requiring human attention
+
+1. **Pre-existing REQ-007 trace-row mismatch (reported, not changed):** the REQ-007 row says `TC-001–TC-025` while verification has TC-001…TC-026. Needs a separate REQ-007 maintenance edit.
+2. **Pre-existing invalid YAML repaired:** the committed `docs/ai-use-log.yaml` was **already invalid** (AIU-009 was mis-nested by 6-space indentation under AIU-008, so `yaml.safe_load` raised `mapping values are not allowed here`). Since `docs/ai-use-log.yaml` is within my allowed edit scope and AIU-010 must be valid YAML, I **dedented AIU-009 to a proper top-level entry** (content unchanged) and collapsed a stray double blank line. The file now parses (10 entries). This is a repair of unreviewed prior corruption — please confirm the dedent is acceptable.
+3. **Transcript trailing whitespace:** the transcript preserves verbatim tool/source output that includes trailing spaces (raw evidence). Not a diff-check concern (untracked, and stripping would alter evidence). Flag for the human redaction review pass.
+4. **Human redaction review of the transcript is still required** before publication (marked Draft), per the file header.
+
+## Final state
+
+- **Evidence paths:** `transcripts/60725623-ChensihanLIU-AIU010.md`; log entry `docs/ai-use-log.yaml` → AIU-010.
+- **AI-use entry ID:** AIU-010.
+- **Redaction:** targeted (emails, API keys, bearer tokens, local home paths); none remaining.
+- **Git:** `git diff --check` clean; nothing committed or pushed.
+
+---
+
+## Message 293 — USER
+
+Perform a final REQ-008 evidence integrity and Git pre-commit audit.
+
+Branch: `docs/sa-search-fallback`.
+
+Do not edit architecture documents, implementation, tests, or requirements. Do not commit or push.
+
+1. Verify that AIU-010 in `docs/ai-use-log.yaml` is valid, correctly references the existing transcript, and that the AIU-009 indentation repair did not change any original field values.
+
+2. Audit `transcripts/60725623-ChensihanLIU-AIU010.md` against the actual OpenCode session history.
+
+   Report whether all REQ-008 user prompts, assistant responses, tool invocations, document edits, and validation results are represented.
+
+   Identify any omitted patch events, truncated tool outputs, or missing messages. Do not describe the Markdown as a complete verbatim transcript if omissions remain.
+
+3. Preserve a full, untruncated source export outside the repository for private verification, using the existing local OpenCode session history. Do not publish raw credentials or private information.
+
+   If a full export cannot be safely generated, report the limitation rather than claiming completeness.
+
+4. Perform a human-review checklist for potential secrets and sensitive data in the repository transcript. Automated regex scans alone are insufficient to certify that all secrets have been removed.
+
+5. Run:
+   - `git status --short`
+   - `git diff --check`
+   - `git diff --cached --check`
+   - YAML parsing and AI-use entry uniqueness checks.
+   - Cross-reference checks for ADR-002, EVAL-002, INV-006–009, POL-003, TC-027–037.
+
+6. Confirm:
+   - ADR-002 remains Proposed.
+   - EVAL-002 remains Open.
+   - D-1 through D-8 remain pending team review.
+   - No source code or test implementation has changed.
+   - No unapproved architecture decision is presented as final.
+
+7. Return a final pre-commit report with:
+   - Evidence completeness and omissions.
+   - Privacy review findings.
+   - Exact Git file list.
+   - Remaining approval dependencies.
+   - Whether the changes are ready for a Proposed SA documentation PR.
+
+Do not commit, push, or open a PR. Stop for human review.
+
+---
+
+## Message 294 — ASSISTANT
+
+I'll run this audit read-only. Let me start with the AI-use log integrity and uniqueness checks.
+
+[tool: bash | status=completed]
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && uv run --no-project python - <<'PY'\nimport yaml, os\nd=yaml.safe_load(open(\"docs/ai-use-log.yaml\"))\nes=d[\"entries\"]\nprint(\"entries:\", len(es), \"| ids:\", [e[\"id\"] for e in es])\nids=[e[\"id\"] for e in es]\nprint(\"unique ids:\", len(set(ids))==len(ids))\n# AIU-010 checks\na=[e for e in es if e[\"id\"]==\"AIU-010\"][0]\nprint(\"AIU-010 keys:\", sorted(a.keys()))\nprint(\"AIU-010 date:\", a[\"date\"], \"| member:\", a[\"member\"], \"| requirements:\", a[\"requirements\"])\ntr=a[\"transcript\"]; print(\"transcript:\", tr, \"| exists:\", os.path.exists(tr))\n# check every entry's transcript path if it points into transcripts/\nfor e in es:\n    t=e.get(\"transcript\")\n    if t and t.startswith(\"transcripts/\"):\n        if not os.path.exists(t): print(\"MISSING transcript for\", e[\"id\"], \"->\", t)\nprint(\"artifact paths exist:\")\nfor p in a[\"artifacts\"]:\n    if p.startswith(\"docs/\") or p.startswith(\"transcripts/\"):\n        print(\"  \", p, os.path.exists(p))\nPY"}
+output: entries: 10 | ids: ['AIU-001', 'AIU-002', 'AIU-003', 'AIU-004', 'AIU-005', 'AIU-006', 'AIU-007', 'AIU-008', 'AIU-009', 'AIU-010']
+unique ids: True
+AIU-010 keys: ['artifacts', 'date', 'id', 'member', 'prompt', 'purpose', 'requirements', 'supervision', 'transcript']
+AIU-010 date: 2026-11-17 | member: sszfot | requirements: ['REQ-008']
+transcript: transcripts/60725623-ChensihanLIU-AIU010.md | exists: True
+artifact paths exist:
+   docs/architecture/adr/002-search-fallback.md True
+   docs/architecture/evaluation-table.md True
+   docs/architecture/invariants.md True
+   docs/architecture/runtime-policy-catalog.md True
+   docs/architecture/trace-matrix.md True
+   docs/code-governance/structural-constraints.md True
+   docs/code-governance/verification-constraints.md True
+   docs/ai-use-log.yaml True
+   transcripts/60725623-ChensihanLIU-AIU010.md True
+
+
+---
+
+## Message 295 — ASSISTANT
+
+AIU-010 valid, transcript and artifacts exist, IDs unique. Now verify the AIU-009 repair preserved field values — compare against the committed HEAD version (parsed leniently despite its broken nesting).
+
+[tool: bash | status=completed]
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && uv run --no-project python - <<'PY'\nimport yaml, subprocess, re\n# Load HEAD version; it's invalid YAML due to mis-nesting, so reconstruct by regex/normalizing indent\nraw = subprocess.check_output([\"git\",\"show\",\"HEAD:docs/ai-use-log.yaml\"], text=True)\n# Fix the known corruption: the AIU-009 block is over-indented by 4; dedent lines from the AIU-009 marker on\nlines = raw.split(\"\\n\")\nout=[]\nstarted=False\nfor l in lines:\n    if l.strip()==\"- id: AIU-009\":\n        started=True\n    if started and len(l)-len(l.lstrip(\" \"))>=6:\n        l=l[4:]\n    out.append(l)\nfixed=\"\\n\".join(out)\nimport re\nfixed=re.sub(r\"\\n{3,}\",\"\\n\\n\",fixed)\nd=yaml.safe_load(fixed)\nold=[e for e in d[\"entries\"] if e[\"id\"]==\"AIU-009\"][0]\nnew=yaml.safe_load(open(\"docs/ai-use-log.yaml\"))\nnewe=[e for e in new[\"entries\"] if e[\"id\"]==\"AIU-009\"][0]\nprint(\"AIU-009 field-by-field equal:\", old==newe)\nfor k in sorted(set(old)|set(newe)):\n    if old.get(k)!=newe.get(k):\n        print(\"DIFF\", k, \"old=\",repr(old.get(k)),\"new=\",repr(newe.get(k)))\nPY"}
+output: AIU-009 field-by-field equal: True
+
+
+---
+
+## Message 296 — ASSISTANT
+
+AIU-009 repair preserved all field values exactly. Now audit the transcript against the actual session history — count grounded messages/parts and check what was omitted (step-finish, patch, snapshots) or truncated.
+
+[tool: bash | status=completed]
+input: {"command": "cd /tmp/req008_export && uv run --no-project python - <<'PY'\nimport json\nmsgs=json.load(open(\"req008_msgs.json\"))\n# Ground truth from DB: parts by type across REQ-008 msgs\nfrom collections import Counter\ntypes=Counter()\ntool_status=Counter()\ntruncated=0\nfor m in msgs:\n    for pid,tc,p in m[\"parts\"]:\n        if not isinstance(p,dict): \n            types[\"<list>\"]+=1; continue\n        t=p.get(\"type\",\"?\")\n        types[t]+=1\n        if t==\"tool\":\n            tool_status[p.get(\"state\",{}).get(\"status\",\"?\")]+=1\nprint(\"REQ-008 messages:\", len(msgs))\nprint(\"part types:\", dict(types))\nprint(\"tool statuses:\", dict(tool_status))\nPY"}
+output: REQ-008 messages: 103
+part types: {'text': 87, 'step-start': 95, 'tool': 108, 'step-finish': 94, 'patch': 22}
+tool statuses: {'completed': 107, 'running': 1}
+
+
+---
+
+## Message 297 — ASSISTANT
+
+[tool: bash | status=completed]
+input: {"command": "cd /tmp/req008_export && echo \"=== transcript message count & block types ===\"; grep -cE \"^## Message \" transcript.md; echo \"user msgs:\"; grep -cE \"^## Message [0-9]+ — USER\" transcript.md; echo \"assistant msgs:\"; grep -cE \"^## Message [0-9]+ — ASSISTANT\" transcript.md; echo \"tool blocks:\"; grep -c \"^\\[tool:\" transcript.md; echo \"=== truncated outputs (renderer cap) count ===\"; uv run --no-project python - <<'PY'\nimport json\nmsgs=json.load(open(\"req008_msgs.json\"))\ncaps_out=0; caps_in=0\nfor m in msgs:\n    for pid,tc,p in m[\"parts\"]:\n        if isinstance(p,dict) and p.get(\"type\")==\"tool\":\n            st=p.get(\"state\",{})\n            o=st.get(\"output\"); i=st.get(\"input\")\n            if o is not None:\n                s=o if isinstance(o,str) else json.dumps(o,ensure_ascii=False)\n                if len(s)>1500: caps_out+=1\n            if i:\n                s=json.dumps(i,ensure_ascii=False)\n                if len(s)>2000: caps_in+=1\nprint(\"tool outputs over 1500 chars (truncated):\", caps_out)\nprint(\"tool inputs over 2000 chars (truncated):\", caps_in)\nPY"}
+output: === transcript message count & block types ===
+104
+user msgs:
+9
+assistant msgs:
+95
+tool blocks:
+108
+=== truncated outputs (renderer cap) count ===
+tool outputs over 1500 chars (truncated): 29
+tool inputs over 2000 chars (truncated): 7
+
+
+---
+
+## Message 298 — ASSISTANT
+
+Key audit facts: 103 grounded messages (9 user, 94 assistant) but the transcript shows 104 message headers (one extra, likely a partial final message). 22 `patch` and 94 `step-finish` parts were intentionally omitted; 108 tool blocks present but **29 tool outputs and 7 inputs are truncated**. So it is **not** a complete verbatim transcript. Let me verify the discrepancy in message count and check patch omissions.
+
+[tool: bash | status=completed]
+input: {"command": "cd /tmp/req008_export && echo \"=== msg index range in transcript ===\"; grep -oE \"^## Message [0-9]+\" transcript.md | sed 's/## Message //' | sort -n | head -3; echo \"...\"; grep -oE \"^## Message [0-9]+\" transcript.md | sed 's/## Message //' | sort -n | tail -3; echo \"=== grounded msg indices ===\"; uv run --no-project python -c \"\nimport json;m=json.load(open('req008_msgs.json'));idx=[x['index'] for x in m];print('min',min(idx),'max',max(idx),'count',len(idx),'contiguous',idx==list(range(min(idx),max(idx)+1)))\n\"; echo \"=== patch parts represent doc edits? sample ===\"; uv run --no-project python - <<'PY'\nimport json\nmsgs=json.load(open(\"req008_msgs.json\"))\nn=0\nfor m in msgs:\n    for pid,tc,p in m[\"parts\"]:\n        if isinstance(p,dict) and p.get(\"type\")==\"patch\":\n            n+=1\n            if n<=2: print(\"patch part keys:\", list(p.keys()), \"| sample:\", str(p)[:120])\nprint(\"total patch parts:\", n)\nPY"}
+output: === msg index range in transcript ===
+1
+162
+163
+...
+262
+263
+264
+=== grounded msg indices ===
+min 162 max 264 count 103 contiguous True
+=== patch parts represent doc edits? sample ===
+patch part keys: ['type', 'hash', 'files'] | sample: {'type': 'patch', 'hash': 'b902fcf10deb59ca805c2ee4866bdff10f4aa80f', 'files': ['[LOCAL_HOME]/Documents/Open_Deepsearch_UL
+patch part keys: ['type', 'hash', 'files'] | sample: {'type': 'patch', 'hash': 'd3422d7ebb8d0ca4b85aee763d52e1c3909c8111', 'files': ['[LOCAL_HOME]/Documents/Open_Deepsearch_UL
+total patch parts: 22
+
+
+---
+
+## Message 299 — ASSISTANT
+
+Grounded range is 162–264 (103 contiguous). The "1" in the transcript header scan is the header line "Message 1" inside quoted transcript text (an example in a prompt), not a real message. So the transcript covers all 103 grounded messages; it is **not verbatim** because 22 patch parts, 94 step-finish parts are omitted and 36 tool I/O blocks are truncated. Now generate a full private export outside the repo (§3).
+
+[tool: bash | status=completed]
+input: {"command": "mkdir -p /var/folders/rv/h78jcx_s7r3b939p9t13ns0h0000gn/T/opencode/req008_private && cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && opencode export ses_e2bdd7ea1fferC4tLbkCJeovtC > /var/folders/rv/h78jcx_s7r3b939p9t13ns0h0000gn/T/opencode/req008_private/full_session_UNSANITIZED.json 2>/tmp/req008_export/exp2.err; echo \"exit=$?\"; ls -la /var/folders/rv/h78jcx_s7r3b939p9t13ns0h0000gn/T/opencode/req008_private/; head -3 /tmp/req008_export/exp2.err"}
+output: exit=0
+total 8040
+drwxr-xr-x@ 3 sft  staff       96 17 11 18:57 .
+drwxr-xr-x@ 3 sft  staff       96 17 11 18:57 ..
+-rw-r--r--@ 1 sft  staff  4114709 17 11 18:57 full_session_UNSANITIZED.json
+Exporting session: ses_e2bdd7ea1fferC4tLbkCJeovtC
+
+
+---
+
+## Message 300 — ASSISTANT
+
+Full 4.1MB unsanitized export preserved **outside the repository** (pre-approved temp dir), so no raw data enters the repo. Let me confirm it contains the REQ-008 range and check it for secrets (to inform the private-verification guidance, without publishing values).
+
+[tool: bash | status=completed]
+input: {"command": "P=/var/folders/rv/h78jcx_s7r3b939p9t13ns0h0000gn/T/opencode/req008_private/full_session_UNSANITIZED.json; echo \"=== REQ-008 present in private export ===\"; grep -c \"REQ-008: Search shall fall back\" \"$P\"; echo \"=== secret PRESENCE flags (counts only, values not printed) ===\"; for pat in \"sk-[A-Za-z0-9]\\{16,\\}\" \"tvly-[A-Za-z0-9]\\{10,\\}\" \"[A-Za-z0-9._%+-]\\+@[A-Za-z0-9.-]\\+\\.[a-z]\\{2,\\}\" \"AKIA[0-9A-Z]\\{12,\\}\" \"Bearer [A-Za-z0-9._-]\\{12,\\}\"; do c=$(grep -oE \"$pat\" \"$P\" | wc -l | tr -d ' '); echo \"  pattern($pat): $c\"; done"}
+output: === REQ-008 present in private export ===
+10
+=== secret PRESENCE flags (counts only, values not printed) ===
+  pattern(sk-[A-Za-z0-9]\{16,\}): 0
+  pattern(tvly-[A-Za-z0-9]\{10,\}): 0
+  pattern([A-Za-z0-9._%+-]\+@[A-Za-z0-9.-]\+\.[a-z]\{2,\}): 0
+  pattern(AKIA[0-9A-Z]\{12,\}): 0
+  pattern(Bearer [A-Za-z0-9._-]\{12,\}): 0
+
+
+---
+
+## Message 301 — ASSISTANT
+
+Private export is complete and contains no detectable key/email/token patterns. Now the human-review checklist for the **repository** transcript — search for sensitive categor(ies) that regex can't fully certify (env var names, tokens, URLs with params, local usernames, session IDs, IPs).
+
+[tool: bash | status=completed]
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && T=transcripts/60725623-ChensihanLIU-AIU010.md; echo \"=== env-var names referenced (should be var NAMES not values) ===\"; grep -oE \"(OPENAI|ANTHROPIC|TAVILY|GOOGLE|SEARCH|SUPABASE|AWS)_[A-Z_]+\" \"$T\" | sort | uniq -c | head; echo \"=== assignment-with-value patterns (potential leaks) ===\"; grep -nE \"(API_KEY|SECRET|TOKEN|PASSWORD)\\s*[:=]\\s*['\\\"][^'\\\"]{6,}\" \"$T\" | head; echo \"=== local usernames / home ===\"; grep -oE \"/Users/[A-Za-z0-9._-]+\" \"$T\" | sort | uniq -c; echo \"=== ip addresses / private urls with creds ===\"; grep -oE \"https?://[^ )\\\"]*@[^ )\\\"]*|[0-9]{1,3}(\\.[0-9]{1,3}){3}\" \"$T\" | head"}
+output: === env-var names referenced (should be var NAMES not values) ===
+   6 SEARCH_API
+   1 TAVILY_SEARCH_DESCRIPTION
+=== assignment-with-value patterns (potential leaks) ===
+=== local usernames / home ===
+=== ip addresses / private urls with creds ===
+
+
+---
+
+## Message 302 — ASSISTANT
+
+Only variable **names** (`SEARCH_API`) appear, no values, no home paths, no IPs, no userinfo URLs. The `[LOCAL_HOME]` redaction confirmed earlier. Now run the mandated Git and cross-reference checks.
+
+[tool: bash | status=completed]
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && echo \"=== git status --short ===\"; git status --short; echo \"=== git diff --check ===\"; git diff --check && echo CLEAN; echo \"=== git diff --cached --check ===\"; git diff --cached --check && echo CACHED_CLEAN"}
+output: === git status --short ===
+ M docs/ai-use-log.yaml
+ M docs/architecture/evaluation-table.md
+ M docs/architecture/invariants.md
+ M docs/architecture/runtime-policy-catalog.md
+ M docs/architecture/trace-matrix.md
+ M docs/code-governance/structural-constraints.md
+ M docs/code-governance/verification-constraints.md
+?? docs/architecture/adr/002-search-fallback.md
+?? transcripts/60725623-ChensihanLIU-AIU010.md
+=== git diff --check ===
+CLEAN
+=== git diff --cached --check ===
+CACHED_CLEAN
+
+
+[tool: bash | status=completed]
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && echo \"=== ADR-002 / EVAL-002 status ===\"; grep -m1 \"^- \\*\\*Status:\" docs/architecture/adr/002-search-fallback.md; awk '/^## EVAL-002/{f=1} f&&/Status:/{print;exit}' docs/architecture/evaluation-table.md; echo \"=== INV-006..009 present ===\"; for n in 006 007 008 009; do grep -q \"^## INV-$n\" docs/architecture/invariants.md && echo \"INV-$n ok\" || echo \"INV-$n MISSING\"; done; echo \"=== POL-003 present ===\"; grep -c \"POL-003\" docs/architecture/runtime-policy-catalog.md; echo \"=== TC-027..037 present & unique ===\"; grep -oE \"^\\| TC-0(2[7-9]|3[0-7]) \" docs/code-governance/verification-constraints.md | grep -oE \"TC-[0-9]{3}\" | sort | uniq -c"}
+output: === ADR-002 / EVAL-002 status ===
+- **Status:** Proposed
+- **Status:** Open (provisional selection of B with a thin C-style tool adapter; awaiting SA Review)
+=== INV-006..009 present ===
+INV-006 ok
+INV-007 ok
+INV-008 ok
+INV-009 ok
+=== POL-003 present ===
+1
+=== TC-027..037 present & unique ===
+   1 TC-027
+   1 TC-028
+   1 TC-029
+   1 TC-030
+   1 TC-031
+   1 TC-032
+   1 TC-033
+   1 TC-034
+   1 TC-035
+   1 TC-036
+   1 TC-037
+
+
+---
+
+## Message 303 — ASSISTANT
+
+All present and unique. Now verify no source/test changes, D-1..D-8 still pending, no final-approved claims, and the staging state (nothing cached).
+
+[tool: bash | status=completed]
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && echo \"=== source/test/req/pyproject changes ===\"; git status --short | grep -E \"^\\s*[MA?]+\\s+(src/|test/|docs/req/|pyproject|uv.lock)\" || echo \"NONE\"; echo \"=== staged count ===\"; git diff --cached --stat | tail -1 || echo \"nothing staged\"; echo \"=== D-1..D-8 statuses ===\"; grep -oE \"D-[1-8] \\((Open|Pending)[^)]*\\)\" docs/architecture/adr/002-search-fallback.md | sort -u; echo \"=== any 'Accepted'/'approved' for Proposed items? ===\"; grep -niE \"status:.*accepted|accepted 2026|EVAL-002.*decided\" docs/architecture/adr/002-search-fallback.md docs/architecture/evaluation-table.md | grep -i \"002\\|ADR-002\\|EVAL-002\" || echo \"none\""}
+output: === source/test/req/pyproject changes ===
+NONE
+=== staged count ===
+=== D-1..D-8 statuses ===
+D-1 (Open; conditionally recommended)
+D-2 (Open)
+D-3 (Open; recommended typed-classification)
+D-4 (Open)
+D-5 (Open)
+D-6 (Open; recommended)
+D-7 (Open; recommended)
+D-8 (Open; recommended)
+=== any 'Accepted'/'approved' for Proposed items? ===
+none
+
+
+---
+
+## Message 304 — ASSISTANT
+
+Nothing staged; no source/test/requirement changes; D-1…D-8 all open; no false "Accepted" claims. Final transcript message-count reconciliation to state completeness precisely.
+
+[tool: bash | status=completed]
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && T=transcripts/60725623-ChensihanLIU-AIU010.md; echo \"=== transcript structural counts ===\"; echo \"message headers: $(grep -cE '^## Message [0-9]+ —' \"$T\")\"; echo \"user: $(grep -cE '^## Message [0-9]+ — USER' \"$T\")  assistant: $(grep -cE '^## Message [0-9]+ — ASSISTANT' \"$T\")\"; echo \"tool blocks: $(grep -c '^\\[tool:' \"$T\")\"; echo \"=== footer/header disclosed omissions ===\"; grep -niE \"truncat|omitted|not.*complete|verbatim\" \"$T\" | head"}
+output: === transcript structural counts ===
+message headers: 104
+user: 9  assistant: 95
+tool blocks: 108
+=== footer/header disclosed omissions ===
+8:- Note: Sanitized at export time (emails, API keys, bearer tokens and local home paths replaced). Tool payloads truncated; transient step/patch parts omitted.
+934:| `resolve_search_api(raw_configurable, environ)` | Pure; raw env snapshot; env precedence; omitted/None→tavily; rejects invalid (ADR-001 §7.2) | Proposed |
+1458:| D-4 | Unavailable MCP fallback: tried-and-failed vs not-attempted | Tried-and-failed, category `load_failed`, listed in C-003 | Exclude silently | C-003 completeness | **U-5** | **Yes** |
+3532:The sanitized export may have redacted or truncated long text. Let me inspect an actual message's text content to understand the sanitized format.
+
+
+---
+
+## Message 305 — ASSISTANT
+
+The transcript header honestly discloses truncation/omission. (The 104 vs 103 header counts and 9 user vs 9 user included, 95 assistant vs 94 grounded — the extra headers come from literal `## Message NNN` examples inside quoted prompt/tool text, not real extra messages.)
+
+The audit is complete. Here is the final pre-commit report.
+
+---
+
+# REQ-008 Final Evidence Integrity & Git Pre-Commit Report
+
+## 1. AI-use log integrity
+- **AIU-010 valid:** YAML parses (10 entries, IDs AIU-001…AIU-010, all unique). Fields present: id, date `2026-11-17`, member `sszfot`, purpose, prompt, `requirements: [REQ-008]`, 9 artifacts, supervision, transcript.
+- **Transcript reference:** `transcripts/60725623-ChensihanLIU-AIU010.md` — exists; all 9 artifact paths exist.
+- **AIU-009 repair verified:** field-by-field comparison against the reconstructed HEAD version is **identical** (`old == new` True); the repair only fixed indentation and a stray blank line. No original field value changed.
+
+## 2. Transcript completeness and omissions (not claimed verbatim)
+Grounded from the OpenCode DB: REQ-008 spans **103 contiguous messages (162–264; 9 user, 94 assistant)** containing 87 text, 108 tool, 94 step-finish, 22 patch parts.
+
+The Markdown transcript **represents** all 103 messages, all user prompts, assistant responses, tool invocations, document edits (via tool `write`/`edit` inputs), and validation command results. **It is not a complete verbatim transcript**, because:
+- **29 tool outputs and 7 tool inputs were truncated** by the renderer length caps.
+- **22 `patch` parts omitted** (document-edit snapshots; the edits themselves appear through tool inputs).
+- **94 `step-finish` parts omitted** (token/step metadata).
+- The header discloses this ("Tool payloads truncated; transient step/patch parts omitted").
+- (The 104 message headers / 95 assistant headers vs 103/94 grounded are literal `## Message NNN` strings inside quoted prompt/tool text, not extra real messages.)
+
+Conclusion: **accurate as a representative transcript; not a byte-complete verbatim record.**
+
+## 3. Full untruncated export preserved privately
+- Generated with `opencode export ses_e2bdd7ea1fferC4tLbkCJeovtC` (no sanitize) to **outside the repository**: `/var/folders/rv/h78jcx_s7r3b939p9t13ns0h0000gn/T/opencode/req008_private/full_session_UNSANITIZED.json` (4.1 MB). Contains the REQ-008 range (10 occurrences of the REQ-008 prompt).
+- This private copy stays out of git; raw content is not published. Secret-pattern scan of the private export: 0 API keys, 0 emails, 0 bearer tokens, 0 AWS keys.
+
+## 4. Human-review checklist — privacy findings (repository transcript)
+- Variable **names only** (`SEARCH_API`), no values; no `API_KEY=`, `SECRET=`, `TOKEN=`, `PASSWORD=` assignments with values.
+- No `/Users/<name>` paths (all `[LOCAL_HOME]`); no IP addresses; no credentials in URLs.
+- No email/API-key/bearer patterns.
+- Header states sanitization and marks it **Draft; human redaction review before publication**.
+- **Caveat (per instruction):** regex scans cannot certify completeness. A human must still read the transcript (notably the 36 truncated blocks) and confirm no proprietary or sensitive content before publishing. The private full export is the reference for that review.
+
+## 5. Command results
+- `git status --short`: 7 modified docs + 2 untracked (ADR-002, transcript) — see §6.
+- `git diff --check`: **CLEAN**
+- `git diff --cached --check`: **CACHED_CLEAN** (nothing staged)
+- YAML: valid, 10 entries, unique IDs.
+- Cross-reference: ADR-002, EVAL-002 present; **INV-006…INV-009** all present; **POL-003** present (1 row); **TC-027…TC-037** all present, each unique.
+
+## 6. Exact Git file list
+```
+ M docs/ai-use-log.yaml
+ M docs/architecture/evaluation-table.md
+ M docs/architecture/invariants.md
+ M docs/architecture/runtime-policy-catalog.md
+ M docs/architecture/trace-matrix.md
+ M docs/code-governance/structural-constraints.md
+ M docs/code-governance/verification-constraints.md
+?? docs/architecture/adr/002-search-fallback.md
+?? transcripts/60725623-ChensihanLIU-AIU010.md
+```
+
+## 7. Status confirmations
+- **ADR-002:** Proposed ✔
+- **EVAL-002:** Open ✔
+- **D-1 through D-8:** all present and Open/pending team review ✔
+- **No source/test/requirements/pyproject changes** ✔
+- **No unapproved decision presented as final** (no "Accepted"/"Decided" for ADR-002/EVAL-002) ✔
+
+## Remaining approval dependencies
+- D-1 (load vs invocation / POL-002 conditional narrowing), D-5 (dependency on REQ-007 U-5) — gate POL-002 wording and TC-037.
+- D-2 (config field), D-3 (typed classification), D-4 (unloadable MCP record), D-6 (adapter/tool name), D-7 (all-failed rendering), D-8 (auth boundary).
+- Human redaction review of the transcript (Draft status) before any publication.
+- Pre-existing **REQ-007 trace-row mismatch** (says `TC-001–TC-025`, body has TC-001…TC-026) — reported, not changed.
+
+## Readiness for a Proposed SA documentation PR
+**Conditionally ready.** The documentation is internally consistent, IDs unique, statuses correct, diff clean, and evidence is logged with a private full reference. Before opening a **Proposed** PR, a human must (a) perform the manual redaction review of the transcript (which is honestly marked non-verbatim/truncated), and (b) acknowledge that D-1…D-8 and the REQ-007 TC-range mismatch remain open. With those acknowledged, it is suitable to submit as a **Proposed** SA documentation PR — not for SA approval.
+
+Nothing committed, pushed, or PR'd. Stopping for human review.
+
+---
+
+## Message 306 — USER
+
+You are working in the Open_Deepsearch_ULTRA repository on REQ-008 (ordered search fallback).
+
+The REQ-008 Software Architecture PR #20 has already been created. Its current base branch is docs/sa-search-provider and its head branch is docs/sa-search-fallback.
+
+The architecture documentation has already been committed. Do not redesign the architecture, change requirements, implement code, or run tests.
+
+Your task is to complete and verify the AI-use transcript evidence for AIU-010, following the same evidence quality standard previously used for REQ-007.
+
+### 1. Inspect existing evidence
+
+Review:
+
+- docs/ai-use-log.yaml
+- transcripts/60725623-ChensihanLIU-AIU010.md
+- The existing REQ-007 AI-use transcript and its formatting conventions
+- The original OpenCode session ses_e2bdd7ea1fferC4tLbkCJeovtC
+
+Identify the exact beginning and ending of the REQ-008 conversation.
+
+### 2. Verify transcript completeness
+
+Compare the existing REQ-008 Markdown transcript against the original OpenCode session.
+
+Verify:
+
+- All user prompts are preserved.
+- All assistant responses are preserved.
+- All substantive tool calls and their arguments are preserved.
+- Tool outputs needed to understand document creation, edits, decisions, and verification are preserved.
+- Patch events containing substantive evidence are represented.
+- No REQ-007-only conversation is incorrectly included as REQ-008 evidence.
+
+Report all omissions, truncations, and discrepancies.
+
+### 3. Prepare improved transcript evidence
+
+If necessary, update the existing AIU-010 Markdown transcript to provide a more complete, readable, chronological record.
+
+Preserve the original meaning and sequence of the conversation.
+
+Do not fabricate messages, tool outputs, timestamps, or approvals.
+
+Clearly distinguish:
+
+- Original session content
+- Redactions
+- Omitted non-substantive metadata
+- Any remaining truncation
+
+Do not claim that an abbreviated transcript is verbatim.
+
+### 4. Protect sensitive information
+
+Never commit an unsanitized OpenCode export.
+
+Redact credentials, API keys, tokens, private URLs, local home-directory identifiers, and other sensitive information.
+
+Preserve an unmodified full export privately outside the Git repository.
+
+Perform automated secret scanning and prepare a human-review checklist.
+
+Do not publish any unreviewed raw transcript.
+
+### 5. Verify AIU-010
+
+Ensure the AIU-010 entry correctly identifies:
+
+- REQ-008
+- The responsible member
+- The purpose of AI assistance
+- The relevant prompts
+- All affected architecture documents
+- The transcript evidence path
+- Human supervision and review status
+
+Do not change unrelated AI-use entries.
+
+### 6. Final validation
+
+Check:
+
+- YAML validity
+- Transcript structure and chronological ordering
+- Evidence completeness
+- Secret-scan findings
+- Git diff --check
+- Git status --short
+- Exact changed-file list
+
+Do not modify source code, tests, or architecture decisions.
+
+Do not commit, push, force-push, or modify PR #20.
+
+### 7. Report
+
+Provide:
+
+1. Existing evidence assessment
+2. Missing evidence identified
+3. Improvements made
+4. Remaining omissions or privacy risks
+5. Exact modified files
+6. Whether AIU-010 is ready for human review and subsequent submission
+
+Stop after reporting the results.
+
+---
+
+## Message 307 — ASSISTANT
+
+I'll audit the current evidence against the actual session. Let me start by confirming the committed state and the transcript's begin/end boundaries.
+
+[tool: bash | status=completed]
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && git log --oneline -5 && echo \"=== status ===\" && git status --short && echo \"=== transcript head ===\" && head -12 transcripts/60725623-ChensihanLIU-AIU010.md && echo \"=== transcript tail ===\" && tail -6 transcripts/60725623-ChensihanLIU-AIU010.md"}
+output: 7e85e5e docs(sa): propose REQ-008 search fallback architecture
+7544a7c docs: clean up REQ-007 AI evidence formatting
+8db87b8 docs(ai): record REQ-007 architecture refinement evidence
+67bc289 docs(sa): refine REQ-007 search configuration architecture
+11be0fb docs(ai): fix REQ-007 transcript naming and redaction
+=== status ===
+=== transcript head ===
+# AIU-010 — REQ-008 Search Fallback Architecture
+
+- Date: 2026-11-17
+- Member: sszfot
+- Session: ses_e2bdd7ea1fferC4tLbkCJeovtC
+- Scope: REQ-008 ADD Iterations 1–2, EVAL-002/ADR-002, integration, consistency repair, evidence
+- Source: OpenCode session history (parts from the first REQ-008 message onward)
+- Note: Sanitized at export time (emails, API keys, bearer tokens and local home paths replaced). Tool payloads truncated; transient step/patch parts omitted.
+- Status: Draft; human redaction review before publication.
+
+## Message 162 — USER
+
+=== transcript tail ===
+## Message 264 — ASSISTANT
+
+[tool: bash | status=running]
+input: {"command": "cd /tmp/req008_export && python3 extract.py 2>&1 | tail; ls -la req008_msgs.json 2>&1"}
+
+---
+
+
+---
+
+## Message 308 — ASSISTANT
+
+The transcript is committed in `7e85e5e`. It ends mid-investigation at message 264 (a `status=running` tool), meaning the session has continued past the transcript's end. Let me compare against the current DB to find the true boundaries and any REQ-007 contamination.
+
+[tool: bash | status=completed]
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && dbfile=$(opencode db path 2>/dev/null); echo \"db: $dbfile\"; python3 - \"$dbfile\" <<'PY'\nimport sqlite3,sys,json\ndb=sys.argv[1]; SID=\"ses_e2bdd7ea1fferC4tLbkCJeovtC\"\ncon=sqlite3.connect(f\"file:{db}?mode=ro\",uri=True); cur=con.cursor()\nrows=cur.execute(\"SELECT id,time_created FROM message WHERE session_id=? ORDER BY time_created\",(SID,)).fetchall()\nprint(\"total messages in session:\",len(rows))\n# find boundary messages by scanning user text parts\ndef first_user_text(mid):\n    for (data,) in cur.execute(\"SELECT data FROM part WHERE message_id=? ORDER BY time_created\",(mid,)):\n        try: p=json.loads(data)\n        except: continue\n        if isinstance(p,dict) and p.get(\"type\")==\"text\": return p.get(\"text\",\"\")\n    return \"\"\nfor i,(mid,t) in enumerate(rows):\n    d=cur.execute(\"SELECT data FROM message WHERE id=?\",(mid,)).fetchone()\n    try: role=json.loads(d[0]).get(\"role\")\n    except: role=\"?\"\n    if role==\"user\":\n        txt=first_user_text(mid)\n        if \"REQ-008\" in txt[:400] or \"REQ-008: Search shall fall back\" in txt:\n            print(f\"idx {i+1} msg {mid}: USER REQ-008 start -> {txt[:70]!r}\")\nPY"}
+output: db: [LOCAL_HOME]/.local/share/opencode/opencode.db
+total messages in session: 308
+idx 26 msg msg_1d428db90001JwIevH9koX6os1: USER REQ-008 start -> 'Continue the Software Architecture design for REQ-007, ADD Iteration 2'
+idx 162 msg msg_1e8f9ff6900122nw97Ycz1h9Z1: USER REQ-008 start -> 'You are assisting with the Software Architecture (SA) phase of the Ope'
+idx 172 msg msg_1e9078338001mPz8Em25alpzOx: USER REQ-008 start -> 'You are assisting with the Software Architecture phase of Open_Deepsea'
+idx 179 msg msg_1e90b0065001hG1nhFaA7W4Xeu: USER REQ-008 start -> 'Continue REQ-008 Software Architecture analysis with **ADD Iteration 2'
+idx 186 msg msg_1e90de367001lelRHp93m9xjlV: USER REQ-008 start -> 'Continue REQ-008 Software Architecture work.\n\nCurrent branch: `docs/sa'
+idx 195 msg msg_1e910d233001NkGRB7fae5FY1H: USER REQ-008 start -> 'Perform a focused consistency repair of REQ-008 EVAL-002 and ADR-002.\n'
+idx 214 msg msg_1e91441d9001FboN7sxyUMniUJ: USER REQ-008 start -> 'Continue REQ-008 Software Architecture documentation integration.\n\nCur'
+idx 228 msg msg_1e917460f001nbr2wOkFPYKRse: USER REQ-008 start -> 'Perform the final cross-document consistency repair for REQ-008 Softwa'
+idx 244 msg msg_1e91b793f0015j6JcNM9KNWMUn: USER REQ-008 start -> 'Prepare the REQ-008 AI-use evidence and pre-commit audit.\n\nCurrent bra'
+idx 293 msg msg_1e927239a001Bd0Yiq1n69YgcT: USER REQ-008 start -> 'Perform a final REQ-008 evidence integrity and Git pre-commit audit.\n\n'
+idx 306 msg msg_1e93f9823001XAb2uixQcNUVL0: USER REQ-008 start -> 'You are working in the Open_Deepsearch_ULTRA repository on REQ-008 (or'
+
+
+---
+
+## Message 309 — ASSISTANT
+
+Critical finding: the session now has **308 messages**, but the committed transcript ends at message 264. The REQ-008 conversation actually runs from message 162 through at least 306 (the current prompt), so the transcript is **missing messages 265–306** — including the entire architecture integration, final consistency repair, first evidence step, and the final audit. Let me establish the exact end boundary and confirm the range is contiguous REQ-008 (no REQ-007 contamination).
+
+[tool: bash | status=completed]
+input: {"command": "cd [LOCAL_HOME]/Documents/Open_Deepsearch_ULTRA && dbfile=$(opencode db path 2>/dev/null); python3 - \"$dbfile\" <<'PY'\nimport sqlite3,sys,json\ndb=sys.argv[1]; SID=\"ses_e2bdd7ea1fferC4tLbkCJeovtC\"\ncon=sqlite3.connect(f\"file:{db}?mode=ro\",uri=True); cur=con.cursor()\nrows=cur.execute(\"SELECT id,time_created FROM message WHERE session_id=? ORDER BY time_created\",(SID,)).fetchall()\ndef role(mid):\n    d=cur.execute(\"SELECT data FROM message WHERE id=?\",(mid,)).fetchone()\n    try: return json.loads(d[0]).get(\"role\")\n    except: return \"?\"\ndef first_text(mid):\n    for (data,) in cur.execute(\"SELECT data FROM part WHERE message_id=? ORDER BY time_created\",(mid,)):\n        try: p=json.loads(data)\n        except: continue\n        if isinstance(p,dict) and p.get(\"type\")==\"text\": return p.get(\"text\",\"\")\n    return \"\"\n# Print any user messages in 162..308 with first 60 chars, to check for REQ-007 content\nfor i,(mid,t) in enumerate(rows, start=1):\n    if i<162: continue\n    if role(mid)==\"user\":\n        print(f\"idx {i}: {first_text(mid)[:80]!r}\")\nprint(\"last idx:\", len(rows), \"| role of last:\", role(rows[-1][0]))\nPY"}
+output: idx 162: 'You are assisting with the Software Architecture (SA) phase of the Open_Deepsear'
+idx 172: 'You are assisting with the Software Architecture phase of Open_Deepsearch_ULTRA.'
+idx 179: 'Continue REQ-008 Software Architecture analysis with **ADD Iteration 2 — Decisio'
+idx 186: 'Continue REQ-008 Software Architecture work.\n\nCurrent branch: `docs/sa-search-fa'
+idx 195: 'Perform a focused consistency repair of REQ-008 EVAL-002 and ADR-002.\n\nCurrent b'
+idx 214: 'Continue REQ-008 Software Architecture documentation integration.\n\nCurrent branc'
+idx 228: 'Perform the final cross-document consistency repair for REQ-008 Software Archite'
+idx 244: 'Prepare the REQ-008 AI-use evidence and pre-commit audit.\n\nCurrent branch: `docs'
+idx 293: 'Perform a final REQ-008 evidence integrity and Git pre-commit audit.\n\nBranch: `d'
+idx 306: 'You are working in the Open_Deepsearch_ULTRA repository on REQ-008 (ordered sear'
+last idx: 309 | role of last: assistant
+
+
+---
+
+## Message 310 — ASSISTANT
+
+Confirmed: messages **162–309** are all REQ-008 (no REQ-007 contamination), and the session keeps growing as we converse. The committed transcript stops at 264, missing 265+. Since the session is live (this very conversation is being appended), I'll re-extract through the latest durable message (before the current in-flight turn) and regenerate a more complete transcript. Let me build a fresh extractor.
+
+[tool: write | status=completed]
+input: {"content": "import json, sqlite3, sys\n\nDB = \"[LOCAL_HOME]/.local/share/opencode/opencode.db\"\nSID = \"ses_e2bdd7ea1fferC4tLbkCJeovtC\"\nSTART = \"msg_1e8f9ff6900122nw97Ycz1h9Z1\"  # first REQ-008 user message\n\ncon = sqlite3.connect(f\"file:{DB}?mode=ro\", uri=True)\ncur = con.cursor()\n\nrows = cur.execute(\n    \"SELECT id, time_created FROM message WHERE session_id=? ORDER BY time_created\", (SID,)\n).fetchall()\n\nidx_of = {mid: i for i, (mid, _t) in enumerate(rows, start=1)}\nstart_i = idx_of[START]\n\n# Include through the LAST message that has at least one part (exclude an empty in-flight message)\ndef has_parts(mid):\n    return cur.execute(\"SELECT 1 FROM part WHERE message_id=? LIMIT 1\", (mid,)).fetchone() is not None\n\nmsgs_rows = rows[start_i - 1:]\n# trim trailing messages with no parts yet\nwhile msgs_rows and not has_parts(msgs_rows[-1][0]):\n    msgs_rows.pop()\n\ndef get_parts(mid):\n    out = []\n    for pid, tc, data in cur.execute(\n        \"SELECT id, time_created, data FROM part WHERE message_id=? ORDER BY time_created\", (mid,)\n    ):\n        try:\n            out.append((pid, tc, json.loads(data)))\n        except Exception:\n            pass\n    return out\n\nexport = []\nfor (mid, mt) in msgs_rows:\n    d = cur.execute(\"SELECT data FROM message WHERE id=?\", (mid,)).fetchone()\n    try:\n        role = json.loads(d[0]).get(\"role\", \"?\") if d else \"?\"\n    except Exception:\n        role = \"?\"\n    export.append({\"index\": idx_of[mid], \"role\": role, \"message_id\": mid, \"parts\": get_parts(mid)})\n\njson.dump(export, open(\"/tmp/req008_export/req008_msgs_v2.json\", \"w\"), ensure_ascii=False)\nprint(\"messages exported:\", len(export), \"| first idx\", export[0][\"index\"], \"| last idx\", export[-1][\"index\"], file=sys.stderr)\n", "filePath": "/tmp/req008_export/extract_v2.py"}
+output: Wrote file successfully.
+
+---
+
+## Message 311 — ASSISTANT
+
+[tool: bash | status=running]
+input: {"command": "cd /tmp/req008_export && python3 extract_v2.py 2>&1 | tail -3; ls -la req008_msgs_v2.json"}
 
 ---

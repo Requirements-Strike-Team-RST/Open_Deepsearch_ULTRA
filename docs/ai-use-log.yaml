@@ -267,4 +267,8 @@ entries:
       TC-037; no test file was created and no test was executed. No
       source code was implemented. ADR-002 remains Proposed, EVAL-002
       remains Open, and D-1 through D-8 remain open pending SA Review.
+      The transcript was later expanded to cover the full REQ-008
+      conversation (messages 162-311) and marked as a sanitized,
+      abbreviated (non-verbatim) record; a human redaction review is
+      still required before publication.
     transcript: transcripts/60725623-ChensihanLIU-AIU010.md
