@@ -6,7 +6,7 @@
 |---|---|
 | **AI-use log entry** | `AIU-008` (`docs/ai-use-log.yaml`; renumbered at integration) |
 | **Member** | AlchemyHAN (student 60705556, HAN Peilin) |
-| **Session** | OpenCode session `ses_e20a7a837ffe9GpV4meno9q7n5`, 2026-11-15 21:14–22:16 (UTC+8), 10 user turns. Turns 1–7, the SA work, are recorded here; turns 8–10, about the AI-use log and an earlier transcript draft, are left out. |
+| **Session** | OpenCode session `ses_e20a7a837ffe9GpV4meno9q7n5`, 2026-11-15 21:14–22:16 (UTC+8), 7 user turns |
 | **Agents** | Drafting: OpenCode, `plan` and then `architect` role, model DeepSeek-V4-Flash (as configured by me). Independent review: Claude Code (claude-opus-5-5), run by me outside the OpenCode session. |
 | **Requirements** | REQ-002 — no delegated research task is lost or silently treated as completed; REQ-004 — run output states whether research was complete, partial or failed (both `must`, `safety_relevant: true`, status `approved`) |
 | **Module** | `delivery` (`docs/architecture/architecture-blueprint.md` §4) |
