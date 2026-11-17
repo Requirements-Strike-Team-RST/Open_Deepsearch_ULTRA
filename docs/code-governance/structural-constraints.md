@@ -136,13 +136,14 @@ One section per module. At integration, check that responsibilities do not overl
 | Item | Constraint |
 |---|---|
 | Path | `src/open_deep_research/search/validation.py` (REQ-008 will add its own file) |
-| Responsibility | Reject an invalid search configuration before any model or search call |
-| Public interface | `load_search_config`, `validate_search_config`, `SearchConfigError` |
-| Called from | `clarify_with_user` and `researcher`, as their first statement |
+| Responsibility | Reject an invalid search configuration, or a run without any search tool, before any model or search call |
+| Public interface | `load_search_config`, `validate_search_config`, `model_provider`, `require_search_tools`, `SearchConfigError`, `SearchUnavailableError` |
+| Called from | `clarify_with_user` and `researcher`, as their first statements (ADR-006 §3.4); the nodes pass in the tools from `utils.get_all_tools` |
 | May depend on | `configuration.py` |
 | Must not depend on | `deep_researcher.py`, `utils.py`, other extension modules, any model or MCP client |
 | Shared contracts | None |
 | Configuration flag | None; only invalid configurations are affected |
+| Baseline code changed | The dead `len(tools) == 0` guard in `researcher` is replaced by `require_search_tools(tools)` (Discussion #19, U-4). Approved exception to "Extend, never replace" (§5) |
 
 ### evaluation (REQ-009, REQ-010, ADR-007)
 

@@ -74,7 +74,7 @@ Exceptions to the general rules, recorded in blueprint §6: new code under `test
 ## 6. State, Failure Handling and Deterministic Boundary
 
 - **State:** none.
-- **Runtime policies:** POL-019 to POL-022.
+- **Runtime policies:** POL-020 to POL-023.
 - **Invariants:** INV-009.
 - **Deterministic boundary:** the judge supplies ratings and claim judgements; code decides whether they are valid and what the score is.
 

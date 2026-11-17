@@ -58,15 +58,15 @@ Unless stated otherwise, an invariant holds when the feature flag of its module 
 - **Verification:** offline fixed-source tests for missing, duplicate and malformed identifiers and unsourced facts; monitor `citation_integrity_violation_count == 0`.
 - **Fallback:** correct only format issues that the source list determines; otherwise mark the evidence as missing. Never fabricate a URL or reference.
 
-## INV-005 — An invalid search configuration never reaches a model call
+## INV-005 — A run never starts research without a valid search source
 
-- **Statement:** A configuration that names an unsupported search provider, pairs native search with a research model of another provider, has neither a search provider nor a usable MCP declaration, or enables the task contract with native search is rejected before any model or search call, with an error that names the setting to change.
+- **Statement:** A configuration that names an unsupported search provider, pairs native search with a research model whose provider is not on that search's allowlist, has neither a search provider nor a usable MCP declaration, or enables the task contract with native search is rejected before the first model or search call of a run, with an error that names the setting to change. A run whose assembled tools contain no search tool stops before any model call with a "no search available" error.
 - **Module:** search
-- **Source:** REQ-007 (REQ-001 for the task-contract rule)
+- **Source:** REQ-007 (REQ-001 for the task-contract rule); Discussion #19 (U-1 to U-4)
 - **Status:** Proposed
-- **Enforcing component:** `search/validation.py` (`load_search_config`) called first in `clarify_with_user` and `researcher` (ADR-006). Holds with no flag.
-- **Verification:** `test/offline/test_search_configuration.py` with a fake model that fails the test if it is called.
-- **Fallback:** raise `SearchConfigError`; never switch to a provider that is not configured.
+- **Enforcing component:** `search/validation.py` (`load_search_config`, `require_search_tools`) called first in `clarify_with_user` and `researcher` (ADR-006). Holds with no flag.
+- **Verification:** `test/offline/test_search_configuration.py` with a fake model that fails the test if it is called and a fake MCP loader.
+- **Fallback:** raise `SearchConfigError` or `SearchUnavailableError`; never switch to a provider that is not configured.
 
 REQ-008 (search fallback) has no design yet; its invariant is added with its ADR.
 

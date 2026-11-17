@@ -84,7 +84,7 @@ Dependency direction: `structural-constraints.md` §5. Exceptions, each justifie
 
 With `task_contract_enabled` and `context_trimming` on:
 
-1. `clarify_with_user` first validates the search configuration (search). It may end the run with a question.
+1. `clarify_with_user` first validates the search configuration and checks that at least one search tool loads (search). It may end the run with a question.
 2. `write_research_brief` writes the brief and resets `task_results`, `exit_reason` and `exit_detail`.
 3. `supervisor` calls the model with `ConductResearch` (with `must_answer` and `scope`), `ResearchComplete` and `think_tool`.
 4. `supervisor_tools` turns each `ConductResearch` call into a `TaskSpec` (orchestration) and runs the specs with `run_delegations` (delivery). At the cap, the specs end `not_run` instead.
@@ -132,8 +132,8 @@ New state fields, their owning module, the nodes that write them and their lifec
 | The supervisor claims completion early or its model fails | Request refused below the threshold; exit through `select_exit` | POL-010, POL-011 | INV-003 |
 | Compression hits a token limit or another error | Oldest turns removed; explicit `token_limit` or `runtime` failure | POL-012 to POL-014 | INV-001 |
 | Nothing found, report fails or findings were cut | Outcome `failed` or `partial`, never `complete` | POL-015 to POL-017 | INV-002 |
-| Invalid search configuration | Rejected before any model call | POL-018 | INV-005 |
-| Invalid judge output, missing input or evaluator error | Only that metric is `not_evaluable` | POL-019 to POL-022 | INV-009 |
+| Invalid search configuration, or no search tool available | Rejected before any model call; a researcher without a search tool fails its task | POL-018, POL-019 | INV-005 |
+| Invalid judge output, missing input or evaluator error | Only that metric is `not_evaluable` | POL-020 to POL-023 | INV-009 |
 
 Details: `runtime-policy-catalog.md`, `invariants.md`; design risks: `risk-list.md`.
 
@@ -146,6 +146,7 @@ Details: `runtime-policy-catalog.md`, `invariants.md`; design risks: `risk-list.
 | 3 | Move runtime prompts from `prompts.py` to versioned `prompts/*.yaml` loaded by `prompts.py` | Pending |
 | 4 | Remaining proposals of the earlier blueprint draft (v0.4) | Pending; not yet copied into this repository |
 | 5 | Integration of the six module branches (2026-11-17), see below | Proposed, for SA Review |
+| 6 | REQ-007 open decisions U-1 to U-4: stop the run when no search tool is available (U-1 A); "rejected before the first model or search call of a run" (U-2); resolve the model provider like `init_chat_model` and check it against an explicit allowlist (U-3 B); replace the dead `len(tools) == 0` guard with a search-tool check (U-4 B) | Decided by the team in [Discussion #19](https://github.com/Requirements-Strike-Team-RST/Open_Deepsearch_ULTRA/discussions/19), 2026-11-17; written into ADR-006 |
 
 **Integration decisions (#5).** Each point resolves a conflict between module drafts or removes design that no requirement asked for. Module owners should check the points that touch their module before SA Review.
 
@@ -160,16 +161,14 @@ Details: `runtime-policy-catalog.md`, `invariants.md`; design risks: `risk-list.
 | Outcome node | One `finalize` node that runs twice, with a `run_finalized` marker and `report_truncated` / `report_error` fields | `check_research_outcome` before the report; the post-report step inside `final_report_generation`; fields `research_outcome`, `outcome_detail`, `failed_tasks` | delivery |
 | `notes` content | Orchestration: claims rendered by code; delivery: validated findings | Counted findings of `complete` and `partial` tasks, as REQ-002 C-007 requires; the full summary only goes back to the supervisor. Possible thinner reports are RISK-013 | orchestration, delivery |
 | Native search with the task contract | Orchestration rejected it inside the researcher | The search validator rejects the combination at start | orchestration, search |
-| Removed as beyond the requirements | Orchestration: `finish_reason` observation, private config keys and contextvar isolation, crash-safe receipts, token cost accounting. Search: environment snapshots, MCP load adapter, configured/bound/executed states, five open questions. Evaluation: HTTP 401/403 mapping, four exit codes, six files. Context: a separate classification module | — | orchestration, search, evaluation, context |
+| Removed as beyond the requirements | Orchestration: `finish_reason` observation, private config keys and contextvar isolation, crash-safe receipts, token cost accounting. Search: environment snapshots, an MCP load adapter that tells each MCP failure apart, configured/bound/executed states. Evaluation: HTTP 401/403 mapping, four exit codes, six files. Context: a separate classification module | — | orchestration, search, evaluation, context |
 | Documents | Two risk lists in different formats; `option-ledger.md`; `orchestration-review-checklist.md` under `docs/architecture/`; an AI-preparation note in `review-memo.md` | One `risk-list.md`; the ledger's only open item moved to EVAL-004 and RISK-012; the checklist moved to `transcripts/raw/61061965-XIE_Shentai/`; the preparation note removed (its AI use is in `ai-use-log.yaml`) | all |
 
 **Open for SA Review:**
 
 1. REQ-008 (search fallback) has no EVAL entry or ADR yet; Gate 1 cannot pass for it.
 2. Confirm the default `coverage_threshold = 0.8` (REQ-003 notes).
-3. Confirm the strict `provider:` prefix rule for native search (ADR-006).
-4. Choose the search-capable configuration for the live checks REQ-003 C-006 and REQ-006 C-004.
-5. REQ-007 C-004 says the researcher tools "include the web_search tool", but the Tavily tool is named `tavily_search` (`utils.py` L43-44); `web_search` is only its metadata name (L558). The requirement owner should correct the wording before tests are written.
-6. If live reports become too thin with findings-only `notes` (RISK-013), the fix is a change to REQ-002 C-007, not to the design.
+3. Choose the search-capable configuration for the live checks REQ-003 C-006 and REQ-006 C-004.
+4. If live reports become too thin with findings-only `notes` (RISK-013), the fix is a change to REQ-002 C-007, not to the design.
 
 Decisions are recorded as ADRs in `adr/` (template: `adr/000-template.md`).

@@ -549,3 +549,28 @@ entries:
       integration pull request is opened; module owners confirm the points that touch their
       module at SA Review.
     transcript: null
+
+  - id: AIU-021
+    date: "2026-11-17"
+    member: AlchemyHAN
+    purpose: >-
+      Announce the team's decisions on the REQ-007 open questions U-1 to U-4 and apply them to
+      the integrated architecture.
+    prompt: >-
+      Read Discussion #19 (REQ-007 U-1 to U-4). The decisions the team voted for and ADR-006 in
+      the integration branch disagree in three places. Post a reply in my voice announcing the
+      final decision, then update the documents to match it. Also correct the tool name in
+      REQ-007 C-004.
+    requirements: [REQ-007]
+    artifacts:
+      - https://github.com/Requirements-Strike-Team-RST/Open_Deepsearch_ULTRA/discussions/19
+      - docs/architecture/adr/006-search-configuration-validation.md
+      - docs/architecture/invariants.md
+      - docs/architecture/runtime-policy-catalog.md
+      - docs/code-governance/verification-constraints.md
+      - docs/req/requirements.yaml
+    supervision: >-
+      The AI counted the votes of the three members who replied (U-1 A, U-2 reword, U-3 B, U-4 B)
+      and drafted the announcement; the member asked for it to be posted. The member reviews the
+      document changes before the integration pull request is opened.
+    transcript: null

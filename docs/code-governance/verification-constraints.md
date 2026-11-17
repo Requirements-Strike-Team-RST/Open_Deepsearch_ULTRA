@@ -144,16 +144,19 @@ Each module lists one or more cases for every acceptance criterion (C-/M-) of it
 
 | Case | Covers | Type | Input | Expected result | Test |
 |---|---|---|---|---|---|
-| TC-SRC-01 | REQ-007 C-001; INV-005 | exception | `search_api = anthropic`, `research_model = openai:gpt-4.1`; also `search_api = openai` with `gpt-4.1` (no prefix) | `SearchConfigError` naming `search_api` and `research_model`; the fake model is never called | `test/offline/test_search_configuration.py::test_native_search_model_mismatch_rejected` |
+| TC-SRC-01 | REQ-007 C-001; INV-005 | exception | `search_api = anthropic` with `research_model = openai:gpt-4.1`; `search_api = openai` with `claude-sonnet-4` | `SearchConfigError` naming `search_api` and `research_model`; the fake model is never called | `test/offline/test_search_configuration.py::test_native_search_model_mismatch_rejected` |
 | TC-SRC-02 | REQ-007 C-002; INV-005 | exception | `search_api = none` with no MCP config, with an MCP config without `url`, and with one without `tools` | `SearchConfigError` naming `search_api` and `mcp_config` before any research | `test/offline/test_search_configuration.py::test_no_search_tool_rejected` |
 | TC-SRC-03 | REQ-007 C-003; INV-005 | exception | `search_api = "bing"` in `configurable`, and `SEARCH_API=bing` in the environment | `SearchConfigError` listing `anthropic, openai, tavily, none` | `test/offline/test_search_configuration.py::test_unsupported_provider_rejected` |
-| TC-SRC-04 | REQ-007 C-004 | normal | `search_api = tavily` with a Tavily key | No error; the researcher tools include the Tavily search tool (named `tavily_search`; see blueprint §11, open item 5) | `test/offline/test_search_configuration.py::test_valid_tavily_configuration_accepted` |
+| TC-SRC-04 | REQ-007 C-004 | normal | `search_api = tavily` with a Tavily key | No error; the researcher tools include the Tavily search tool (`tavily_search`) | `test/offline/test_search_configuration.py::test_valid_tavily_configuration_accepted` |
 | TC-SRC-05 | INV-005 | exception | An invalid configuration passed directly to the researcher subgraph | `SearchConfigError` before the researcher's model call | `test/offline/test_search_configuration.py::test_researcher_entry_validates` |
 | TC-SRC-06 | INV-005 (REQ-001 rule) | exception | `task_contract_enabled = True` with `search_api = openai` | `SearchConfigError` naming both settings | `test/offline/test_search_configuration.py::test_task_contract_rejects_native_search` |
-| TC-SRC-07 | REQ-007 C-005 | human | A reviewer follows the README without reading source code | They can configure each built-in provider and an MCP search server and find the needed keys | `docs/review-memo.md` (search provider configuration review) |
+| TC-SRC-07 | INV-005 (U-3) | boundary | Native search with `gpt-4.1`, `o3-mini`, `openai:gpt-4.1` (openai) and `claude-sonnet-4`, `anthropic:claude-sonnet-4` (anthropic); then `azure_openai:gpt-4.1`, `anthropic_bedrock:claude-sonnet-4`, `openrouter:openai/gpt-4.1` and `mystery-model` | The first group is accepted; every name in the second group raises `SearchConfigError` naming `research_model` | `test/offline/test_search_configuration.py::test_native_search_provider_allowlist` |
+| TC-SRC-08 | INV-005 (U-1) | exception | `search_api = none`, a valid `mcp_config`, and a fake MCP loader that returns no tool | `SearchUnavailableError` naming `mcp_config` in `clarify_with_user`; the fake model is never called | `test/offline/test_search_configuration.py::test_mcp_without_tools_stops_run` |
+| TC-SRC-09 | INV-005 (U-4) | boundary | `researcher` called with tools `[ResearchComplete, think_tool]`, and with the Tavily tool added | The first raises `SearchUnavailableError` before the model call; the second proceeds | `test/offline/test_search_configuration.py::test_researcher_requires_search_tool` |
+| TC-SRC-10 | REQ-007 C-005 | human | A reviewer follows the README without reading source code | They can configure each built-in provider and an MCP search server and find the needed keys | `docs/review-memo.md` (search provider configuration review) |
 
 - **Regression:** all of `test/offline/`.
-- **Live or human checks:** TC-SRC-07 (`automated: false`), recorded as a `REVIEW-NNN` entry.
+- **Live or human checks:** TC-SRC-10 (`automated: false`), recorded as a `REVIEW-NNN` entry.
 
 ### evaluation (REQ-009, REQ-010, ADR-007)
 
