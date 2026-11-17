@@ -3,7 +3,7 @@
 > **Purpose:** The order in which work happens once a requirement is approved: software architecture, review, tests, implementation and verification, with the human gates between them.
 > **Authoritative for:** workflow and gates only. Permissions, structure and verification rules live in the documents referenced below and are not repeated here.
 > **Maintained by:** humans.
-> **Last updated:** 2026-11-12
+> **Last updated:** 2026-11-17
 
 ## 0. Golden Rule
 
@@ -69,7 +69,8 @@ Each module owner works on the module listed for their requirements in `architec
 |---|---|---|
 | `docs/architecture/invariants.md` | Invariants, enforcing component, verification, fallback | Always for `safety_relevant` or `invariant`-type requirements |
 | `docs/architecture/memory-design.md` §5 | State fields, ownership, lifecycle | The module adds or changes state |
-| `docs/architecture/runtime-policy-catalog.md` §2 | Exception, retry, degradation and failure policies | The module handles failures |
+| `docs/architecture/runtime-policy-catalog.md` §1 | Exception, retry, degradation and failure policies | The module handles failures |
+| `docs/architecture/risk-list.md` | Risks of the decision and when to re-evaluate it | The decision carries a known risk |
 | `docs/architecture/trace-matrix.md` | Architecture component and verification method for each REQ | Always |
 | `docs/code-governance/structural-constraints.md` §10 | Module path, interface, allowed and forbidden dependencies | Always |
 | `docs/code-governance/verification-constraints.md` §7 | Normal, exception, boundary and regression cases per C-/M-/INV | Always |
@@ -100,7 +101,7 @@ A human reviewer checks the test commit: every case in the module's §7 table ha
 
 1. Read the accepted ADR, the blueprint, the module's section in `structural-constraints.md` §10 and the governance rules.
 2. Implement the ADR's implementation steps within the module's scope until the approved tests pass.
-3. Run the checks in `permission-model.md` §4 and record each command and its result in `docs/build-reports/<RID>.md`. CI on the PR is the authoritative run.
+3. Run the checks in `verification-constraints.md` §4 and record each command and its result in `docs/build-reports/<RID>.md`. CI on the PR is the authoritative run.
 4. Draft the PR description and the proposed entries for `docs/ai-use-log.yaml` and `docs/review-memo.md` in the build report; humans apply them.
 
 Build never changes the approved tests. If a test looks wrong, stop and report it; the fix goes back to Test Author and Gate 2. If the implementation would deviate from the ADR, stop: that is an architecture change (§10). Build pushes only when the human confirms.

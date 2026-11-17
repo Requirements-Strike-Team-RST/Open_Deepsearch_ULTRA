@@ -1,692 +1,155 @@
-# ADR-002: Typed research tasks and deterministic coverage termination
+# ADR-001: Typed research tasks and coverage-based termination
 
 - **Status:** Proposed
-- **Date:** 2026-11-14
-- **Revised:** 2026-11-15 (internal budget/evidence separation and response-completion boundary)
+- **Date:** 2026-11-17
 - **Module:** orchestration
-- **Owner:** Centay — XIE Shentai, 61061965
-- **Evaluation:** EVAL-002 (`docs/architecture/evaluation-table.md`)
-- **SA Review:** pending; no Gate 1 or Gate 2 approval exists.
-
-This is a local SA proposal against `827fd32f956a0601df3e1fd253d5cc98044fff88`.
-It supersedes neither approved requirements nor another owner's draft. Differences
-from the historical v0.5 field discussion and reader decisions are listed in
-`../orchestration-review-checklist.md`. Types, algorithms and test names below are
-planned interfaces, not implemented behavior.
-
-The 2026-11-15 revision preserves the public DTOs, enums, helper arguments and
-context return types of the previous local draft. It adds no online-document edit
-or reader approval. Its bounded gateway/adapter/baseline experiments are SA
-evidence, not implemented orchestration or product acceptance tests (§7).
+- **Owner:** centay
+- **Evaluation:** EVAL-001 (`docs/architecture/evaluation-table.md`)
+- **SA Review:** SA-NNN (`docs/review-memo.md`), at acceptance
 
 ## 1. Architecturally Significant Requirements
 
 | Requirement | Acceptance criteria that shape this decision | Why they matter architecturally |
 |---|---|---|
-| REQ-001 | C-001 | A code-created specification must cross the supervisor/researcher boundary before execution. |
-| REQ-001 | C-002, C-003, M-001 | Code derives status from question-linked findings and task-local retrieved sources; model prose cannot establish coverage. |
-| REQ-001 | C-004 | Invalid output has a typed failure path rather than an unvalidated summary. |
-| REQ-003 | C-001, C-002, M-002 | Model completion is a request; a deterministic coverage check controls exit. |
-| REQ-003 | C-003, C-004, C-005, M-001 | Progress, iteration bounds and supervisor errors share one ordered exit selector. |
-| REQ-003 | C-006 | Two historical queries require later live evidence; offline design arguments cannot prove this criterion. |
-| REQ-002, contributor | C-005, C-007 | Valid unrun delegations receive results, and failure/placeholder prose cannot become report findings. Dispatch, queuing and joining remain delivery's responsibility. |
-
-Relevant proposed invariants: INV-003, INV-006 and INV-007. The complete case
-inventory is the orchestration section of `verification-constraints.md` §7.
+| REQ-001 | C-001 | The supervisor must hand each researcher a task specification built by code, not free text. |
+| REQ-001 | C-002, C-003, M-001 | Task status must be derived by code from findings whose URLs a tool in that task actually returned. The model's own claims are input, not the decision. |
+| REQ-001 | C-004 | A result that does not match the contract must become a typed failure. |
+| REQ-003 | C-001, C-002, M-002 | `ResearchComplete` and a turn without tool calls are requests. Only a deterministic coverage check ends the loop. |
+| REQ-003 | C-003, C-004, C-005, M-001 | Stall, iteration cap and supervisor failure must go through one exit decision that records exactly one reason. |
+| REQ-003 | C-006 | Live evidence only; it does not shape the design. |
 
 ## 2. Context
 
-At the baseline, `state.py::ConductResearch` has only `research_topic`; researcher
-output is free text. `supervisor_tools` exits before dispatch on model completion,
-empty tool calls or `research_iterations > max_researcher_iterations`
-(`deep_researcher.py:240–262`). Results above the concurrency slice are lost and a
-child exception ends the phase (`:288–342`, delivery's area). `researcher` increments
-a model-turn counter (`:422`), while `researcher_tools` checks the limit only after
-executing a whole tool batch (`:473–498`). `compress_research` returns unstructured
-text or a placeholder (`:511–585`). `utils.get_notes_from_tool_calls` collects tool
-text without an evidence boundary (`utils.py:599–601`).
+Baseline (`src/open_deep_research/`, line numbers at commit `daf6947`):
 
-`state.py::override_reducer` **appends ordinary lists**; it replaces a value only
-for `{"type": "override", "value": ...}`. A full cumulative list returned as an
-ordinary delta would duplicate old entries. `ResearcherOutputState` is a separate
-output schema, so a new internal field alone would not reach delivery.
+- `state.py` L15-19: `ConductResearch` has one free-text field, `research_topic`. L92-96: the researcher returns free text and raw notes, with no task id, status or sources.
+- `deep_researcher.py` L246-262: `supervisor_tools` ends the loop on the iteration cap, a turn without tool calls, or a `ResearchComplete` call. Nothing checks whether the brief was answered and no exit reason is stored. L214: an error in the supervisor's own model call aborts the whole run.
+- `deep_researcher.py` L492: the researcher budget counts model turns (`tool_call_iterations`), not tool calls.
+- `utils.py` L599-601: `get_notes_from_tool_calls` copies every tool message into `notes`, including failure text.
+- `utils.py` L131-132: Tavily results contain one `URL: <url>` line per source, so retrieved URLs can be read from tool messages without changing the search tool.
 
-The project requires thin existing nodes, unchanged graph topology and extension
-modules importing shared types. `state.py` and `configuration.py` must not import
-orchestration. Python remains 3.12; no dependency or permission change is proposed.
+Constraints: thin nodes and fixed topology (`structural-constraints.md` §2), shared types in `state.py` so that extension modules do not import each other (§5, §6), deterministic code for safety-relevant decisions (§7), offline tests with fake models (`verification-constraints.md` §3).
 
 ## 3. Decision
 
-Choose EVAL-002 option B: shared types in `state.py`, with contract, budget,
-execution-evidence and termination helpers in `orchestration/`. Existing nodes call those
-helpers. Keep delivery's fan-out/join and context's trimming algorithms with their
-owners. Every behavior below is behind `orchestration_enabled`, default `False`.
+Use EVAL-001 option B: the shared types live in `state.py`; the logic lives in `src/open_deep_research/orchestration/` and is called from the existing nodes. Everything below is active only when `Configuration.task_contract_enabled` is `True` (default `False`). This flag also switches on ADR-002 and ADR-003, because REQ-002 to REQ-004 depend on the task contract.
 
-### 3.1 Accepting delegations
+### 3.1 Delegation
 
-The enabled schema is `ConductResearchV2`, exposed to the model under the unchanged
-tool name **ConductResearch**. Keep the original class for the disabled path.
+- When the flag is on, the supervisor binds `ConductResearchTask` instead of `ConductResearch`. It has `research_topic: str`, `must_answer: list[str] = []` and `scope: str = ""`, and its schema title is `ConductResearch`, so the model still sees a tool named `ConductResearch`. The baseline class is unchanged.
+- `build_task_specs` turns each call into a `TaskSpec`. Questions are de-duplicated after collapsing whitespace and ignoring case; the first spelling is kept. An empty list becomes `[research_topic]`. The budget is `max_tool_calls = max_react_tool_calls`.
+- A call with a blank topic, a non-string question or more than five distinct questions is rejected: it gets an error `ToolMessage`, no task is created and no question is added to coverage. Only an accepted `TaskSpec` counts as a delegated task.
+- Task ids are `T1`, `T2`, ... in delegation order within one run.
+- The researcher's first message is `render_task_brief(spec)`: topic, scope, the required questions and the tool-call budget.
 
-Validate raw arguments before dispatch. Normalize question identity with
-`" ".join(text.split()).casefold()`, preserving the first original question for
-messages and unanswered lists. Remove duplicates in first-occurrence order.
-An empty question list falls back to the nonblank topic. More than five distinct
-questions, blank/non-string entries, a blank topic or a wrong field type are
-validation errors, not silently truncated tasks. Missing scope defaults to `""`.
-Assign `T1`, `T2`, … to accepted specifications in original call order.
+### 3.2 Tool-call budget and retrieved URLs
 
-After normal response-completion acceptance (§3.5), record every raw call by
-`tool_call_id` in `delegation_receipts`. A whole-response rejection has only its
-node-private operation diagnostic, with no registered intents or fabricated IDs. A malformed raw
-intent receives a `rejected` diagnostic and a matching validation-error
-ToolMessage, is never dispatched, and contributes no invented question to coverage.
-Only an accepted valid TaskSpec is a delegated research task. Every accepted task
-must have exactly one TaskResult, including accepted-but-unrun tasks. This explicit
-interpretation of malformed intent requires delivery/owner review; it is not a
-silent exception or a change to approved requirement text.
+- `researcher_tools` runs at most `max_tool_calls - tool_calls_spent` calls of a batch, in the order the model gave them. The remaining calls get a `ToolMessage` saying the budget is used up and are not run. Every executed call counts, including a call that fails and `think_tool`. When the budget is used up, the researcher goes to `compress_research`. The baseline turn limit (`tool_call_iterations`) stays as a second limit.
+- After the calls run, `extract_urls(tool_messages)` adds every `http(s)` URL found in the content of tool messages, except `think_tool` messages, to `ResearcherState.retrieved_urls`. URLs are compared as exact strings.
+- Native OpenAI and Anthropic search run inside the model call and return no tool message, so their URLs cannot be checked. With the flag on, `search_api` must be `tavily` or `none` with MCP tools; ADR-006 rejects other values before the run starts.
 
-Replaying a known call ID with identical arguments reuses its registration/result.
-For different arguments under that ID, reject the new intent with a diagnostic
-response, preserve the original registration/result, and add no task or question;
-normal turn/cap/stall handling still applies. Validate nonblank string call IDs
-before accepting any intent in a turn. An invalid ID rejects that transport-level
-turn before dispatch: retain its raw diagnostic outside model history, replace
-the malformed AI turn with bounded replanning feedback, and create no invented
-ToolMessage ID or fake task. The rejected turn consumes one eligible processed
-turn. A completed task is never
-converted into `not_run`. This bookkeeping prevents duplicate *state* entries; it
-does not promise exactly-once external side effects across a process crash.
+### 3.3 Task result
 
-### 3.2 Actual execution budget and trusted evidence
+When the flag is on, `compress_research` adds `task_findings_instruction` (in `prompts.py`) to its final instruction. It asks the model to put one findings block before the `### Sources` section:
 
-`TaskSpec.max_tool_calls` is a maximum of **started executable tool invocations**,
-not model turns, HTTP requests inside a tool, search queries inside one invocation,
-or token cost. Initially use the configured `max_react_tool_calls` as that maximum.
-This deliberately makes the enabled budget tighter than the old value interpreted
-as turns times an arbitrary batch size; enabled behavior is not flag-off parity,
-and live comparisons must record this change. It must be an integer at least one;
-retain the original model-turn watchdog as an
-additional bound, with its existing value and disabled-path semantics.
-
-Separate the internal responsibilities: `budget.py` owns ordered admission and
-the existing native-execution capability guard; `evidence.py` owns factual
-starts/results, trusted sources, reported usage and snapshot/restore. Both operate
-on the **same** per-task receipt. Do not introduce a second budget counter, lock,
-graph channel or runtime-config key. `contracts.py` reads that receipt without
-executing calls or spending permits. Keep helper names/arguments stable through
-the package exports; retain a compatibility entry point if a reader has already
-named an earlier qualified import. This placement change is internal to
-orchestration and does not move delivery's queue/concurrency/join responsibilities.
-
-Before creating concurrent execution awaitables, admit executable calls in model
-call order, reserving at most the remaining permits. Each started invocation costs
-one permit, including a tool that raises and `think_tool`. A denied call costs zero
-and receives a matching budget-denied response. `ResearchComplete` is a control
-signal with no executable invocation, so costs zero; resolve all other calls in a
-mixed batch before compression. Once permits are exhausted, start no more tools
-and proceed to compression after all admitted calls join.
-
-Check-and-reserve is one uninterrupted admission operation before batch creation.
-A reservation that never starts is released and is not reported as a start;
-record a real start once, and never refund a started failure. Synchronization,
-when needed, protects the one holder rather than two independent counters.
-
-An unknown/non-executable tool name is a rejected model intent with a matching
-diagnostic response and zero spend, not an attempted invocation. In a researcher
-turn it consumes the existing model-turn watchdog but cannot manufacture evidence;
-the eventual task status still comes from valid findings. Supervisor unknown-tool
-intents are likewise diagnosed, with valid same-turn delegations still processed.
-Native tool definitions that execute remotely must pass the capability guard
-before model binding; they are not silently treated as local executable tools.
-
-Each accepted task has a code-owned `TaskExecutionEvidence` receipt. The task
-wrapper retains it and passes it through a fresh per-task copy of RunnableConfig's
-private configurable key `_orchestration_evidence`. Do not mutate shared config,
-forward this key into model configuration, or include the live object in prompts.
-Because LangChain also inherits ambient RunnableConfig, merely omitting the key
-from `.with_config()` is insufficient. The model-call adapter builds a fresh safe
-config without the holder in configurable/metadata, uses the locked library
-`set_config_context(safe_config)` context manager, and runs/awaits the entire model
-coroutine via Python 3.12 `asyncio.create_task(..., context=clean_context)`. Retain
-only safe callbacks/tags and existing model settings; bound model configs must
-also be clean. Creating a coroutine inside a context but awaiting it outside
-does not isolate it. This adapter reuses existing model objects, not new clients.
-It records call IDs/starts, trusted returned URLs and available usage metadata.
-State stores only serializable `task_evidence_snapshot` checkpoints. A wrapper that
-catches a child exception can therefore preserve already-spent tool calls instead
-of falsely returning zero. Missing usage metadata is recorded as incomplete in the
-receipt. `TaskCost.usage_complete` defaults to False and is True only when every
-counted model attempt has valid usage metadata. Token counters sum available
-**reported** usage and remain partial totals when that flag is False, not billing
-totals. Malformed usage observations produce incomplete-evidence diagnostics,
-never authoritative negative, boolean or nonfinite cost.
-
-Only successful retrieval receipts matched to admitted tool IDs can add HTTP(S)
-URLs. Tavily's returned source fields/anchored source entries and explicitly
-supported MCP metadata adapters are eligible. `think_tool` echoes, error strings,
-model messages, arbitrary prose URLs and an output's self-declared `retrieved_urls`
-are ineligible. Unknown MCP result shapes add no trusted URLs; do not guess.
-Use exact returned URL strings, with no query/fragment removal or redirect
-equivalence. The ledger survives message trimming and does not rely on `raw_notes`.
-
-Native OpenAI/Anthropic search executes inside model calls and lacks an audited
-strict per-task admission/count contract in this baseline. The proposed enabled
-path rejects those search modes before the first researcher request that could
-execute native tools, with an
-explicit compatibility error; it never substitutes a provider. This restriction
-needs search/delivery review. Flag-off retains the existing provider behavior.
-No native search or live project run was performed during this SA task.
-
-### 3.3 Compression draft protocol and result acceptance
-
-Preserve context ADR-005's `CompressionOutcome.summary: str`. On the enabled path,
-the existing compression request produces ordinary Markdown with exactly one
-sidecar **before** the final, unique `### Sources` section:
-
-````text
-<task_findings_v1>
-```json
-{"schema_version":1,"findings":[{"claim":"A claim","source_numbers":[1],"answers":["Exact required question"]}]}
-```
-</task_findings_v1>
+```text
+<task_findings>
+{"findings": [{"claim": "...", "answers": ["<one required question, copied exactly>"], "sources": [1, 2]}]}
+</task_findings>
 ### Sources
-[1] Source title: https://example.org/evidence
-````
+[1] Title: https://example.org/a
+[2] Title: https://example.org/b
+```
 
-The delimiters must be standalone lines, there must be exactly one block and one
-JSON object, and the block allows only the shown keys. Require integer version 1,
-nonblank claims, positive integer source numbers (booleans excluded), and answer
-strings exactly matching that task's original `must_answer` items. Parse sources
-only as `[n] Title: HTTP(S)-URL` lines in the final section; identifiers are unique,
-sequential from one and URLs are unique. Titles are display text, not authority.
+The JSON braces of this example are written as `{{` and `}}` in the template, because the template is filled with `.format(must_answer=...)`.
 
-Missing/duplicate delimiters, malformed JSON, extra keys, wrong types, unknown
-question/source references or ambiguous source numbering fail the task as
-`invalid_result`. A structurally valid finding that refers to a URL absent from
-the trusted task receipt is discarded; derive status from the remaining findings.
-This distinction implements C-003 without treating all invalid output alike.
+`build_task_result(spec, text, retrieved_urls, tool_calls)` then decides, without a model:
 
-Code builds TaskResult's identity, questions, cost, retrieved URLs, coverage and
-status. The model only proposes claims/answer links/source references. The
-Centay's compressor adapter consumes the raw context string, discards its free-text
-body and sidecar from reader-facing strings, and deterministically renders
-`TaskResult.summary` and `compressed_research` from complete/partial tasks'
-validated findings and their sources before returning to delivery. Raw compression prose is diagnostic raw_notes
-only; it cannot bypass this adapter into a ConductResearch ToolMessage or report
-findings. Malformed results return no summary. Context still returns a string;
-orchestration decides which validated content leaves that boundary.
+1. The text must contain exactly one findings block with valid JSON of the shape above, every `answers` entry must match a required question of the spec (same normalisation as §3.1), and every source number must appear in the `### Sources` list as `[n] Title: URL`. Otherwise the result is `failed` with category `invalid_result`.
+2. A finding counts only if every one of its URLs is in `retrieved_urls`. Other findings are dropped.
+3. Status: `complete` when every required question has a counted finding, `partial` when some do, `failed` with category `unanswered` when none do. A non-complete result lists the unanswered questions in `reason`.
+4. `summary` is the compression text with the findings block removed. It is empty when the status is `failed`.
 
-Before parsing, apply the response-completion acceptance boundary in §3.5 to the
-matching compression operation. A returned string alone is insufficient. Parse
-exactly once only after a normal-completion observation and the selected recovery
-path's successful string return; known truncation or unknown observation is not parsed.
-A syntactically successful model response with a malformed sidecar ends as
-invalid_result; it does not start another compression/format-repair loop. Before
-calling recovery in the cleaned Runnable context, the node saves strong local
-references to its TaskSpec and execution evidence. Recovery needs no evidence
-parameter: its success/typed exception returns to the node, which still holds the
-receipt and performs result mapping outside that clean model context.
+The node returns this `TaskResult` in the new output field `task_result`. When context recovery raises `CompressionFailed` (ADR-004), the node returns `TaskResult.failed(spec, category, reason)` instead. With `context_trimming` off, a failed compression returns the baseline placeholder, which has no findings block and therefore becomes `invalid_result`.
 
-The enabled producer always returns the legacy required output fields as well as
-the typed result: `compressed_research` (canonical finding text or `""`),
-`raw_notes` (diagnostic list), and `task_result`. A consumer validates the typed
-result against the registered spec and its own retained receipt; it never trusts
-the child's auxiliary string. If a test double/raw mapping omits that string but
-contains a valid evidence-consistent result, render it canonically rather than
-adding a placeholder or second result. Missing/invalid TaskResult itself becomes
-failed/invalid_result. An output-schema exception before a usable result reaches
-the collector is an output-contract failure, not fabricated successful research.
+### 3.4 Coverage and loop exit
 
-At finalization, construct `notes` deterministically only from **complete/partial**
-tasks' validated Finding.claim and their referenced validated sources, in task/finding
-order. A failed/unanswered task may have a sourced tangential finding with no
-required-question answer; it still contributes no summary or notes. Never copy
-free-text compression prose, raw notes, the sidecar, reflections or failure diagnostics into
-report findings. Findings retain per-task numbered citations and one Sources list
-per task; final cross-task renumbering remains citations/report prompt's job.
-URL membership establishes retrieval provenance, **not semantic entailment**.
+Coverage counts distinct required questions across all task results of the run, including failed and `not_run` ones: `coverage = answered / total`, and `0` when there is no question. A question is answered when any task has a counted finding for it.
 
-### 3.4 Coverage, turns and one exit selector
+`supervisor_tools` handles one supervisor turn in this order:
 
-Let Q be the distinct normalized required questions of all accepted registered
-tasks, including failed and not_run tasks. A question is answered if a validated
-finding in any task answers it. Coverage is `|answered| / |Q|`, or zero for empty Q.
-Use exact fractions internally; convert the finite configured threshold with
-`Fraction(str(threshold))`, not `Fraction(threshold)` on a binary float. Serialize
-coverage with `float(answered_count / total_count)` from the same exact fraction,
-and recompute/compare that value when validating a final snapshot. Re-delegating
-the same question does not increase the denominator. New unanswered questions can
-lower coverage. Require nonempty Q and a finite threshold `0 < threshold <= 1`
-before covered; proposed default `coverage_threshold = 0.8` needs SA Review.
+1. Handle `think_tool` calls as today and reject invalid delegations (§3.1).
+2. `cap_reached = research_iterations > max_researcher_iterations` (the baseline cap test) is evaluated on every turn, with or without delegations. When it is true, every accepted spec of this turn becomes `TaskResult.failed(spec, "not_run", ...)` and is not run (REQ-002 C-005). Otherwise ADR-002's `run_delegations` runs the specs.
+3. Each `ConductResearch` call gets one `ToolMessage` built by `render_result_message(result)`: task id, status, unanswered questions and the summary.
+4. `select_exit` decides with the results before and after the turn, in this order of precedence:
+   1. `covered`: there is at least one question and coverage ≥ `coverage_threshold`;
+   2. `budget_exhausted`: `cap_reached` is true;
+   3. `stalled`: `stalled_turns` reaches 2. A turn that does more than call `think_tool` (delegation, `ResearchComplete`, or no tool call) adds 1 when coverage did not change and resets the counter to 0 when it changed. A turn with only `think_tool` calls leaves the counter as it is;
+   4. `failed`: only when the supervisor's model call failed (step 5);
+   5. otherwise continue.
+5. In `supervisor`, if the model call still fails after its configured retries, the node calls `select_exit` with `supervisor_error=True` and ends the loop with the reason it returns, so a covered run is still reported as `covered`. It writes the same fields as step 7.
+6. A `ResearchComplete` call or a turn without tool calls does not end the loop while coverage is below the threshold. The supervisor gets the list of unanswered questions: in the `ToolMessage` of the `ResearchComplete` call, or in a `HumanMessage` when there was no tool call.
+7. On exit the node writes `exit_reason`, `exit_detail` (a short reason for any exit other than `covered`) and `notes` as an override with `render_notes(task_results)`: one entry per `complete` or `partial` task, holding only its counted findings (claim and source URLs), in task order. REQ-002 C-007 requires that `notes` contain only validated findings, so neither the free-text summary nor failure text enters `notes`. The summary still reaches the supervisor in the `ToolMessage` of step 3.
 
-`completed_supervisor_turns` starts at zero. It counts successfully processed
-supervisor responses, including think-only, no-tool and completion-only turns.
-At tools entry, first enforce §3.5 completion acceptance; for an accepted control
-response register all raw intents before evaluating an early exit. If the
-count is already N=`max_researcher_iterations`, accepted pending tasks are not
-dispatched and receive `failed/not_run`. Otherwise process the turn, join every
-started task, then increment the count and evaluate exit. At supervisor entry an
-already reached cap finalizes without a new model request. Thus an all-delegation,
-below-threshold N=1 fixture dispatches exactly one turn and N=2 exactly two; neither
-starts a supervisor request N+1. No new request starts after cap selection; each
-of those at most N calls has at most the existing configured retry attempts.
-Keep the old `research_iterations`
-counter and comparisons confined to flag-off or diagnostic compatibility.
-
-For an eligible processed turn, compare coverage immediately before and after the
-turn using its prior and new registered ledgers. Equal coverage increments
-`unchanged_eligible_turns`; any change resets it to zero. Ignore think-only turns
-for this streak, without resetting it; they still consume the global turn budget.
-No-tool, completion-only and mixed turns are eligible. Two unchanged eligible
-turns with a think-only turn between them therefore stall. Registering new
-questions is part of the after-turn denominator, not evidence of progress by itself.
-
-One pure `select_exit` chooses, in this order:
-
-1. **covered:** nonempty Q and coverage meets threshold;
-2. **budget_exhausted:** processed-turn cap reached;
-3. **stalled:** two unchanged eligible turns;
-4. **failed:** terminal supervisor model-operation error: its own provider call
-   exhausted existing configured retries, or its returned response failed §3.5
-   completion acceptance without another request;
-5. otherwise continue.
-
-At a supervisor error, pass the error to this same selector, using current state;
-do not hardcode failed and overwrite a higher-priority condition. Child failures
-become task results through delivery and do not independently end research.
-ResearchComplete and no-tool turns are requests, never completion authority. If
-the loop continues, return unresolved original questions in deterministic order.
-Tool calls receive matching ToolMessages; no-tool feedback uses a HumanMessage,
-not a fabricated tool-call ID. Mixed completion/delegation turns process all valid
-delegations unless an already applicable early exit prevents dispatch.
-
-Before any early exit, resolve every accepted pending registration to its actual
-result or not_run, then recompute Q/coverage and select the final reason. Example:
-old 4/5 coverage plus two distinct pending unanswered questions becomes 4/7;
-at cap it exits budget_exhausted. Repeating the same questions leaves 4/5 and
-covered wins. Never reuse a stale `run_coverage` value.
-
-### 3.5 Response completion before control or result acceptance
-
-Output-length exhaustion is distinct from an exception caused by an oversized
-input. The school gateway probes returned `finish_reason=length` as an ordinary
-response, and the locked ChatOpenAI adapter retained it in
-`AIMessage.response_metadata`. The baseline compression function then loses it
-when converting to `str(response.content)`. A valid sidecar is not proof that the
-model response ended normally. Preserve context's function signature and
-`CompressionOutcome.summary: str`; no new metadata argument or result field is
-required from that module.
-
-The node supplies its existing configured model through a node-owned observing
-Runnable. For supervisor/researcher calls, place observation **inside the existing
-configured retry boundary**, so each logical `ainvoke` attempt is observed once;
-apply completion acceptance after that boundary returns. For compression, pass
-the observing model through context's existing `model` argument. The wrapper
-records a response or exception and returns/re-raises it unchanged. It never
-disguises output truncation as an input-limit exception to trigger trimming.
-Context remains the sole recovery owner; no schema-repair or completion retry
-is added. Underlying SDK HTTP retries are not independently observed logical
-attempts or a claim of complete billing.
-
-Retain the sink in a code closure outside cleaned provider configuration. Use an
-operation ID, phase and attempt ordinal; associate the returned compression string
-with that operation's last returned attempt, not an old task's/phase's success.
-Store only bounded, safe marker/state observations alongside the existing private
-task evidence snapshot. An exception has its own observation, not an invented
-normal response. Supervisor has no TaskSpec: keep its operation observation in
-the existing node-private diagnostic receipt, never a fake task or allocated
-child cost. No observation, live holder or closure enters prompts/model config.
-
-| Supported observation | Classification / scope |
-|---|---|
-| `response_metadata.finish_reason == "stop"` | Normal returned response; content/tool/schema checks still apply. |
-| `response_metadata.finish_reason == "tool_calls"` | Normal control response for supervisor/researcher only; validate every intent normally. Verified using a synthetic school-gateway tool intent that was never executed. |
-| `response_metadata.finish_reason == "length"` | Known output truncation, regardless of text/JSON parseability. |
-| Missing/malformed/conflicting marker, unsupported value/adapter, missing or stale operation observation | Unknown, never relabeled normal or token-limit. |
-
-This table is the experimentally checked school OpenAI-compatible mapping, not a
-universal provider table. Other adapters require a documented, reviewed mapping
-and fixtures before enabled acceptance. An expected plain-text compression
-response ending `tool_calls` is unusable, not normal compression. No provider
-switch, hidden fallback or flag-off behavior change is introduced. This enabled
-compatibility condition remains a reader-review item.
-
-Apply these proposed policies without changing DTOs or failure enums:
-
-- **Compression:** known truncation returns `failed/token_limit`; unknown returns
-  `failed/runtime` with an unavailable-completion diagnostic. In both cases keep
-  actual cost, return empty findings/summary, perform zero parses and zero extra
-  model requests. A normal response with invalid structure remains
-  `failed/invalid_result` under §3.3. This makes truncation precedence explicit.
-- **Supervisor:** reject all new intents in an unusable returned response before
-  registration/dispatch. Pass that model-operation acceptance failure through the
-  existing `supervisor_error` input to `select_exit`; retain covered/cap/stall
-  priority and safe diagnostic detail. Previously accepted results are unchanged,
-  with no fabricated tasks/questions/ToolMessages. Distinguish this fail-fast
-  rejection from provider exceptions whose configured retries were exhausted;
-  neither adds a fifth exit reason or another model request.
-- **Researcher:** reject an unusable returned control response before executing
-  any of its intents; use the existing child runtime-failure boundary with its
-  retained receipt. Delivery still isolates the child and joins successful
-  siblings. No new graph node/edge, queue or recovery loop is needed.
-- **Final report:** delivery owns completion/outcome. Record the interface review
-  question; do not alter its implementation or infer `partial` from an output
-  length marker. Deliberately removing input findings already has a separate
-  REQ-004 C-006 rule. This ADR does not add a report validator.
-
-These are Proposed acceptance rules, not shared-reader approval. Unknown support
-is a conservative runtime failure, not proof of malformed JSON or a token limit.
+`coverage_threshold` is a new `Configuration` field, default `0.8`, valid range `0 < x ≤ 1`.
 
 ## 4. Rejected Options
 
 | Option | Reason for rejection |
 |---|---|
-| Prompt-only gating | Cannot establish code-derived status, provenance or exit authority; fails critical drivers. |
-| Whole-node orchestration takeover | Can be correct, but absorbs delivery's dispatch/join scope and maximizes shared-node coordination. |
+| A — prompt-only rules | Status, coverage and exit stay model decisions, so REQ-001 C-002/C-003 and REQ-003 C-001–C-005 cannot be enforced. |
+| C — one module replaces the whole `supervisor_tools` | Takes over the fan-out and join that REQ-002 assigns to delivery, and puts three owners' work in one module. |
+| Putting task summaries into `notes` (considered at integration) | Keeps more text for the report writer, but the summaries can contain claims whose findings were dropped, which breaks REQ-002 C-007 ("notes contain only validated findings"). Revisit only through a requirement change (RISK-013). |
+| Tracking `finish_reason`, private config keys and crash-safe receipts (an earlier draft) | Not required by REQ-001 or REQ-003. A truncated findings block already fails as `invalid_result`. |
 
-The full qualitative comparison is in EVAL-002. No prototype, latency measurement
-or passing behavior test is claimed by this selection.
+The full comparison is in EVAL-001.
 
 ## 5. Components and Interfaces
 
-### Shared types, defined once in `state.py`
-
-| Type | Fields / constraints |
-|---|---|
-| ConductResearchV2 | `research_topic: str`, `must_answer: list[str]=[]`, `scope: str=""`; validation per §3.1; exported tool name ConductResearch. |
-| TaskSpec | `task_id: str`, `research_topic: str`, `must_answer: list[str]`, `scope: str`, `max_tool_calls: int`; code-created, nonempty valid questions and budget. |
-| Source | `source_id: str` (S1…), `url: str`, `title: str=""`; ID unique within task. |
-| Finding | `claim: str`, `source_ids: list[str]`, `answers: list[str]`; nonempty valid sources, exact task question references. |
-| TaskCost | `tool_calls: int=0`, `input_tokens: int=0`, `output_tokens: int=0`; strict nonnegative integers, no boolean coercion. New proposed `usage_complete: bool=False` makes incomplete token totals visible without changing tool-call units. |
-| TaskResult | `task_id`, `status`, optional `failure_category/failure_reason`, `summary=""`, `findings=[]`, `sources=[]`, `retrieved_urls=[]`, `must_answer`, `coverage=0.0`, `cost`; fresh collection defaults. |
-| RunRecord | `exit_reason`, optional `exit_detail`, `run_coverage`, `coverage_threshold`, `task_results=[]`; final snapshot only. |
-| RegisteredDelegation / JoinedTurn | Node-to-delivery integration records, described below; runtime return data, not additional persisted channels or task handles. |
-| TaskExecutionEvidence / SerializableReceipt | Private code-owned live execution receipt and its serializable snapshots; no model-authored authority fields. |
-
-Enums remain v0.5's `complete|partial|failed`,
-`covered|budget_exhausted|stalled|failed`, and
-`unanswered|invalid_result|runtime|token_limit|not_run`.
-Complete requires coverage 1 and no failure fields; partial requires 0<coverage<1
-and unanswered; failed requires coverage 0. Every noncomplete result has category
-and reason. Runtime/token_limit/invalid_result/not_run failures have no findings or
-summary; an unanswered result with no valid findings also has an empty rendered
-summary. `unanswered()` preserves question order. The pure question-key/set
-calculation lives with the shared types and is reused by validators, these
-computed query methods and termination.coverage_snapshot, without reverse imports
-or a second float-based calculation in delivery.
-Reject nonfinite coverage/threshold, duplicate IDs, identity/question mismatches,
-and claimed cost/provenance inconsistent with the code receipt.
-
-| Component | Responsibility | Interface (planned) | Called by |
+| Component | Responsibility | Interface | Called by |
 |---|---|---|---|
-| contracts.py | Valid specs, draft parsing, result validation and failure construction | `build_task_spec(tool_call, task_id: str, config) -> TaskSpec`; `render_task_message(spec) -> str` | delivery dispatch; thin nodes |
-| contracts.py | Build trusted results | `build_task_result(spec, compression_text: str, *, evidence) -> TaskResult`; `validate_task_result(output, spec, *, evidence) -> TaskResult` | compression adapter; delivery collector |
-| contracts.py | Typed failures with actual cost | `failed_result(spec, category, message, *, evidence) -> TaskResult`; `not_run_result(spec) -> TaskResult` | delivery/context exception mapping; cap finalization |
-| budget.py | Ordered invocation admission and native-execution capability policy over the existing receipt | `admit_tool_calls(calls, spec, evidence)`; `validate_execution_capability(config) -> None` | researcher / researcher_tools; orchestration entry |
-| evidence.py | One receipt's starts/results, supported source metadata, reported usage, private completion observations and snapshot/restore | `record_tool_result(evidence, call_id, observation, adapter)`; node-owned observing model wrapper (§3.5), with no new context/reader argument | researcher/compression model and tool adapters; node-local supervisor diagnostic observation |
-| termination.py | Registration, exact coverage, progress and exit selection | `register_delegations(calls, receipts, config)`; `coverage_snapshot(results)`; `select_exit(snapshot, *, cap_reached, unchanged_turns, supervisor_error)` | supervisor_tools; supervisor error/entry |
-| termination.py | Validate completeness and produce one terminal update | `finalize_run(receipts, results, selection, threshold) -> RunRecord`; `RunRecord.to_state_update() -> dict` | thin node finalization |
-| state.py | Read final output | `RunRecord.from_state(state) -> RunRecord \| None` | delivery and any final-state reader |
-| state.py | Read original unanswered questions without parsing prose/floats | `TaskResult.unanswered() -> list[str]`; `RunRecord.unanswered_questions() -> list[str]` | supervisor feedback; delivery limitations |
-| delivery collector (proposal for Alchemy) | Queue, isolate, join and return one ordered turn | `collect_delegations(accepted, *, config, evidence_by_task_id, validate_result, make_failure, render_result) -> JoinedTurn` | supervisor_tools integration boundary |
-| contracts.py | Render code-owned supervisor feedback | `render_supervisor_result(result: TaskResult) -> str` | injected collector renderer; not the report-notes builder |
+| `state.py` | Shared types and two pure helpers | `ConductResearchTask`, `TaskSpec`, `Finding`, `TaskResult`, `TaskResult.failed(spec, category, reason, tool_calls=0)`, `normalize_question(text) -> str`, `unanswered_questions(results) -> list[str]` | all modules |
+| `orchestration/contracts.py` | Build specs and results | `build_task_specs(calls, first_index, config) -> tuple[list[TaskSpec], list[ToolMessage]]`; `render_task_brief(spec) -> str`; `extract_urls(tool_messages) -> list[str]`; `build_task_result(spec, text, retrieved_urls, tool_calls) -> TaskResult`; `render_result_message(result) -> str`; `render_notes(results) -> list[str]` | `supervisor_tools`, `researcher_tools`, `compress_research` |
+| `orchestration/termination.py` | Coverage and exit decision | `coverage(results) -> float`; `select_exit(before, after, *, stalled_turns, turn_is_eligible, cap_reached, supervisor_error, threshold) -> tuple[ExitReason \| None, int]` | `supervisor`, `supervisor_tools` |
 
-**Delivery port (Proposed, reader approval required).** `accepted` is an ordered
-list of `RegisteredDelegation(call_id: str, spec: TaskSpec)`. Rejected raw intents
-are handled by the node and are not variants in this accepted-task list. The
-node/dispatch boundary allocates a separate evidence holder per spec and retains
-the mapping while the collector runs. Delivery receives the existing contract
-validator/failure factory/renderer as callables; it does not import orchestration
-internals or reimplement status/coverage. Dispatch still owns per-child config
-copies, queueing, isolation and joining.
+Shared types in `state.py`, all Pydantic `BaseModel`s like the existing structured outputs, so they validate on construction and serialise with the graph state:
 
-`JoinedTurn` contains only `task_results: list[TaskResult]`,
-`tool_messages: list[MessageLikeRepresentation]` and `raw_notes: list[str]`.
-Every accepted call appears once in result/tool-message order matching `accepted`,
-**independent of completion order**. All started children have joined before it
-returns; task handles and live collectors are neither serialized nor returned as
-state. The node merges these messages with its own control/rejection feedback in
-the original supervisor tool-call order, then publishes the result delta once.
+| Type | Fields |
+|---|---|
+| `TaskSpec` | `task_id: str`, `research_topic: str`, `scope: str`, `must_answer: list[str]` (1–5), `max_tool_calls: int` |
+| `Finding` | `claim: str`, `answers: list[str]`, `source_urls: list[str]` |
+| `TaskResult` | `task_id: str`, `status: "complete" \| "partial" \| "failed"`, `must_answer: list[str]`, `findings: list[Finding]` (counted findings only), `summary: str`, `tool_calls: int`, `failure_category: "unanswered" \| "invalid_result" \| "runtime" \| "token_limit" \| "not_run" \| None`, `reason: str` |
 
-`render_supervisor_result` includes code-generated task identity, status, safe
-failure category/reason and unanswered questions, followed by canonical findings
-for complete/partial tasks. Such typed failure feedback is useful to the
-supervisor but is never a report finding: final notes are rendered separately
-from findings, not scraped from these ToolMessages. No legacy placeholder, raw
-compression body or sidecar is used. Control/rejection feedback for held raw calls
-is included in the same terminal tool-turn update even when it exits; a supervisor
-entry with no unprocessed response invents no feedback and starts no request to
-flush diagnostics. No cross-crash exactly-once feedback guarantee is added.
+Rules: `complete` has no category and an empty reason; every other status has a category and a reason. A `failed` result has no findings and an empty summary.
 
-The same feedback preparation runs for **both** terminal tool-turn and supervisor
-entry paths. If a cap entry contains an unprocessed response/rejected receipt,
-emit its pending valid-ID diagnostic without dispatch or a model call; if no
-response is pending, emit nothing. Give enabled responses a stable code-owned
-run-local response ID, and track `feedback_for_response_ids` in each private
-SerializableReceipt. Publish the receipt mark and feedback together in one state
-update, so replay of that same response does not append it twice. A genuinely new
-response repeating a call ID can receive feedback again without adding a task.
-Malformed-ID feedback still follows §3.1's valid-history rule, never a fake tool ID.
-
-`RunRecord.unanswered_questions()` derives the globally unanswered distinct
-questions from the existing `task_results[*].must_answer` and
-`findings[*].answers`, using the same question-identity calculation as coverage
-and preserving first original occurrence order. It adds no serialized field.
-Delivery also has `TaskResult.unanswered()` for per-task limitations; a question
-answered by another task can be globally covered while an earlier task remains
-failed. Never derive these lists from task counts, rounded coverage or reason text.
-
-`from_state` returns None for an absent run (empty/absent results and all terminal
-fields absent/None), raises ValueError for an incomplete/inconsistent final
-snapshot, and is **not** used on intermediate supervisor checkpoints. Reader
-failure policy belongs to delivery. `to_state_update` emits all five run fields
-together plus explicit override envelopes for task_results and notes **inside the
-supervisor subgraph**. Its reducers consume these envelopes; compiled subgraph
-output carries plain final lists. The unchanged parent node appends these lists
-to the empty public channels prepared by write_research_brief. It does not receive
-a magical cross-subgraph override. Finalizers
-check registration/result cardinality as well as the model's structural validators.
-
-Shared readers must review this contract: Alchemy (delivery), Tekon/BroZhai
-(context), and the citations owner for the compression protocol. Evaluation's
-current draft consumes report/brief/evidence rather than requiring a new
-orchestration import; preserve those inputs without introducing a dependency.
+Shared contracts changed (`structural-constraints.md` §6): the types above and the state fields in §6. Readers who must approve changes: delivery (AlchemyHAN), context (BroZhai). The findings-block instruction must keep the citation format of ADR-005; citations (NoPumpkinz) reviews it.
 
 ## 6. State, Failure Handling and Deterministic Boundary
 
-- **State:** the orchestration section of memory-design §5 owns the field table,
-  defaults, writer and lifecycle. New supervisor-private counters/receipts and
-  researcher evidence snapshots must not become AgentState output fields.
-- **Runtime policies:** POL-002–POL-012, detailed in the module policy section.
-- **Invariants:** INV-003, INV-006 and INV-007, all Proposed.
-- **Deterministic boundary:** input acceptance, execution permits, source admission,
-  result validation/status, coverage, progress and exit selection do not call a
-  model. Model proposals enter these boundaries as untrusted data.
-
-Delivery returns each turn's ordered **plain list delta** via
-`update_payload["task_results"]`. The node computes old+delta transiently, then
-returns the delta once when continuing. On exit it returns the final override
-instead of both delta and override. No extension directly mutates graph state;
-the node is the single channel writer. At the parent boundary the final lists
-are appended once to cleared public channels; ORC-040 must include old parent
-notes/results, the brief reset, and this actual child-to-parent propagation. A
-direct caller with nonempty channels must clear them explicitly before accepting
-this output. The existing `write_research_brief` return
-initializes a new enabled run by clearing **public** terminal fields/results and
-notes. Private counters/receipts are not AgentState fields and cannot be reset by
-that main-graph update. Keep the existing default `supervisor_builder.compile()`
-per-invocation mode: each new subgraph call gets fresh private channels, read with
-explicit zero/empty defaults; resuming the same invocation restores its private
-checkpoint instead. Do not change it to `checkpointer=True` or infer a fresh run
-from None exit_reason. Direct entry must distinguish new input from same-call
-checkpoint resume; ORC-039 verifies two calls on the same parent thread.
-Flag comparisons use fresh state; reusing a checkpoint across different feature
-flag modes requires an agreed reset/migration policy and is not part of this
-release's supported resume contract. This follows the documented [LangGraph subgraph persistence modes](https://docs.langchain.com/oss/python/langgraph/use-subgraphs#per-invocation-default),
-not an executed project test. Flag-off writes none of the new fields.
-
-### Per-turn context and compaction contract (course D2.2)
-
-| Call | Ordered assembly | Protected / re-injected authority |
-|---|---|---|
-| Supervisor | system instructions and tool schema → immutable research brief → conversation/tool results → deterministic unresolved-question feedback | Completion rule, cap and unresolved original question texts are supplied by code, not copied from retrieved text. |
-| Researcher | research system instruction → first HumanMessage from TaskSpec → AI/tool history | Topic, scope, exact questions and tool budget remain in the protected preamble; tool observations remain untrusted data. |
-| Compression, every attempt | fixed system prompt with compression/citation instructions and immutable TaskSpec/trusted-source map → surviving history → protected final compression instruction with sidecar rules | Pass the assembled fixed authority block via context's existing `system_prompt` argument, which its internal retry loop retains on every attempt. The ledger itself stays outside mutable messages. Serialize spec/source values as quoted data, not executable instructions; their content does not gain authority from being structurally valid. Insert JSON/schema fragments **after** existing `.format(...)`, avoiding accidental format braces. |
-
-The baseline output caps are research 10,000 tokens, compression 8,192, report
-10,000 and Tavily summarization 8,192. They are configurable **output** maxima;
-`max_content_length=50,000` is a **character** cap. Neither is an input-token cap.
-`get_model_token_limit` is a static lookup, may return None, and does not enforce
-request input size. Do not present it as a verified provider context window.
-
-The current bounded compaction trigger is a recognized compression token-limit
-error, classified against **compression_model**, followed by context ADR-005's
-oldest-whole-turn recovery, at most three attempts. For on/on there is one recovery
-loop, not nested three-by-three retries. Context must preserve the preamble,
-compression instruction and newest AI/tool turn. Orchestration re-injects critical
-spec/format/source references for every attempt; it does not implement trimming.
-Here `max_attempts=3` means at most three actual compression model invocations:
-failure, failure, success uses three; success returns immediately. A current-list
-instruction position must be recomputed after trimming rather than reusing an
-old numeric index. This is an interface-review condition for context, not a claim
-that its unimplemented recovery code has a demonstrated indexing bug. Context's
-turn-level `source_urls` convenience set is not task provenance; only the retained
-execution receipt supplies that authority. With context disabled, its baseline
-trimming defect is deliberately not claimed fixed by orchestration rollout.
-
-**Integration gap:** a proactive input-token cap/compaction threshold with an
-approved tokenizer/model-window source is not defined in current main or the
-context draft. Course D2.2 requires the whole-system policy. Ask Tekon/Alchemy to
-resolve it at integration; this ADR supplies the boundary and reactive behavior,
-not a fabricated numerical input cap or an unapproved tokenizer dependency.
-
-Flag combinations: off/off keeps baseline; on/off uses typed acceptance and the
-bounded baseline compression attempts; on/on uses context's one recovery loop
-followed by this parser; off/on has no TaskSpec and needs context/delivery to agree
-their typed-exception mapping. Its orchestration run fields stay absent; a final
-reader returns None, and no RunRecord is constructed for that path. Do not invent
-orchestration fields for off/on or
-claim it is baseline-equivalent when context is enabled.
+- **State:** `ResearcherState.task_spec`, `retrieved_urls`, `tool_calls_spent`; `ResearcherOutputState.task_result`; `SupervisorState` and `AgentState` `task_results`, `exit_reason`, `exit_detail`; `SupervisorState.stalled_turns`. Details and writers in `memory-design.md` §5.
+- **Runtime policies:** POL-004, POL-006 to POL-011.
+- **Invariants:** INV-003, INV-006.
+- **Deterministic boundary:** task status, coverage and the exit reason are computed by code from the model's findings block and the tool messages. The model proposes claims; it never decides status or exit.
 
 ## 7. Verification
 
-Every REQ-001 C-001–C-004/M-001 and REQ-003 C-001–C-006/M-001–M-002 maps to its
-exact requirement-specified path in verification-constraints §7. Additional
-planned cases cover budget admission before fan-out, failed-call cost, forged
-provenance, sidecar parsing/stripping, stable duplicate questions, threshold
-boundaries, denominator growth, precedence, N=1/N=2, idempotent registration,
-delta/override behavior, new-run reset and flags. Each proposed invariant has
-named violation tests. Run the shared contract suite and every existing offline
-suite after implementation; do not author those tests before Gate 1.
-
-REQ-003 C-006 is **NOT_RUN**. The recovered historical query texts and the old
-search-disabled configuration are recorded in the raw evidence reference. A
-source-capable live configuration must be reviewed before claiming sourced
-coverage; preserve query text and disclose configuration differences. No Claude
-API is permitted by this student's task authorization.
-
-Actual SA checks, their commands and verdicts are recorded in the review checklist.
-Document checks do not establish runtime correctness, live fit or human approval.
-
-The 2026-11-15 [experiment record](../../../transcripts/raw/61061965-XIE_Shentai/followup-20261115-experiments.md)
-separates three direct school-DeepSeek probes, mocked replay through locked
-adapters and eight isolated executions of extracted baseline function bodies.
-It supports the missing-boundary diagnosis, not a passing future fix, full graph
-reproduction or product live criterion. ORC-047–053 are additional **planned**
-cases; all product acceptance/regression/live suites remain NOT_RUN.
+Each criterion of REQ-001 and REQ-003 has a case in `verification-constraints.md` §7 (orchestration), using fake models and fake researchers. REQ-003 C-006 is a live check and is `NOT_RUN`; it needs a configuration with a client-side search source (Tavily or MCP), because the team's earlier baseline ran with search disabled.
 
 ## 8. Consequences
 
-**Positive:** code decides authoritative status/exit; trusted evidence survives
-trimming; each accepted task is traceable; readers have one terminal snapshot;
-the extension can be tested with fake models and literal fixtures.
-
-**Costs:** several existing node hooks and shared state additions require coordinated
-review. Strict parsing can reject useful but malformed model output. Findings
-inherit the model's question/claim association: URL provenance is narrower than
-fact verification. Coverage is of delegated questions, not proof that the model
-decomposed the entire research brief correctly. Native-search compatibility is
-narrowed on the enabled path until strict budget support is designed.
-
-**Operational limits:** receipt state deduplication is not durable exactly-once
-tool execution. A crash after an external request but before checkpointing can
-leave uncertain cost/side effects; do not automatically replay that window or
-claim a verified result. Diagnostics must avoid credentials and stack traces in
-reader-facing reasons; original safe error text/category remains available to
-delivery. No new retention service or cross-version checkpoint migration is added.
-
-Reopen this decision when any shared field/helper or citation protocol changes;
-native search gains auditable pre-request caps; receipt/ledger invariants fail;
-an enabled model adapter lacks a reliable completion mapping or rejects useful
-responses excessively;
-input-budget policy cannot protect the declared context layers; real compression
-frequently fails the strict schema; live C-006 is unmet; a requirement changes; or
-checkpoint/resume needs stronger crash guarantees. Persistent rejection of the
-new delegation schema is also a reopen trigger: its increased prompt/schema
-burden is a model-compliance cost, not a measured improvement. Reopen through ADD/ADR and SA
-Review, with affected tests returning to Gate 2; never weaken tests to fit output.
+- **Positive:** a caller and the other modules can read typed results; a model's "done" claim no longer ends research; every exit has one recorded reason; all decisions run offline in tests.
+- **Negative:** the strict findings block can turn useful output into `invalid_result` (RISK-003). The report writer gets claims and sources instead of the full compressed text, so reports may be shorter (RISK-013). The tool-call budget is tighter than the baseline turn budget (RISK-005). Native search cannot be used with the flag on (RISK-010). A URL in the findings block proves retrieval, not that the source supports the claim (RISK-004).
+- **Neutral:** with the flag off, the tools, prompts and state behave as in the baseline; the new fields stay empty.
 
 ## 9. Implementation Steps
 
-These are future Build steps **after Gate 1, Test Author baseline evidence and
-Gate 2**. No step below has been performed in this documentation branch.
-
-1. In `state.py`, define the shared types and validators once; add own fields to
-   the existing state classes and task_result to ResearcherOutputState. Leave
-   baseline ConductResearch and existing reducer behavior intact.
-2. Add `orchestration/__init__.py`, `contracts.py`, `budget.py`, `evidence.py`, `termination.py`.
-   Implement the deterministic algorithms and observation adapters in §3 and the interfaces in §5. Add the new
-   subpackage to `[tool.setuptools] packages` in `pyproject.toml` with human review;
-   this is packaging, not a new dependency or permission change.
-3. Add only `orchestration_enabled=False` and validated `coverage_threshold=0.8`
-   to Configuration with `x_oap_ui_config`. Add enabled-run initialization to
-   `write_research_brief`'s existing return for public fields only. Retain the
-   default per-invocation subgraph compilation and private zero/empty defaults;
-   specify fresh versus resumed direct inputs in helper documentation/fixtures.
-4. In `supervisor`, select the enabled tool schema, check the processed-turn cap
-   before another request and map exhausted configured model retries or a separate
-   unusable-response rejection through the same exit selector. Observe attempts
-   inside the existing retry boundary; apply completion acceptance after it returns,
-   before registering intents. Add no model client or completion-retry loop.
-5. In `supervisor_tools`, register intents once, apply pre-dispatch exits, and use
-   delivery's approved wrapper for task-scoped evidence, queuing, isolation and
-   join, through the proposed JoinedTurn port and injected contract callables.
-   **Alchemy owns dispatch/gather/consumer error handling.** Centay supplies
-   contract/registration helpers and the pre/post-turn selector. Agree the hunk
-   split before editing; context's proposed change to the missing-summary default
-   is the same delivery hunk, not a second owner.
-6. In `researcher`/`researcher_tools`, validate enabled execution capability, carry
-   the protected TaskSpec, allocate permits before task creation, capture matching
-   receipts and maintain serializable snapshots. Isolate every model attempt in
-   the cleaned Runnable context described in §3.2, including context recovery
-   attempts; a fake model must inspect the actual received config for leakage.
-   Reject an incomplete/unknown researcher control response before any intent
-   executes, through the existing isolated child-failure boundary. Keep baseline tool assembly at
-   `get_all_tools`; do not change provider selection or search fallback policy.
-7. In `compress_research`, pass the observing model using context's existing model
-   argument and call exactly one selected recovery path. After its string return,
-   match the operation observation: normal permits one parse/build; length maps to
-   token_limit and unknown to runtime, with no parse or additional request.
-   Preserve the original context/CompressionOutcome signatures. Build TaskResult with the trusted receipt;
-   on typed context exhaustion or other failure use the evidence-aware helper.
-   Always fill all required ResearcherOutputState fields, and let the collector
-   canonically reconstruct auxiliary text from a valid typed result rather than
-   using missing-string defaults. Retain the node's evidence reference outside
-   the clean recovery coroutine; parse once after a matching normal return, with no schema retry.
-   **Tekon owns trimming/classification/recovery**, Centay the successful result
-   adapter and the common exhausted-result mapping, Alchemy exception collection.
-8. Draft enabled-only prompt additions in `prompts.py`, reusing the citations
-   owner's format and avoiding format-brace collisions. Jeremy/citations and
-   Tekon review the added protected instructions. Keep the original disabled
-   strings and existing graph topology; record prompt version/evaluation in the
-   integrator's approved scheme rather than inventing a version-file migration.
-9. At every finalization, verify all accepted registrations have one result, apply
-   final precedence, emit all terminal fields together, override results/notes
-   within the subgraph, and append its final lists once to the reset parent
-   channels. Keep internal counters/receipts out of main output. Delivery alone computes
-   run outcome and limitations from that snapshot.
-10. Run the approved contract/new/all-prior offline suites and active project
-    gates; Verify independently records real results. Run the approved live queries
-    on an authorized non-Claude configuration only after the required reviews.
-    Update code/test evidence in trace-matrix and the actual AI-use/review records;
-    never mark the requirement verified from this SA draft.
+1. `state.py`: add the types and helpers of §5 and the fields of §6. Keep `ConductResearch` and the existing reducers.
+2. `configuration.py`: add `task_contract_enabled: bool = False` and `coverage_threshold: float = 0.8` with `x_oap_ui_config` metadata; reject a threshold outside `(0, 1]`.
+3. Add `orchestration/__init__.py`, `contracts.py` and `termination.py`; add `open_deep_research.orchestration` to `[tool.setuptools] packages` (human confirms the `pyproject.toml` change).
+4. `prompts.py`: add `task_findings_instruction` (placeholder `{must_answer}`) and one line in `lead_researcher_prompt`'s flag-on variant that explains `must_answer` and `scope`. Do not restate the citation format; refer to the Citation Rules.
+5. `write_research_brief`: when the flag is on, reset `task_results` (override `[]`), `exit_reason` and `exit_detail`.
+6. `supervisor`: bind `ConductResearchTask` when the flag is on; catch the error left after the configured retries and end through `select_exit` (§3.4 step 5). Its return type becomes `Command[Literal["supervisor_tools", "__end__"]]`, and on that path it writes `exit_reason`, `exit_detail` and `notes`.
+7. `supervisor_tools`: follow §3.4 steps 1–7. The dispatch in step 2 calls ADR-002's `run_delegations`; agree the code split with the delivery owner before editing.
+8. `researcher_tools`: apply the budget and record `tool_calls_spent` and `retrieved_urls` (§3.2).
+9. `compress_research`: add the findings instruction, call `build_task_result` or map `CompressionFailed` (§3.3), and return `compressed_research = task_result.summary`, `raw_notes` and `task_result`.
+10. Run the checks in `verification-constraints.md` §4 and record them in `docs/build-reports/REQ-001.md` and `REQ-003.md`.

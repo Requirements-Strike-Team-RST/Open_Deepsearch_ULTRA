@@ -164,41 +164,6 @@ entries:
     transcript: null
 
   - id: AIU-008
-    date: "2026-11-14"
-    member: centay
-    purpose: >-
-      Recover the Work handoff and inspect current Git, course requirements, baseline source
-      and peer SA interfaces before preparing the orchestration module's SA draft.
-    prompt: >-
-      Continue the CS5351 SA task, preserve existing changes, use Git as authority and the
-      school's DeepSeek through OpenCode, never call Claude, and leave final Git/shared
-      operations to the student. Prioritise Tekon and Alchemy's quality standards.
-    requirements: [REQ-001, REQ-003, REQ-002]
-    artifacts:
-      - docs/architecture/orchestration-review-checklist.md
-      - transcripts/61061965-XIE_Shentai.md
-    supervision: >-
-      The student supplied the scope, source hierarchy, provider restriction and student
-      identity. Codex and read-only AI assistants inspected the current repository, Canvas
-      materials and peer drafts. These inspections are AI assistance, not human SA approval;
-      the student has not yet reviewed or accepted the resulting local draft.
-    transcript: transcripts/61061965-XIE_Shentai.md
-
-  - id: AIU-009
-    date: "2026-11-14"
-    member: centay
-    purpose: >-
-      Use OpenCode plan with cityucs/CS5351/DeepSeek-V4-Flash to analyse ADD options and draft
-      the task contract, deterministic termination and orchestration module sections.
-    prompt: >-
-      Read the approved requirements and current governance; use v0.5 as historical field
-      context; compare three candidates and write proposed SA artifacts for REQ-001/REQ-003.
-      Preserve peer interfaces, count actual tool calls, validate task-local source provenance,
-      render notes from validated findings, and leave tests, code and every human gate pending.
-    requirements: [REQ-001, REQ-003, REQ-002]
-    artifacts:
-      - docs/architecture/evaluation-table.md
-      - docs/architecture/adr/002-orchestration-contract-and-termination.md
     date: "2026-11-13"
     member: BroZhai
     purpose: >-
@@ -219,6 +184,23 @@ entries:
       - docs/architecture/adr/005-context-compression.md
       - docs/architecture/invariants.md
       - docs/architecture/memory-design.md
+      - docs/architecture/runtime-policy-catalog.md
+      - docs/architecture/trace-matrix.md
+      - docs/architecture/risk-list.md
+      - docs/architecture/option-ledger.md
+      - docs/code-governance/structural-constraints.md
+      - docs/code-governance/verification-constraints.md
+      - transcripts/61061690-ZHANG_Kaidi.md
+    supervision: >-
+      The member directed each phase and chose candidate B of EVAL-001, the ADR file name and its
+      later revision to 005-context-compression.md, and required English content. Agent claims were
+      checked against the source code rather than accepted from the requirement text; the context
+      owner reviewed every document. Open for the human: agreement on the token_limit category and
+      on the new ResearcherOutputState.research_outcome field with the REQ-001 owner, and ID
+      unification at integration.
+    transcript: transcripts/61061690-ZHANG_Kaidi.md
+
+  - id: AIU-009
     date: "2026-11-13"
     member: DopplerXD
     purpose: >-
@@ -238,98 +220,6 @@ entries:
       - docs/architecture/trace-matrix.md
       - docs/code-governance/structural-constraints.md
       - docs/code-governance/verification-constraints.md
-      - docs/architecture/orchestration-review-checklist.md
-      - transcripts/61061965-XIE_Shentai.md
-    supervision: >-
-      OpenCode's first analysis was inspected by the Codex coordinator. It rejected the
-      proposed step-budget reinterpretation, summary-based notes and contradictory cap
-      rules, and supplied a corrective authoring prompt. The second round wrote EVAL-002 but
-      reached its 8192-token output limit before the ADR tool call executed. Codex and its
-      audit assistants completed the remaining documents; OpenCode performed read-only
-      reviews in rounds 3 and 4. Human module review and Gate 1 remain pending. No
-      test, source implementation, push, PR, merge or approval is claimed.
-    transcript: transcripts/61061965-XIE_Shentai.md
-
-  - id: AIU-010
-    date: "2026-11-14"
-    member: centay
-    purpose: >-
-      Independently challenge the orchestration SA proposal from simulated delivery and
-      context peer perspectives, using OpenCode plan and the school DeepSeek provider.
-    prompt: >-
-      Review from Alchemy's delivery requirements and Tekon/BroZhai's frozen context ADR
-      perspectives. Walk concrete sibling-failure, cap/pending, cost/provenance, compression,
-      retry and flag scenarios against orchestration's public contract. Distinguish a new
-      inconsistency from a declared reader decision. Do not impersonate a teammate, approve
-      a gate, edit files or run product/live tests.
-    requirements: [REQ-001, REQ-003, REQ-002]
-    artifacts:
-      - docs/architecture/orchestration-review-checklist.md
-      - transcripts/61061965-XIE_Shentai.md
-    supervision: >-
-      The student explicitly requested another member's perspective to challenge the work.
-      The Codex coordinator started two fresh independent school-DeepSeek plan sessions,
-      with no inherited prior AI-review conclusions. Their actual findings and coordinator
-      dispositions are preserved in the transcript. Joined-turn/output-field gaps were
-      clarified and three planned cases were added; follow-ups retracted unsupported
-      coverage, retry-count and threshold assumptions. These are AI simulations, not the
-      named teammates' reviews or approval. Human review and runtime tests remain pending.
-    transcript: transcripts/61061965-XIE_Shentai.md
-
-  - id: AIU-011
-    date: "2026-11-15"
-    member: centay
-    purpose: >-
-      Investigate the student's budget/evidence, truncation, collaboration and iteration
-      questions against current references, baseline code and bounded experimental evidence.
-    prompt: >-
-      Read the supplied sidechat and current HackMD/Google index, check peer submissions,
-      assess internal budget/evidence separation without changing readers, and test how
-      output truncation metadata actually behaves. Never call Claude or publish shared changes.
-    requirements: [REQ-001, REQ-003, REQ-002]
-    artifacts:
-      - transcripts/61061965-XIE_Shentai.md
-      - transcripts/raw/61061965-XIE_Shentai/followup-20261115-experiments.md
-    supervision: >-
-      The student supplied the concrete questions and authorised the investigation. Codex
-      performed read-only reference/GitHub checks and three direct school-DeepSeek HTTP
-      probes, reporting 398 tokens; these were not OpenCode sessions. Locked-adapter replay
-      and eight AST-extracted baseline-function scenarios used fake boundaries and remain
-      external SA evidence, not product acceptance tests. Diagnosis, probe design and audit
-      corrections are attributed to Codex; no student architecture approval is inferred.
-    transcript: transcripts/61061965-XIE_Shentai.md
-
-  - id: AIU-012
-    date: "2026-11-15"
-    member: centay
-    purpose: >-
-      Refine the local Proposed orchestration SA using the student's questions, unchanged
-      shared references and actual response-completion evidence.
-    prompt: >-
-      If the original HackMD and other members' development interfaces need no change,
-      continue improving SA. Preserve existing DTO/helper/context signatures, split internal
-      budget admission from one factual receipt, and state truncation/unknown acceptance
-      with no additional retry or takeover of delivery/context responsibilities.
-    requirements: [REQ-001, REQ-003, REQ-002]
-    artifacts:
-      - docs/architecture/adr/002-orchestration-contract-and-termination.md
-      - docs/architecture/evaluation-table.md
-    date: "2026-11-15"
-    member: AlchemyHAN
-    purpose: >-
-      Draft the software architecture of the delivery module for REQ-002 and REQ-004.
-    prompt: >-
-      I own REQ-002 and REQ-004. From main, create the branch docs/sa-delivery and complete the
-      SA documents for the delivery module: ASR, an ADD entry with 2-3 candidates, an ADR whose
-      implementation steps a coding agent can follow, and the module sections of the shared
-      architecture and constraint documents. List test cases only, no test code.
-    requirements: [REQ-002, REQ-004]
-    artifacts:
-      - docs/architecture/evaluation-table.md
-      - docs/architecture/adr/001-task-failure-isolation.md
-      - docs/architecture/adr/002-finalize-node-run-outcome.md
-      - docs/architecture/invariants.md
-      - docs/architecture/memory-design.md
     supervision: >-
       The member selected option B, simplified report identity to SHA-256, requested evidence
       for packaging and LangSmith compatibility, and confirmed the remaining design choices.
@@ -342,83 +232,7 @@ entries:
       non-English filenames in tool records retain their identity through Unicode escapes.
     transcript: transcripts/60741820-YANG_Xinchuan.md
 
-  - id: AIU-009
-    date: "2026-11-17"
-    member: DopplerXD
-    purpose: >-
-      Revise the evaluation SA documents in response to the PR #15 module review.
-    prompt: >-
-      Address AlchemyHAN's six findings and BroZhai's path-whitelist suggestion. Remove the
-      utils date dependency, separate import-boundary and call-isolation tests, complete the
-      missing cases, align the C-004 verification path, distinguish judge failures with exit
-      code 3, and document proposed client and path exceptions. Preserve completed metric
-      results and map real provider authentication and permission exceptions. Keep changes
-      within English architecture documents and test specifications.
-    requirements: [REQ-009, REQ-010]
-    artifacts:
-      - docs/architecture/adr/001-evaluation-module.md
-      - docs/architecture/evaluation-table.md
-      - docs/architecture/invariants.md
-      - docs/architecture/runtime-policy-catalog.md
-      - docs/architecture/trace-matrix.md
-      - docs/code-governance/structural-constraints.md
-      - docs/code-governance/verification-constraints.md
-      - docs/architecture/orchestration-review-checklist.md
-      - transcripts/61061965-XIE_Shentai.md
-    supervision: >-
-      Codex and a read-only AI auditor checked the local revision, including stale exit,
-      intent-registration and parse wording. The proposal now has 53 planned cases and
-      explicit R-11/R-12 decisions; unknown metadata conservatively maps to runtime failure
-      pending reader review. No shared schema, online document, source/test code or gate was
-      changed. The old package is retained and a dated revision is prepared for the student's
-      actual review/publication; no human acceptance or implementation is claimed.
-    transcript: transcripts/61061965-XIE_Shentai.md
-
-  - id: AIU-013
-    date: "2026-11-15"
-    member: centay
-    purpose: >-
-      Prepare the first published Draft PR of the local orchestration SA after explicit
-      student authorisation, retaining Proposed status and subsequent human review.
-    prompt: >-
-      If this version has no blocking issue, submit a first version now; I will understand
-      the design later on the 15th and continue iterating. Also explain what my human
-      judgement contributed compared with AI self-review.
-    requirements: [REQ-001, REQ-003, REQ-002]
-    artifacts:
-      - docs/architecture/orchestration-review-checklist.md
-      - transcripts/61061965-XIE_Shentai.md
-    supervision: >-
-      The student explicitly authorised first-version publication, superseding the earlier
-      reservation of final Git actions. Codex rechecked package identity, remote state and
-      sensitive-token patterns, and obtained an independent read-only AI review with no
-      blocker. Staged whitespace checking found two original Markdown captures with inherited
-      whitespace; deterministic gzip storage preserves their decompressed bytes. Publication
-      does not constitute student architecture acceptance, peer review or Gate 1/Gate 2.
-      The actual commit and Draft PR remain identifiable in Git/GitHub publication history.
-    transcript: transcripts/61061965-XIE_Shentai.md
-      - docs/architecture/risk-list.md
-      - docs/code-governance/structural-constraints.md
-      - docs/code-governance/verification-constraints.md
-    supervision: >-
-      The member chose the delivery scope, both candidate-solution decisions and the new
-      invariant, then reviewed the drafts in three review rounds and had the AI correct a
-      module-to-module dependency, a duplicated state field, a finalize loop and several
-      inconsistencies between the ADR decisions and their implementation steps.
-    transcript: transcripts/60705556_HAN Peilin.md
-      - docs/architecture/risk-list.md
-      - docs/architecture/option-ledger.md
-      - docs/code-governance/structural-constraints.md
-      - docs/code-governance/verification-constraints.md
-      - transcripts/61061690-ZHANG_Kaidi.md
-    supervision: >-
-      The member directed each phase and chose candidate B of EVAL-001, the ADR file name and its
-      later revision to 005-context-compression.md, and required English content. Agent claims were
-      checked against the source code rather than accepted from the requirement text; the context
-      owner reviewed every document. Open for the human: agreement on the token_limit category and
-      on the new ResearcherOutputState.research_outcome field with the REQ-001 owner, and ID
-      unification at integration.
-    transcript: 61061690-ZHANG_Kaidi.md
+  - id: AIU-010
     date: "2026-11-13"
     member: sszfot
     purpose: >-
@@ -446,44 +260,253 @@ entries:
       centralized pure validator design after comparing candidate
       architectures. The initial documents were reviewed against
       REQ-007 and the source code. Subsequent refinements are
-      recorded in AIU-009. The architecture remains Proposed
+      recorded in AIU-018. The architecture remains Proposed
       pending SA Review.
     transcript: transcripts/60725623-ChensihanLIU.md
 
+  - id: AIU-011
+    date: "2026-11-14"
+    member: centay
+    purpose: >-
+      Recover the Work handoff and inspect current Git, course requirements, baseline source
+      and peer SA interfaces before preparing the orchestration module's SA draft.
+    prompt: >-
+      Continue the CS5351 SA task, preserve existing changes, use Git as authority and the
+      school's DeepSeek through OpenCode, never call Claude, and leave final Git/shared
+      operations to the student. Prioritise Tekon and Alchemy's quality standards.
+    requirements: [REQ-001, REQ-003, REQ-002]
+    artifacts:
+      - docs/architecture/orchestration-review-checklist.md
+      - transcripts/61061965-XIE_Shentai.md
+    supervision: >-
+      The student supplied the scope, source hierarchy, provider restriction and student
+      identity. Codex and read-only AI assistants inspected the current repository, Canvas
+      materials and peer drafts. These inspections are AI assistance, not human SA approval;
+      the student has not yet reviewed or accepted the resulting local draft.
+    transcript: transcripts/61061965-XIE_Shentai.md
 
-      - id: AIU-009
-        date: "2026-11-16"
-        member: sszfot
-        purpose: >-
-          Review and refine the proposed REQ-007 software architecture,
-          including configuration validation, MCP runtime handling,
-          module boundaries, and verification coverage.
-        prompt: >-
-          Audit and refine ADR-001 and the related REQ-007 architecture
-          artifacts against the existing implementation and acceptance
-          criteria. Correct environment precedence and configuration
-          snapshot handling, clarify MCP loading responsibilities,
-          strengthen the search capability predicate, and expand the
-          verification matrix. Keep all unresolved decisions open and
-          make no implementation or test changes.
-        requirements: [ REQ-007 ]
-        artifacts:
-          - docs/architecture/adr/001-search-configuration-validation.md
-          - docs/architecture/evaluation-table.md
-          - docs/architecture/invariants.md
-          - docs/architecture/runtime-policy-catalog.md
-          - docs/architecture/trace-matrix.md
-          - docs/code-governance/structural-constraints.md
-          - docs/code-governance/verification-constraints.md
-        supervision: >-
-          The member reviewed the architecture changes, requested
-          corrections to the configuration snapshot and MCP dependency
-          boundaries, and checked documentation consistency.
-          The Markdown diff check passed. The verification matrix
-          defines 26 test cases, but tests were not executed.
-          ADR-001 remains Proposed and U-1 through U-5 remain open
-          pending SA Review.
-        transcript: transcripts/60725623-ChensihanLIU-AIU009.md
+  - id: AIU-012
+    date: "2026-11-14"
+    member: centay
+    purpose: >-
+      Use OpenCode plan with cityucs/CS5351/DeepSeek-V4-Flash to analyse ADD options and draft
+      the task contract, deterministic termination and orchestration module sections.
+    prompt: >-
+      Read the approved requirements and current governance; use v0.5 as historical field
+      context; compare three candidates and write proposed SA artifacts for REQ-001/REQ-003.
+      Preserve peer interfaces, count actual tool calls, validate task-local source provenance,
+      render notes from validated findings, and leave tests, code and every human gate pending.
+    requirements: [REQ-001, REQ-003, REQ-002]
+    artifacts:
+      - docs/architecture/evaluation-table.md
+      - docs/architecture/adr/002-orchestration-contract-and-termination.md
+      - docs/architecture/invariants.md
+      - docs/architecture/memory-design.md
+      - docs/architecture/runtime-policy-catalog.md
+      - docs/architecture/trace-matrix.md
+      - docs/code-governance/structural-constraints.md
+      - docs/code-governance/verification-constraints.md
+      - docs/architecture/orchestration-review-checklist.md
+      - transcripts/61061965-XIE_Shentai.md
+    supervision: >-
+      OpenCode's first analysis was inspected by the Codex coordinator. It rejected the
+      proposed step-budget reinterpretation, summary-based notes and contradictory cap
+      rules, and supplied a corrective authoring prompt. The second round wrote EVAL-002 but
+      reached its 8192-token output limit before the ADR tool call executed. Codex and its
+      audit assistants completed the remaining documents; OpenCode performed read-only
+      reviews in rounds 3 and 4. Human module review and Gate 1 remain pending. No
+      test, source implementation, push, PR, merge or approval is claimed.
+    transcript: transcripts/61061965-XIE_Shentai.md
+
+  - id: AIU-013
+    date: "2026-11-14"
+    member: centay
+    purpose: >-
+      Independently challenge the orchestration SA proposal from simulated delivery and
+      context peer perspectives, using OpenCode plan and the school DeepSeek provider.
+    prompt: >-
+      Review from Alchemy's delivery requirements and Tekon/BroZhai's frozen context ADR
+      perspectives. Walk concrete sibling-failure, cap/pending, cost/provenance, compression,
+      retry and flag scenarios against orchestration's public contract. Distinguish a new
+      inconsistency from a declared reader decision. Do not impersonate a teammate, approve
+      a gate, edit files or run product/live tests.
+    requirements: [REQ-001, REQ-003, REQ-002]
+    artifacts:
+      - docs/architecture/orchestration-review-checklist.md
+      - transcripts/61061965-XIE_Shentai.md
+    supervision: >-
+      The student explicitly requested another member's perspective to challenge the work.
+      The Codex coordinator started two fresh independent school-DeepSeek plan sessions,
+      with no inherited prior AI-review conclusions. Their actual findings and coordinator
+      dispositions are preserved in the transcript. Joined-turn/output-field gaps were
+      clarified and three planned cases were added; follow-ups retracted unsupported
+      coverage, retry-count and threshold assumptions. These are AI simulations, not the
+      named teammates' reviews or approval. Human review and runtime tests remain pending.
+    transcript: transcripts/61061965-XIE_Shentai.md
+
+  - id: AIU-014
+    date: "2026-11-15"
+    member: AlchemyHAN
+    purpose: >-
+      Draft the software architecture of the delivery module for REQ-002 and REQ-004.
+    prompt: >-
+      I own REQ-002 and REQ-004. From main, create the branch docs/sa-delivery and complete the
+      SA documents for the delivery module: ASR, an ADD entry with 2-3 candidates, an ADR whose
+      implementation steps a coding agent can follow, and the module sections of the shared
+      architecture and constraint documents. List test cases only, no test code.
+    requirements: [REQ-002, REQ-004]
+    artifacts:
+      - docs/architecture/evaluation-table.md
+      - docs/architecture/adr/001-task-failure-isolation.md
+      - docs/architecture/adr/002-finalize-node-run-outcome.md
+      - docs/architecture/invariants.md
+      - docs/architecture/memory-design.md
+      - docs/architecture/runtime-policy-catalog.md
+      - docs/architecture/trace-matrix.md
+      - docs/architecture/risk-list.md
+      - docs/code-governance/structural-constraints.md
+      - docs/code-governance/verification-constraints.md
+    supervision: >-
+      The member chose the delivery scope, both candidate-solution decisions and the new
+      invariant, then reviewed the drafts in three review rounds and had the AI correct a
+      module-to-module dependency, a duplicated state field, a finalize loop and several
+      inconsistencies between the ADR decisions and their implementation steps.
+    transcript: transcripts/60705556_HAN Peilin.md
+
+  - id: AIU-015
+    date: "2026-11-15"
+    member: centay
+    purpose: >-
+      Investigate the student's budget/evidence, truncation, collaboration and iteration
+      questions against current references, baseline code and bounded experimental evidence.
+    prompt: >-
+      Read the supplied sidechat and current HackMD/Google index, check peer submissions,
+      assess internal budget/evidence separation without changing readers, and test how
+      output truncation metadata actually behaves. Never call Claude or publish shared changes.
+    requirements: [REQ-001, REQ-003, REQ-002]
+    artifacts:
+      - transcripts/61061965-XIE_Shentai.md
+      - transcripts/raw/61061965-XIE_Shentai/followup-20261115-experiments.md
+    supervision: >-
+      The student supplied the concrete questions and authorised the investigation. Codex
+      performed read-only reference/GitHub checks and three direct school-DeepSeek HTTP
+      probes, reporting 398 tokens; these were not OpenCode sessions. Locked-adapter replay
+      and eight AST-extracted baseline-function scenarios used fake boundaries and remain
+      external SA evidence, not product acceptance tests. Diagnosis, probe design and audit
+      corrections are attributed to Codex; no student architecture approval is inferred.
+    transcript: transcripts/61061965-XIE_Shentai.md
+
+  - id: AIU-016
+    date: "2026-11-15"
+    member: centay
+    purpose: >-
+      Refine the local Proposed orchestration SA using the student's questions, unchanged
+      shared references and actual response-completion evidence.
+    prompt: >-
+      If the original HackMD and other members' development interfaces need no change,
+      continue improving SA. Preserve existing DTO/helper/context signatures, split internal
+      budget admission from one factual receipt, and state truncation/unknown acceptance
+      with no additional retry or takeover of delivery/context responsibilities.
+    requirements: [REQ-001, REQ-003, REQ-002]
+    artifacts:
+      - docs/architecture/adr/002-orchestration-contract-and-termination.md
+      - docs/architecture/evaluation-table.md
+      - docs/architecture/invariants.md
+      - docs/architecture/memory-design.md
+      - docs/architecture/runtime-policy-catalog.md
+      - docs/architecture/trace-matrix.md
+      - docs/code-governance/structural-constraints.md
+      - docs/code-governance/verification-constraints.md
+      - docs/architecture/orchestration-review-checklist.md
+      - transcripts/61061965-XIE_Shentai.md
+    supervision: >-
+      Codex and a read-only AI auditor checked the local revision, including stale exit,
+      intent-registration and parse wording. The proposal now has 53 planned cases and
+      explicit R-11/R-12 decisions; unknown metadata conservatively maps to runtime failure
+      pending reader review. No shared schema, online document, source/test code or gate was
+      changed. The old package is retained and a dated revision is prepared for the student's
+      actual review/publication; no human acceptance or implementation is claimed.
+    transcript: transcripts/61061965-XIE_Shentai.md
+
+  - id: AIU-017
+    date: "2026-11-15"
+    member: centay
+    purpose: >-
+      Prepare the first published Draft PR of the local orchestration SA after explicit
+      student authorisation, retaining Proposed status and subsequent human review.
+    prompt: >-
+      If this version has no blocking issue, submit a first version now; I will understand
+      the design later on the 15th and continue iterating. Also explain what my human
+      judgement contributed compared with AI self-review.
+    requirements: [REQ-001, REQ-003, REQ-002]
+    artifacts:
+      - docs/architecture/orchestration-review-checklist.md
+      - transcripts/61061965-XIE_Shentai.md
+    supervision: >-
+      The student explicitly authorised first-version publication, superseding the earlier
+      reservation of final Git actions. Codex rechecked package identity, remote state and
+      sensitive-token patterns, and obtained an independent read-only AI review with no
+      blocker. Staged whitespace checking found two original Markdown captures with inherited
+      whitespace; deterministic gzip storage preserves their decompressed bytes. Publication
+      does not constitute student architecture acceptance, peer review or Gate 1/Gate 2.
+      The actual commit and Draft PR remain identifiable in Git/GitHub publication history.
+    transcript: transcripts/61061965-XIE_Shentai.md
+
+  - id: AIU-018
+    date: "2026-11-16"
+    member: sszfot
+    purpose: >-
+      Review and refine the proposed REQ-007 software architecture,
+      including configuration validation, MCP runtime handling,
+      module boundaries, and verification coverage.
+    prompt: >-
+      Audit and refine ADR-001 and the related REQ-007 architecture
+      artifacts against the existing implementation and acceptance
+      criteria. Correct environment precedence and configuration
+      snapshot handling, clarify MCP loading responsibilities,
+      strengthen the search capability predicate, and expand the
+      verification matrix. Keep all unresolved decisions open and
+      make no implementation or test changes.
+    requirements: [ REQ-007 ]
+    artifacts:
+      - docs/architecture/adr/001-search-configuration-validation.md
+      - docs/architecture/evaluation-table.md
+      - docs/architecture/invariants.md
+      - docs/architecture/runtime-policy-catalog.md
+      - docs/architecture/trace-matrix.md
+      - docs/code-governance/structural-constraints.md
+      - docs/code-governance/verification-constraints.md
+    supervision: >-
+      The member reviewed the architecture changes, requested
+      corrections to the configuration snapshot and MCP dependency
+      boundaries, and checked documentation consistency.
+      The Markdown diff check passed. The verification matrix
+      defines 26 test cases, but tests were not executed.
+      ADR-001 remains Proposed and U-1 through U-5 remain open
+      pending SA Review.
+    transcript: transcripts/60725623-ChensihanLIU-AIU009.md
+
+  - id: AIU-019
+    date: "2026-11-17"
+    member: DopplerXD
+    purpose: >-
+      Revise the evaluation SA documents in response to the PR #15 module review.
+    prompt: >-
+      Address AlchemyHAN's six findings and BroZhai's path-whitelist suggestion. Remove the
+      utils date dependency, separate import-boundary and call-isolation tests, complete the
+      missing cases, align the C-004 verification path, distinguish judge failures with exit
+      code 3, and document proposed client and path exceptions. Preserve completed metric
+      results and map real provider authentication and permission exceptions. Keep changes
+      within English architecture documents and test specifications.
+    requirements: [REQ-009, REQ-010]
+    artifacts:
+      - docs/architecture/adr/001-evaluation-module.md
+      - docs/architecture/evaluation-table.md
+      - docs/architecture/invariants.md
+      - docs/architecture/runtime-policy-catalog.md
+      - docs/architecture/trace-matrix.md
+      - docs/code-governance/structural-constraints.md
+      - docs/code-governance/verification-constraints.md
       - https://github.com/Requirements-Strike-Team-RST/Open_Deepsearch_ULTRA/pull/15
     supervision: >-
       The member accepted the review direction, required isolation between patch setup and
@@ -496,3 +519,33 @@ entries:
       an updated PR explanation. The transcript addendum translates user instructions and
       labels response summaries; original tool records remain in the OpenCode session.
     transcript: transcripts/60741820-YANG_Xinchuan.md
+
+  - id: AIU-020
+    date: "2026-11-17"
+    member: AlchemyHAN
+    purpose: >-
+      Integrate the six module SA branches into one branch and make the architecture and
+      governance documents consistent.
+    prompt: >-
+      Read the project and the existing documents and their format rules, then merge the team's
+      architecture and governance documents (each member's own branch and PR) into one new
+      branch. Resolve conflicts between them, module conflicts, statements that do not match the
+      code, and unclear or non-standard writing, so that the whole design is consistent and
+      follows common practice. Do not make simple things complex, do not over-engineer or
+      over-abstract, and keep the language plain and clear for future coding agents.
+    requirements: [REQ-001, REQ-002, REQ-003, REQ-004, REQ-005, REQ-006, REQ-007, REQ-009, REQ-010]
+    artifacts:
+      - docs/architecture/
+      - docs/code-governance/structural-constraints.md
+      - docs/code-governance/verification-constraints.md
+      - docs/ai-use-log.yaml
+      - docs/review-memo.md
+      - AGENTS.md
+      - Prompt.md
+    supervision: >-
+      The AI merged every module branch with git merge, renumbered ADR, EVAL, INV, POL, test and
+      AIU IDs, and rewrote the module designs into one design; the integration decisions are
+      listed in architecture-blueprint.md section 11. The member reviews the result before the
+      integration pull request is opened; module owners confirm the points that touch their
+      module at SA Review.
+    transcript: null

@@ -40,28 +40,3 @@
 - **Verdict:** PASS | FAIL | NOT_RUN | BLOCKED | N/A, with reasons.
 
 ## Records
-
-### PREP-CENTAY-20261114: orchestration draft preparation (AI assistance)
-
-- **Requirements:** REQ-001, REQ-003; contributor interfaces for REQ-002 C-005/C-007.
-- **Date:** 2026-11-14, UTC+8.
-- **Reviewer:** Codex AI coordinator and read-only AI audit assistants. This is not a
-  teammate's PR review or an SA Review.
-- **Procedure:** inspect the approved requirements and baseline source, compare the
-  OpenCode proposal with the v0.5 reference and peer drafts, and correct the local draft.
-- **Findings:** the first OpenCode proposal conflated model turns with actual tool calls,
-  retained unvalidated summaries in notes and gave contradictory cap rules. A corrective
-  prompt was issued. The subsequent draft and final disposition are documented in
-  `docs/architecture/orchestration-review-checklist.md` and the annotated transcript.
-- **Evidence:** `transcripts/61061965-XIE_Shentai.md` and its linked raw session files.
-- **AI-check disposition:** the initial findings were corrected. Final OpenCode round 4
-  found no remaining contradiction in the supplied ADR; 14 external document checks
-  passed before the additional peer challenge. At the student's request, two independent
-  simulated peer sessions and follow-ups then challenged delivery/context interfaces;
-  actual gaps were corrected and unsupported AI assumptions were retracted. The final
-  static audit is preserved in D5. None is a product-test verdict or a human review.
-- **Human-review verdict:** NOT_RUN. No PR was opened; no human approval, Gate 1 or
-  Gate 2 was recorded. The student and named module readers must review the final draft.
-
-This preparation record contributes genuine review findings. It does not replace the
-course D4 PR review memo that a human reviewer must write when the draft is published.
