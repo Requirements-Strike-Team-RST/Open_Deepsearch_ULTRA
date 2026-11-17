@@ -190,4 +190,4 @@ entries:
       invariant, then reviewed the drafts in three review rounds and had the AI correct a
       module-to-module dependency, a duplicated state field, a finalize loop and several
       inconsistencies between the ADR decisions and their implementation steps.
-    transcript: transcripts/60705556_HAN Peilin.md
+    transcript: transcripts/60705556-HAN_Peilin.md
