@@ -1,0 +1,16 @@
+[
+  {
+    "original_relative_path": "followup-20261115/reference-audit/progress-tracker-current.md",
+    "stored_relative_path": "followup-20261115/reference-audit/progress-tracker-current.md.gz",
+    "original_bytes": 8059,
+    "original_sha256": "5ff81ada71b4b7693cd52f6f6d2be4e0331c7f0ed26aa9bbf1c4603b820a61a7",
+    "decompressed_bytes_match": true
+  },
+  {
+    "original_relative_path": "followup-20261115/sidechat-visible-message-handoff.md",
+    "stored_relative_path": "followup-20261115/sidechat-visible-message-handoff.md.gz",
+    "original_bytes": 115695,
+    "original_sha256": "a59efd2b22c9f754bbbcf6e05d0957ab2eed3c2c565f6c1818294d8b3b0b72f1",
+    "decompressed_bytes_match": true
+  }
+]

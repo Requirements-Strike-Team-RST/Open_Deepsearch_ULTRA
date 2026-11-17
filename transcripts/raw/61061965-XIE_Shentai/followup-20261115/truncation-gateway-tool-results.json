@@ -1,0 +1,37 @@
+[
+  {
+    "probe": "tool-control",
+    "started_utc": "2026-11-14T22:40:40.562573+00:00",
+    "host": "llm.cs.cityu.edu.hk",
+    "requested_model": "CS5351/DeepSeek-V4-Flash",
+    "max_tokens": 128,
+    "returned_model": "CS5351/DeepSeek-V4-Flash",
+    "finish_reason": "tool_calls",
+    "choice_fields": [
+      "finish_reason",
+      "index",
+      "message",
+      "provider_specific_fields"
+    ],
+    "message_fields": [
+      "content",
+      "provider_specific_fields",
+      "role",
+      "tool_calls"
+    ],
+    "content_chars": 0,
+    "tool_intents_returned": 1,
+    "usage": {
+      "completion_tokens": 33,
+      "prompt_tokens": 292,
+      "total_tokens": 325,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 292
+    },
+    "raw_file": "gateway-tool-control.response.json",
+    "verdict": "RESPONSE"
+  }
+]
