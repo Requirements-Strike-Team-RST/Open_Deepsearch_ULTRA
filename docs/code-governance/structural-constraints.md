@@ -101,3 +101,20 @@ Copy the example for your module. At integration, check that responsibilities do
 | Configuration flag | None: baseline behaviour is preserved and no new `Configuration` field is added |
 
 REQ-008 (search fallback) will also live in this module and is designed separately; this section covers REQ-007 only. Two call sites are intentional: `clarify_with_user` is the public boundary, and `researcher` is required because the researcher subgraph is compiled and directly invokable (ADR-001 §2.2, §10). `supervisor` binds no search tool and `researcher_tools` is reached only after `researcher` validated, so neither needs a check.
+
+### search — REQ-008 fallback (REQ-008, ADR-002) — Proposed
+
+The REQ-007 responsibilities above are unchanged. REQ-008 adds the following components to the same `search/` module (not yet implemented; Proposed, pending SA Review).
+
+| Item | Constraint |
+|---|---|
+| Path | `src/open_deep_research/search/` (same module as REQ-007) |
+| Responsibility | Execute an ordered fallback over configured client-side search sources on eligible failures, classify errors before they are stringified, distinguish empty success from failure, and aggregate an explicit all-sources-failed result. |
+| Public interface | `SearchRequest(queries, max_results, topic)`; `SearchSource` adapters (`name`, `async invoke(SearchRequest) -> SearchOutcome`, `load_status`); `FallbackCoordinator.run(req, sources) -> SearchOutcome \| SearchTerminatedFailure \| AllSourcesFailed`; `SearchAttemptFailure(source_name, stage ∈ {LOAD, INVOKE}, classification, detail)`, `SearchTerminatedFailure`, `AllSourcesFailed`, `ErrorClassification(eligible, category)`; a thin tool-facing adapter exposing the coordinator as one stable model-callable search tool |
+| Called from | The model-callable search tool registered through `get_all_tools`; invoked during `researcher_tools` tool execution. The **fallback algorithm is not implemented in `deep_researcher.py`** or any orchestration node; the node only dispatches the assembled tool. |
+| May depend on | `configuration.py` (ordered fallback list, `MCPConfig`); the structured MCP load result (REQ-007 U-5, or equivalent) passed in by orchestration; the assembled source tools as arguments |
+| Must not depend on | `deep_researcher.py`, other extension modules, model clients; native model search (out of scope); direct MCP client use where REQ-007 U-5 Option A already owns loading; `execute_tool_safely` (classification must precede stringification) |
+| Shared contracts | **Approval-dependent:** a new `Configuration` field for the ordered fallback list (default empty; D-2) and, under U-5 Option B, the `utils.load_mcp_tools` return type. Both need the affected owners' approval (`§6`). |
+| Configuration flag | Ordered fallback list field, default empty = single-source baseline behaviour (architectural intent; ADR-002 §3 notes it is not yet verified). |
+
+REQ-008 follows the same dependency direction as REQ-007 (`deep_researcher.py → search/ → configuration.py`). Native OpenAI/Anthropic search is excluded from fallback (REQ-008 out of scope). The load-stage/invocation-stage distinction and the proposed exception to POL-002 require D-1 approval (ADR-002 §12).

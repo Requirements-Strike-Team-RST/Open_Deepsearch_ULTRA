@@ -66,6 +66,46 @@ Every entry uses the same fields:
 - **Verification:** `test/offline/test_search_configuration.py`, `test/offline/test_search_fallback.py` with fake providers (normal, empty, timeout, invalid, unknown); see ADR-001 §11 and `verification-constraints.md` §7.
 - **Fallback:** on an eligible error, try only the configured fallback sources in order and record each attempt; when all fail, return an explicit search failure. Never substitute a source that is not configured. (Fallback behaviour itself is REQ-008 and out of REQ-007 scope.)
 
+## INV-006 — No fallback after an empty successful result
+
+- **Statement:** A search that returns no hits without error is a successful search and terminates the fallback sequence; no further source is tried.
+- **Module:** search
+- **Source:** REQ-008 (C-004)
+- **Status:** Proposed
+- **Enforcing component:** the fallback coordinator (`search/`, ADR-002): an empty `SearchOutcome` (`found=False`) is a success and stops the attempt loop.
+- **Verification:** `test/offline/test_search_fallback.py` — planned case for C-004 (empty result suppresses fallback); see ADR-002 §11 and `verification-constraints.md` §7.
+- **Fallback:** return the empty success to the researcher as no evidence; do not advance to the next configured source.
+
+## INV-007 — No fallback after an ineligible error
+
+- **Statement:** An ineligible search error (for example a malformed query) is returned without trying any further source; fallback advances only on an eligible error.
+- **Module:** search
+- **Source:** REQ-008 (C-005)
+- **Status:** Proposed
+- **Enforcing component:** the error classification in the fallback coordinator (`search/`, ADR-002): an ineligible `SearchTerminatedFailure` ends the loop immediately.
+- **Verification:** `test/offline/test_search_fallback.py` — planned case for C-005 (ineligible error suppresses fallback); see ADR-002 §11 and `verification-constraints.md` §7.
+- **Fallback:** return the ineligible failure to the researcher as an error; never substitute another source.
+
+## INV-008 — Configured source order is preserved
+
+- **Statement:** When an eligible failure triggers fallback, the configured fallback sources are tried in their configured order, and no source is skipped or reordered.
+- **Module:** search
+- **Source:** REQ-008 (C-001, C-002)
+- **Status:** Proposed
+- **Enforcing component:** the ordered attempt loop in the fallback coordinator (`search/`, ADR-002).
+- **Verification:** `test/offline/test_search_fallback.py` — planned cases for C-001 and C-002 (ordered fallback); see ADR-002 §11 and `verification-constraints.md` §7.
+- **Fallback:** never reorder or skip; if the configured order cannot be followed, the run receives an explicit failure rather than a silently different order.
+
+## INV-009 — Exhausting all eligible sources produces an explicit failure
+
+- **Statement:** When every configured source fails with an eligible error, the researcher receives one explicit all-sources-failed result that lists each attempted source and its error and cannot be mistaken for an empty search result.
+- **Module:** search
+- **Source:** REQ-008 (C-003)
+- **Status:** Proposed
+- **Enforcing component:** the all-failed aggregation in the fallback coordinator (`search/`, ADR-002), rendered by the thin tool-facing adapter into a distinct `ToolMessage`.
+- **Verification:** `test/offline/test_search_fallback.py` — planned case for C-003 (explicit aggregate); see ADR-002 §11 and `verification-constraints.md` §7.
+- **Fallback:** return the aggregate failure with every attempted source and its error; never fabricate a result and never return the empty-success marker.
+
 ## Adding an Entry
 
 Copy an entry, take the next free `INV-NNN` number, and fill every field. Never reuse a retired number. Add the INV ID to the requirement's row in `trace-matrix.md` and to the ADR's §6. At integration the integrator may renumber entries and updates every reference.
