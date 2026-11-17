@@ -375,3 +375,68 @@ entries:
       on the new ResearcherOutputState.research_outcome field with the REQ-001 owner, and ID
       unification at integration.
     transcript: 61061690-ZHANG_Kaidi.md
+    date: "2026-11-13"
+    member: sszfot
+    purpose: >-
+      Draft the REQ-007 Software Architecture documents: the ADD iteration-2 resolution and the
+      architecture artifacts derived from it.
+    prompt: >-
+      For approved REQ-007 (upstream issue #250), compare three candidate designs for validating
+      search configuration (validation inside the graph entry node, a centralized pure validator,
+      and validation inside tool assembly) against acceptance criteria C-001 to C-005, then, after
+      the human selected the centralized validator, write EVAL-001, ADR-001, the REQ-007 row of
+      the traceability matrix, the search module sections, and a draft AI-use entry. Keep
+      REQ-008 out of scope, change no source or tests, and mark every decision Proposed.
+    requirements: [REQ-007]
+    artifacts:
+      - docs/architecture/adr/001-search-configuration-validation.md
+      - docs/architecture/evaluation-table.md
+      - docs/architecture/trace-matrix.md
+      - docs/architecture/invariants.md
+      - docs/architecture/runtime-policy-catalog.md
+      - docs/code-governance/structural-constraints.md
+      - docs/code-governance/verification-constraints.md
+      - docs/ai-use-log.yaml
+    supervision: >-
+      The member directed the ADD iterations and selected the
+      centralized pure validator design after comparing candidate
+      architectures. The initial documents were reviewed against
+      REQ-007 and the source code. Subsequent refinements are
+      recorded in AIU-009. The architecture remains Proposed
+      pending SA Review.
+    transcript: transcripts/60725623-ChensihanLIU.md
+
+
+      - id: AIU-009
+        date: "2026-11-16"
+        member: sszfot
+        purpose: >-
+          Review and refine the proposed REQ-007 software architecture,
+          including configuration validation, MCP runtime handling,
+          module boundaries, and verification coverage.
+        prompt: >-
+          Audit and refine ADR-001 and the related REQ-007 architecture
+          artifacts against the existing implementation and acceptance
+          criteria. Correct environment precedence and configuration
+          snapshot handling, clarify MCP loading responsibilities,
+          strengthen the search capability predicate, and expand the
+          verification matrix. Keep all unresolved decisions open and
+          make no implementation or test changes.
+        requirements: [ REQ-007 ]
+        artifacts:
+          - docs/architecture/adr/001-search-configuration-validation.md
+          - docs/architecture/evaluation-table.md
+          - docs/architecture/invariants.md
+          - docs/architecture/runtime-policy-catalog.md
+          - docs/architecture/trace-matrix.md
+          - docs/code-governance/structural-constraints.md
+          - docs/code-governance/verification-constraints.md
+        supervision: >-
+          The member reviewed the architecture changes, requested
+          corrections to the configuration snapshot and MCP dependency
+          boundaries, and checked documentation consistency.
+          The Markdown diff check passed. The verification matrix
+          defines 26 test cases, but tests were not executed.
+          ADR-001 remains Proposed and U-1 through U-5 remain open
+          pending SA Review.
+        transcript: transcripts/60725623-ChensihanLIU-AIU009.md

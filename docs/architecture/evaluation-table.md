@@ -117,6 +117,12 @@ The decision has to answer four distinct sub-questions sharing one loop: (a) the
 - **Owner:** NoPumpkinz
 - **Decision recorded in:** ADR-001
 - **Status:** Decided
+## EVAL-001: Where search configuration is validated before research
+
+- **Module:** search
+- **Owner:** sszfot
+- **Decision recorded in:** ADR-001
+- **Status:** Open (provisional selection of B; awaiting SA Review)
 
 **ASR**
 
@@ -127,6 +133,9 @@ The decision has to answer four distinct sub-questions sharing one loop: (a) the
 
 The outcome depends on information from two different moments: the research exit reason and task results (available before report generation) and report-generation success or truncation (known only after it). The decision has to see both.
 | REQ-006 | C-001, C-002, C-003 (offline inspection); C-004 (live, `automated: false`) | Consistency of citation format (invariant), maintainability (drift prevention), testability (offline inspection), evidence/audit (live check + versioned prompt) |
+| REQ-007 | C-001, C-002, C-003, C-004, C-005 | correctness (fail before model/search calls), testability, modularity, behaviour preservation |
+
+Architectural drivers (provisional IDs, see ADR-001 §1): ASR-007-01 validate on every path to a model/search call; ASR-007-02 native provider ↔ `research_model`; ASR-007-03 static MCP capability versus runtime availability; ASR-007-04 unsupported provider lists the supported set (including via `SEARCH_API`); ASR-007-05 pure and offline-testable; ASR-007-06 preserve valid behaviour and topology; ASR-007-07 documentation consistency; ASR-007-08 a statically declared but unusable MCP must not silently produce a no-search run; ASR-007-09 an explicit search-capability predicate replaces the tool-count check.
 
 **Candidates**
 
@@ -170,3 +179,24 @@ The outcome depends on information from two different moments: the research exit
 **Rejected and why:** A — reconciles the prompts inline but leaves the format duplicated, so the drift mode survives. A2 — drift-proof but leaves the contract unowned, with no home for INV-004 work and no §4 ownership. C — out of REQ-006 scope and owned by Deferred INV-004; a post-processor can reformat but cannot recover which URL backs an unsourced claim.
 
 *Amended after module review: added Option A2 and rephrased Option A.*
+| A | Validate at the top of the research graph entry node | `deep_researcher.py` (`clarify_with_user`) | Small; runs early | Violates the thin-node rule (`structural-constraints.md` §2.1); correctness depends on placement before the `allow_clarification` return; no reusable, unit-testable interface; duplicates MCP capability logic | Low | Medium |
+| B | Pure centralized validator in `search/`, called from `clarify_with_user` and `researcher` | `search/configuration_validator.py`, two call sites | Single-responsibility module; runs before the `clarify_with_user` (L101) and `write_research_brief` (L154) model calls; pure, so offline-testable; matches blueprint `search/` and dependency direction; no topology change | Two call sites; package registration needed | Medium | High |
+| C | Validation inside tool assembly (`utils.get_all_tools`) | `utils.py` | Reuses existing MCP detection | Runs only inside `researcher` (`deep_researcher.py:384,467`), i.e. after the L101/L154 model calls on the standard path, so it fails C-001; bloats `utils.py`; conflates validation with REQ-008 fallback and repeats the unmerged `fix/issue-250` shape | High (coupling) | Medium |
+
+**C-003 mechanism note (affects all options).** Pydantic already rejects an invalid `search_api` during `Configuration` construction (`configuration.py:243-247`), with environment variable precedence, before any node body runs. A validator that receives a constructed `Configuration` therefore cannot be the C-003 mechanism. Option B addresses this with a small raw-input `resolve_search_api` step that runs before construction and reads the same env/config sources; construction stays as a backstop. This does not change the ranking of A/B/C.
+
+**MCP runtime note (affects all options).** The split between static declaration and runtime availability is the same for every option; only the placement of the runtime stop-and-error check differs (Option B places it in `researcher` after assembly). The current `load_mcp_tools` returns a single `[]` for connection failure, zero usable tools, and missing authentication (`utils.py:470-504`), so none of these options can distinguish the runtime outcomes without an adapter or a return-contract change (ADR-001 §8.1a, U-5). This is an implementation dependency of the accepted direction, not a property of the existing code.
+
+**Evidence**
+
+- `configuration.py:11-17,78-93,153-162`: provider set and absence of provider/model validation.
+- `configuration.py:236-247`: `from_runnable_config` precedence (env over configurable), `None` dropped, Pydantic enum rejection of invalid values.
+- `deep_researcher.py:60-175,365-424,714`: the top-level entry and the in-node model calls at L101 and L154.
+- `deep_researcher.py:384-389`: the dead `len(tools) == 0` guard; `utils.py:579`: core tools always present.
+- `deep_researcher.py:384,467` and `utils.py:569-597`: `get_all_tools` is reached only inside the researcher loop.
+- `utils.py:531-567`: unknown provider falls through silently; tool objects versus metadata; `utils.py:470-481,499-504`: MCP loading returns `[]` on failure.
+- `structural-constraints.md` §2 (thin nodes) and §5 (dependency direction).
+
+**Choice:** B — the only option that validates before every model/search call on all paths while keeping validation pure, single-responsibility, offline-testable and inside the `search/` module boundary (provisional; pending SA Review).
+
+**Rejected and why:** A — breaks the thin-node rule and is placement-fragile. C — validates too late (after the clarification and brief model calls) and couples validation to tool assembly and REQ-008.

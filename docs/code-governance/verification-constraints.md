@@ -233,6 +233,41 @@ Tests are deterministic offline tests: fake message lists and fake model/excepti
 - **Regression:** re-run the full `test/offline/` suite (`prompts.py` is imported by all graph tests). No `test_contracts.py` addition: ADR-001 §5 changes no `state.py` type and no interface another module reads in code.
 - **Baseline failure:** every offline assertion above must FAIL on the baseline prompts for the registered reason (`Prompt.md` §5).
 - **Live or human checks:** TC-006 (C-004, `automated: false`) runs on demand through the semantic evaluation gate for the prompt change (`Prompt.md` §9); evidence goes to `docs/test-reports/REQ-006.md`.
+### search (REQ-007, ADR-001)
+
+The proposed behaviours are described in ADR-001 §2.1, §7, §8 and §9. Test IDs preserve the requirement's existing `verification` names (C-003, C-004, C-002) and add new IDs without colliding with other modules.
+
+| Case | Covers | Type | Input | Expected result | Test |
+|---|---|---|---|---|---|
+| TC-001 | C-001 | exception | `search_api=anthropic`, `research_model=openai:gpt-4.1` | Error names both `search_api` and `research_model`; raised before any model or search call | `test/offline/test_search_configuration.py::test_native_search_model_mismatch_rejected` |
+| TC-002 | C-001 | normal | `anthropic` + `anthropic:claude-sonnet-4`; `openai` + `openai:gpt-4.1` | No error; native definition bound | `::test_native_provider_valid_combinations_accepted` |
+| TC-003 | C-001, U-3 | normal/boundary | `openai` + bare `gpt-4.1` and `anthropic` + `anthropic.claude-3` under each resolution policy (strict vs LangChain-compatible) | Outcome matches the U-3 policy chosen; documents the `gpt-4.1` and `anthropic.claude-3` behaviour | `::test_provider_resolution_policy` |
+| TC-004 | C-002 | boundary | `search_api=none`: (a) no MCP, (b) `MCP_DECLARED`, (c) malformed (url set, `tools=[]`), (d) url missing | (a)/(c)/(d) rejected naming `search_api`/`mcp_config`; (b) statically accepted | `::test_no_search_tool_rejected` |
+| TC-005 | C-003 | exception | `search_api="bing"` | Rejected listing `anthropic, openai, tavily, none`; zero model calls | `::test_unsupported_provider_rejected` |
+| TC-006 | C-003 | exception | `search_api=""` | Rejected, lists supported set | `::test_empty_provider_rejected` |
+| TC-007 | C-003 | exception | `search_api="TAVILY"` (uppercase) | Rejected, not normalised to `tavily` | `::test_uppercase_provider_rejected` |
+| TC-008 | C-003, ASR-007-04 | exception | `SEARCH_API=bing` with a valid `configurable.search_api` | Rejected because the env var takes precedence | `::test_env_provider_precedence_rejected` |
+| TC-009 | D1 | normal | `search_api` omitted | Resolves `tavily`, no error | `::test_omitted_provider_defaults_tavily` |
+| TC-010 | D1 | normal | `search_api=None` | Resolves `tavily` (treated as unset), no error | `::test_none_provider_defaults_tavily` |
+| TC-011 | C-004 | normal | `search_api=tavily` with any `research_model` (`openai:gpt-4.1`) | No error; the `tavily_search` tool object is present (`tool.name == "tavily_search"`) and its `metadata["name"] == "web_search"`; the two are asserted distinctly | `::test_valid_tavily_configuration_accepted` |
+| TC-012 | ASR-007-01 | exception | Invalid config, `allow_clarification=True` | Fake research model records **zero** calls; error before the clarification model call | `::test_invalid_config_zero_model_calls_clarify_true` |
+| TC-013 | ASR-007-01 | exception | Invalid config, `allow_clarification=False` | Fake research model records **zero** calls; error before the brief model call | `::test_invalid_config_zero_model_calls_clarify_false` |
+| TC-014 | C-002, §8.1 | boundary | `none` with malformed MCP: `url` missing | `MCP_INVALID_DECLARATION`; rejected | `::test_mcp_missing_url_rejected` |
+| TC-015 | C-002, §8.1 | boundary | `none` with `auth_required=True` and no resolvable token | Statically `MCP_DECLARED`; the runtime adapter reports `AUTH_MISSING` (distinct from a load failure) — see TC-018 | `::test_mcp_auth_required_classified` |
+| TC-016 | ASR-007-08, U-1, U-5 | exception | Declared MCP, `get_tools()` raises, `search_api=none` | Adapter status `LOAD_FAILED`: research stops with explicit error naming `mcp_config.url`; no fallback | `::test_mcp_connection_failure_stops` |
+| TC-017 | ASR-007-08, U-1, U-5 | exception | Declared MCP, load succeeds but zero tools match declaration | Adapter status `ZERO_USABLE_TOOLS` (distinct from `LOAD_FAILED`): research stops with explicit error; no fallback | `::test_mcp_zero_usable_tools_stops` |
+| TC-018 | ASR-007-08, U-5 | exception | Declared MCP, `auth_required=True`, no token at runtime | Adapter status `AUTH_MISSING` (distinct from `LOAD_FAILED` and `ZERO_USABLE_TOOLS`): research stops with explicit auth error | `::test_mcp_missing_auth_stops` |
+| TC-019 | INV-005 | normal | Usable search tool returns no hits | Empty result is success; no error, no stop | `::test_empty_result_is_success` |
+| TC-020 | U-4, ASR-007-09, §8.3 | normal | `has_search_capability(SearchEvidence)` for each provider: Anthropic native with `native_bound is True`, OpenAI native with `native_bound is True` (dict without `name`), Tavily (`tavily_search` present), MCP (`MCP_DECLARED` + `mcp_load_status=LOADED` + ≥1 tool), `none`+absent | True except `none`+absent; native uses `native_bound`, never a tool `name`; never keyed on `len(tools)` | `::test_search_capability_predicate` |
+| TC-021 | C-004, ASR-007-06 | regression | No `search_api` set, `research_model=openai:gpt-4.1`, no new keys needed | Default Tavily tool assembly unchanged; no validation error | `::test_default_tavily_openai_regression` |
+| TC-022 | INV-005 | normal/exception | Empty result vs failure vs unsupported provider | Empty = success; failure = failure; unsupported rejected | `::test_inv005_result_contract` |
+| TC-023 | C-005 | human | README provider matrix and MCP recipe | Reviewer configures each provider and an MCP search server from the docs alone | `docs/review-memo.md` (`REVIEW-NNN`), `automated: false` |
+| TC-024 | U-5, §8.1a | exception | MCP load fed each branch (Option A: adapter owns the load; Option B: refactored `load_mcp_tools`): missing `url`/`tools`, missing auth token, `get_tools()` raise, successful load with 0 matching tools, successful load with tools | Returns distinct `LOAD_FAILED` / `AUTH_MISSING` / `ZERO_USABLE_TOOLS` / `LOADED` (four states not collapsed to `[]`); a fake MCP client (`get_tools`) is used, no network | `::test_mcp_load_result_distinguishes_states` |
+| TC-025 | U-3, §8.2 | normal/boundary | Native binding: fake model records definitions passed to `bind_tools`; "configured" (definition produced) vs "bound" (`native_bound`) vs "executed" (fake response with/without `anthropic_websearch_called`/`openai_websearch_called` metadata) | Predicate uses `native_bound` (available only after binding); execution availability is observed only post-response and does not gate capability; a successful bind is not treated as proof of remote execution | `::test_native_configured_bound_executed` |
+| TC-026 | Correction B, §7.2, §8.0 | normal/exception | Env `SEARCH_API` set with a conflicting `configurable.search_api`; a resolver snapshot plus construction from validated effective inputs; a fake model recording call count | The constructed `Configuration` reflects the resolver's effective value (env precedence preserved), no `os.environ` mutation occurs, and the capability predicate is only evaluated after `bind_tools` (step 4). Zero model/search calls before validation | `::test_config_resolution_snapshot_and_order` |
+
+- **Regression:** `uv run pytest test/offline`; no shared contract changes, so `test/offline/test_contracts.py` is unaffected. TC-021 is the default-configuration regression.
+- **Live or human checks:** C-005 (TC-023) is human review recorded as `REVIEW-NNN` in `docs/review-memo.md`. TC-016–TC-018 and TC-024 depend on the U-1/U-5 decisions; until approved they are planned, not binding. TC-003 and TC-025 depend on the U-3 decision. TC-026 covers the configuration-resolution boundary (Correction B) and the §8.0 ordering; it is binding regardless of U-5, but its construction step depends on the §7.2 implementation choice (Option 1 needs no factory change; Option 2 needs the additive `environ` parameter).
 
 ## 8. Definition of Done
 
