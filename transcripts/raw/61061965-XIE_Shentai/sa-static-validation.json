@@ -1,0 +1,775 @@
+{
+  "tool_kind": "external static SA document audit, not product tests",
+  "generated_at": "2026-11-14T05:04:26.455691+08:00",
+  "invocation": [
+    "/opt/homebrew/opt/python@3.15/bin/python3.15",
+    "/Users/e1bae/src/homework/5351/project/sa-evidence-2026-11-14/validate-sa-docs.py"
+  ],
+  "tool_sha256": "fa115780e5bd72b5f89c816bc520d598ccd530f39a0c0ae8daa25e96fbc16ef4",
+  "repository": "/Users/e1bae/src/homework/5351/project/sa-centay-2026-11-14",
+  "baseline": "827fd32f956a0601df3e1fd253d5cc98044fff88",
+  "static_verdict": "PASS",
+  "failed_checks": [],
+  "pending_checks": [],
+  "checks": [
+    {
+      "name": "baseline_commit",
+      "verdict": "PASS",
+      "details": {
+        "expected": "827fd32f956a0601df3e1fd253d5cc98044fff88",
+        "resolved": "827fd32f956a0601df3e1fd253d5cc98044fff88"
+      }
+    },
+    {
+      "name": "git_visible_change_scope",
+      "verdict": "PASS",
+      "details": {
+        "tracked_changes": [
+          "docs/ai-use-log.yaml",
+          "docs/architecture/evaluation-table.md",
+          "docs/architecture/invariants.md",
+          "docs/architecture/memory-design.md",
+          "docs/architecture/runtime-policy-catalog.md",
+          "docs/architecture/trace-matrix.md",
+          "docs/code-governance/structural-constraints.md",
+          "docs/code-governance/verification-constraints.md",
+          "docs/review-memo.md"
+        ],
+        "untracked_files": [
+          "docs/architecture/adr/002-orchestration-contract-and-termination.md",
+          "docs/architecture/orchestration-review-checklist.md",
+          "transcripts/61061965-XIE_Shentai.md",
+          "transcripts/raw/61061965-XIE_Shentai/README.md",
+          "transcripts/raw/61061965-XIE_Shentai/artifact-credential-audit.json",
+          "transcripts/raw/61061965-XIE_Shentai/baseline-query-reference.md",
+          "transcripts/raw/61061965-XIE_Shentai/coordinator-review-resolutions.md",
+          "transcripts/raw/61061965-XIE_Shentai/course-sa-requirements-audit.md",
+          "transcripts/raw/61061965-XIE_Shentai/framework-source-audit.md",
+          "transcripts/raw/61061965-XIE_Shentai/peer-interface-audit.md",
+          "transcripts/raw/61061965-XIE_Shentai/peer-scenario-arithmetic.json",
+          "transcripts/raw/61061965-XIE_Shentai/preflight-prompt.md",
+          "transcripts/raw/61061965-XIE_Shentai/preflight.events.jsonl",
+          "transcripts/raw/61061965-XIE_Shentai/preflight.meta.json",
+          "transcripts/raw/61061965-XIE_Shentai/preflight.raw.txt",
+          "transcripts/raw/61061965-XIE_Shentai/preflight.session.json",
+          "transcripts/raw/61061965-XIE_Shentai/preservation-verification.json",
+          "transcripts/raw/61061965-XIE_Shentai/raw-bundle-manifest.json",
+          "transcripts/raw/61061965-XIE_Shentai/round1-analysis-prompt.md",
+          "transcripts/raw/61061965-XIE_Shentai/round1-analysis.events.jsonl",
+          "transcripts/raw/61061965-XIE_Shentai/round1-analysis.meta.json",
+          "transcripts/raw/61061965-XIE_Shentai/round1-analysis.raw.txt",
+          "transcripts/raw/61061965-XIE_Shentai/round1-analysis.session.json",
+          "transcripts/raw/61061965-XIE_Shentai/round2-authoring-prompt.md",
+          "transcripts/raw/61061965-XIE_Shentai/round2-authoring.events.jsonl",
+          "transcripts/raw/61061965-XIE_Shentai/round2-authoring.meta.json",
+          "transcripts/raw/61061965-XIE_Shentai/round2-authoring.raw.txt",
+          "transcripts/raw/61061965-XIE_Shentai/round2-authoring.session.json",
+          "transcripts/raw/61061965-XIE_Shentai/round3-review-prompt.md",
+          "transcripts/raw/61061965-XIE_Shentai/round3-review.events.jsonl",
+          "transcripts/raw/61061965-XIE_Shentai/round3-review.meta.json",
+          "transcripts/raw/61061965-XIE_Shentai/round3-review.raw.txt",
+          "transcripts/raw/61061965-XIE_Shentai/round3-review.session.json",
+          "transcripts/raw/61061965-XIE_Shentai/round4-final-review-prompt.md",
+          "transcripts/raw/61061965-XIE_Shentai/round4-final-review.events.jsonl",
+          "transcripts/raw/61061965-XIE_Shentai/round4-final-review.meta.json",
+          "transcripts/raw/61061965-XIE_Shentai/round4-final-review.raw.txt",
+          "transcripts/raw/61061965-XIE_Shentai/round4-final-review.session.json",
+          "transcripts/raw/61061965-XIE_Shentai/round5-delivery-peer-prompt.md",
+          "transcripts/raw/61061965-XIE_Shentai/round5-delivery-peer-response.md",
+          "transcripts/raw/61061965-XIE_Shentai/round5-delivery-peer.events.jsonl",
+          "transcripts/raw/61061965-XIE_Shentai/round5-delivery-peer.meta.json",
+          "transcripts/raw/61061965-XIE_Shentai/round5-delivery-peer.raw.txt",
+          "transcripts/raw/61061965-XIE_Shentai/round5-delivery-peer.session.json",
+          "transcripts/raw/61061965-XIE_Shentai/round6-context-peer-prompt.md",
+          "transcripts/raw/61061965-XIE_Shentai/round6-context-peer-response.md",
+          "transcripts/raw/61061965-XIE_Shentai/round6-context-peer.events.jsonl",
+          "transcripts/raw/61061965-XIE_Shentai/round6-context-peer.meta.json",
+          "transcripts/raw/61061965-XIE_Shentai/round6-context-peer.raw.txt",
+          "transcripts/raw/61061965-XIE_Shentai/round6-context-peer.session.json",
+          "transcripts/raw/61061965-XIE_Shentai/round7-delivery-followup-prompt.md",
+          "transcripts/raw/61061965-XIE_Shentai/round7-delivery-followup-response.md",
+          "transcripts/raw/61061965-XIE_Shentai/round7-delivery-followup.events.jsonl",
+          "transcripts/raw/61061965-XIE_Shentai/round7-delivery-followup.meta.json",
+          "transcripts/raw/61061965-XIE_Shentai/round7-delivery-followup.raw.txt",
+          "transcripts/raw/61061965-XIE_Shentai/round7-delivery-followup.session.json",
+          "transcripts/raw/61061965-XIE_Shentai/round8-context-followup-prompt.md",
+          "transcripts/raw/61061965-XIE_Shentai/round8-context-followup-response.md",
+          "transcripts/raw/61061965-XIE_Shentai/round8-context-followup.events.jsonl",
+          "transcripts/raw/61061965-XIE_Shentai/round8-context-followup.meta.json",
+          "transcripts/raw/61061965-XIE_Shentai/round8-context-followup.raw.txt",
+          "transcripts/raw/61061965-XIE_Shentai/round8-context-followup.session.json",
+          "transcripts/raw/61061965-XIE_Shentai/sa-static-validation.json",
+          "transcripts/raw/61061965-XIE_Shentai/sa-static-validation.md",
+          "transcripts/raw/61061965-XIE_Shentai/validate-sa-docs.py.txt"
+        ],
+        "invalid_paths": [],
+        "note": "Only Git-visible untracked files are checked; ignored runtime caches are not deliverable artifacts. No source/test/scripts/permissions/dependencies/requirements/approval paths are allowed."
+      }
+    },
+    {
+      "name": "shared_document_preservation",
+      "verdict": "PASS",
+      "details": {
+        "outside_module_changes": [],
+        "allowed": "Own orchestration module sections; INV-003/006/007; EVAL-002; one explicitly labelled AI-preparation memo. Blank section separators may differ."
+      }
+    },
+    {
+      "name": "unassigned_trace_rows_unchanged",
+      "verdict": "PASS",
+      "details": {
+        "other_rows_and_surrounding_text_identical": true,
+        "own_row_count": 2
+      }
+    },
+    {
+      "name": "adr_template_and_proposed_status",
+      "verdict": "PASS",
+      "details": {
+        "sections": [
+          [
+            "1",
+            "Architecturally Significant Requirements"
+          ],
+          [
+            "2",
+            "Context"
+          ],
+          [
+            "3",
+            "Decision"
+          ],
+          [
+            "4",
+            "Rejected Options"
+          ],
+          [
+            "5",
+            "Components and Interfaces"
+          ],
+          [
+            "6",
+            "State, Failure Handling and Deterministic Boundary"
+          ],
+          [
+            "7",
+            "Verification"
+          ],
+          [
+            "8",
+            "Consequences"
+          ],
+          [
+            "9",
+            "Implementation Steps"
+          ]
+        ],
+        "expected_sections": [
+          "Architecturally Significant Requirements",
+          "Context",
+          "Decision",
+          "Rejected Options",
+          "Components and Interfaces",
+          "State, Failure Handling and Deterministic Boundary",
+          "Verification",
+          "Consequences",
+          "Implementation Steps"
+        ],
+        "status_is_proposed": true
+      }
+    },
+    {
+      "name": "actual_architecture_ids_unique",
+      "verdict": "PASS",
+      "details": {
+        "definitions": {
+          "INV-001": [
+            "docs/architecture/invariants.md"
+          ],
+          "INV-002": [
+            "docs/architecture/invariants.md"
+          ],
+          "INV-003": [
+            "docs/architecture/invariants.md"
+          ],
+          "INV-004": [
+            "docs/architecture/invariants.md"
+          ],
+          "INV-005": [
+            "docs/architecture/invariants.md"
+          ],
+          "INV-006": [
+            "docs/architecture/invariants.md"
+          ],
+          "INV-007": [
+            "docs/architecture/invariants.md"
+          ],
+          "EVAL-002": [
+            "docs/architecture/evaluation-table.md"
+          ],
+          "POL-002": [
+            "docs/architecture/runtime-policy-catalog.md"
+          ],
+          "POL-003": [
+            "docs/architecture/runtime-policy-catalog.md"
+          ],
+          "POL-004": [
+            "docs/architecture/runtime-policy-catalog.md"
+          ],
+          "POL-005": [
+            "docs/architecture/runtime-policy-catalog.md"
+          ],
+          "POL-006": [
+            "docs/architecture/runtime-policy-catalog.md"
+          ],
+          "POL-007": [
+            "docs/architecture/runtime-policy-catalog.md"
+          ],
+          "POL-008": [
+            "docs/architecture/runtime-policy-catalog.md"
+          ],
+          "POL-009": [
+            "docs/architecture/runtime-policy-catalog.md"
+          ],
+          "POL-010": [
+            "docs/architecture/runtime-policy-catalog.md"
+          ],
+          "ADR-002": [
+            "docs/architecture/adr/002-orchestration-contract-and-termination.md"
+          ]
+        },
+        "duplicates": {},
+        "missing_own_ids": [],
+        "excluded": "NNN templates and the unchanged all-TBD POL-001 placeholder are not actual definitions."
+      }
+    },
+    {
+      "name": "own_architecture_references_resolve",
+      "verdict": "PASS",
+      "details": {
+        "references": {
+          "docs/architecture/adr/002-orchestration-contract-and-termination.md": [
+            "ADR-002",
+            "ADR-005",
+            "EVAL-002",
+            "INV-003",
+            "INV-006",
+            "INV-007",
+            "POL-002",
+            "POL-003",
+            "POL-004",
+            "POL-005",
+            "POL-006",
+            "POL-007",
+            "POL-008",
+            "POL-009",
+            "POL-010"
+          ],
+          "docs/architecture/evaluation-table.md": [
+            "ADR-002",
+            "EVAL-002"
+          ],
+          "docs/architecture/invariants.md": [
+            "ADR-002",
+            "INV-003",
+            "INV-006",
+            "INV-007"
+          ],
+          "docs/architecture/memory-design.md": [
+            "ADR-002"
+          ],
+          "docs/architecture/orchestration-review-checklist.md": [
+            "ADR-002",
+            "ADR-005",
+            "EVAL-002",
+            "INV-003",
+            "INV-006",
+            "INV-007"
+          ],
+          "docs/architecture/runtime-policy-catalog.md": [
+            "ADR-002",
+            "INV-003",
+            "INV-006",
+            "INV-007",
+            "POL-002",
+            "POL-003",
+            "POL-004",
+            "POL-005",
+            "POL-006",
+            "POL-007",
+            "POL-008",
+            "POL-009",
+            "POL-010"
+          ],
+          "docs/architecture/trace-matrix.md": [
+            "ADR-002",
+            "EVAL-002",
+            "INV-003",
+            "INV-006",
+            "INV-007"
+          ],
+          "docs/code-governance/structural-constraints.md": [
+            "ADR-002",
+            "EVAL-002"
+          ],
+          "docs/code-governance/verification-constraints.md": [
+            "ADR-002",
+            "EVAL-002",
+            "INV-003",
+            "INV-006",
+            "INV-007"
+          ],
+          "docs/review-memo.md": [],
+          "transcripts/61061965-XIE_Shentai.md": [
+            "ADR-002",
+            "EVAL-002",
+            "INV-003",
+            "INV-006",
+            "INV-007",
+            "POL-002",
+            "POL-003",
+            "POL-004",
+            "POL-005",
+            "POL-006",
+            "POL-007",
+            "POL-008",
+            "POL-009",
+            "POL-010"
+          ]
+        },
+        "unresolved": {},
+        "external_proposed_reference": {
+          "ADR-005": "/Users/e1bae/src/homework/5351/project/sa-evidence-2026-11-14/peer-sa-snapshots/sa-context/docs/architecture/adr/005-context-adr.md"
+        },
+        "note": "An external draft resolves provenance only; it is not an accepted ADR or a local approval."
+      }
+    },
+    {
+      "name": "d1_yaml_and_existing_entries",
+      "verdict": "PASS",
+      "details": {
+        "parser": "PyYAML SafeLoader with duplicate-mapping-key rejection",
+        "module_source": "/Users/e1bae/.cache/uv/archive-v0/0-vD9rtTWJ6L4Hg5pOjZn",
+        "entries": [
+          "AIU-001",
+          "AIU-002",
+          "AIU-003",
+          "AIU-004",
+          "AIU-005",
+          "AIU-006",
+          "AIU-007",
+          "AIU-008",
+          "AIU-009",
+          "AIU-010"
+        ],
+        "duplicate_ids": [],
+        "invalid_ids": [],
+        "missing_fields": [],
+        "baseline_entries_preserved": true,
+        "other_top_level_fields_preserved": true,
+        "missing_new_transcript_targets": []
+      }
+    },
+    {
+      "name": "acceptance_to_planned_case_traceability",
+      "verdict": "PASS",
+      "details": {
+        "criteria": [
+          {
+            "requirement": "REQ-001",
+            "criterion": "C-001",
+            "exact_verification": "test/offline/test_task_contract.py::test_delegation_is_valid_task_spec",
+            "case_ids": [
+              "ORC-001"
+            ]
+          },
+          {
+            "requirement": "REQ-001",
+            "criterion": "C-002",
+            "exact_verification": "test/offline/test_task_contract.py::test_status_derived_from_sourced_findings",
+            "case_ids": [
+              "ORC-002"
+            ]
+          },
+          {
+            "requirement": "REQ-001",
+            "criterion": "C-003",
+            "exact_verification": "test/offline/test_task_contract.py::test_unretrieved_source_does_not_count",
+            "case_ids": [
+              "ORC-003"
+            ]
+          },
+          {
+            "requirement": "REQ-001",
+            "criterion": "C-004",
+            "exact_verification": "test/offline/test_task_contract.py::test_malformed_result_becomes_failed",
+            "case_ids": [
+              "ORC-004"
+            ]
+          },
+          {
+            "requirement": "REQ-001",
+            "criterion": "M-001",
+            "exact_verification": "test/offline/test_task_contract.py::test_unretrieved_source_does_not_count",
+            "case_ids": [
+              "ORC-005"
+            ]
+          },
+          {
+            "requirement": "REQ-003",
+            "criterion": "C-001",
+            "exact_verification": "test/offline/test_research_termination.py::test_full_coverage_exits_covered",
+            "case_ids": [
+              "ORC-006"
+            ]
+          },
+          {
+            "requirement": "REQ-003",
+            "criterion": "C-002",
+            "exact_verification": "test/offline/test_research_termination.py::test_complete_below_threshold_is_refused",
+            "case_ids": [
+              "ORC-007"
+            ]
+          },
+          {
+            "requirement": "REQ-003",
+            "criterion": "C-003",
+            "exact_verification": "test/offline/test_research_termination.py::test_turns_without_progress_exit_stalled",
+            "case_ids": [
+              "ORC-008"
+            ]
+          },
+          {
+            "requirement": "REQ-003",
+            "criterion": "C-004",
+            "exact_verification": "test/offline/test_research_termination.py::test_iteration_cap_exits_budget_exhausted",
+            "case_ids": [
+              "ORC-009"
+            ]
+          },
+          {
+            "requirement": "REQ-003",
+            "criterion": "C-005",
+            "exact_verification": "test/offline/test_research_termination.py::test_supervisor_model_error_exits_failed",
+            "case_ids": [
+              "ORC-010"
+            ]
+          },
+          {
+            "requirement": "REQ-003",
+            "criterion": "C-006",
+            "exact_verification": "test/live/test_research_termination_live.py::test_baseline_queries_exit_reasons",
+            "case_ids": [
+              "ORC-011"
+            ]
+          },
+          {
+            "requirement": "REQ-003",
+            "criterion": "M-001",
+            "exact_verification": "test/offline/test_research_termination.py",
+            "case_ids": [
+              "ORC-012"
+            ]
+          },
+          {
+            "requirement": "REQ-003",
+            "criterion": "M-002",
+            "exact_verification": "test/offline/test_research_termination.py::test_complete_below_threshold_is_refused",
+            "case_ids": [
+              "ORC-013"
+            ]
+          }
+        ],
+        "planned_case_count": 46,
+        "duplicate_case_ids": [],
+        "unmapped_own_invariants": [],
+        "note": "Only literal planned test references are checked. Existence, runtime behavior and passing tests are not asserted."
+      }
+    },
+    {
+      "name": "markdown_table_column_counts",
+      "verdict": "PASS",
+      "details": {
+        "tables_checked": 37,
+        "errors": [],
+        "parser_rule": "Odd-backslash escaped pipes are cell content; fenced examples are excluded."
+      }
+    },
+    {
+      "name": "relative_markdown_links_exist",
+      "verdict": "PASS",
+      "details": {
+        "missing_targets": []
+      }
+    },
+    {
+      "name": "d5_raw_evidence_bundles",
+      "verdict": "PASS",
+      "details": {
+        "expected_labels": [
+          "preflight",
+          "round1-analysis",
+          "round2-authoring",
+          "round3-review",
+          "round4-final-review",
+          "round5-delivery-peer",
+          "round6-context-peer",
+          "round7-delivery-followup",
+          "round8-context-followup"
+        ],
+        "missing_or_empty": [],
+        "malformed_json": [],
+        "jsonl_event_counts": {
+          "preflight": 2,
+          "round1-analysis": 94,
+          "round2-authoring": 11,
+          "round3-review": 138,
+          "round4-final-review": 2,
+          "round5-delivery-peer": 48,
+          "round6-context-peer": 54,
+          "round7-delivery-followup": 2,
+          "round8-context-followup": 2
+        },
+        "raw_non_json_diagnostic_lines": {
+          "preflight": 0,
+          "round1-analysis": 1,
+          "round2-authoring": 0,
+          "round3-review": 0,
+          "round4-final-review": 0,
+          "round5-delivery-peer": 1,
+          "round6-context-peer": 0,
+          "round7-delivery-followup": 0,
+          "round8-context-followup": 0
+        },
+        "pending_mode": false,
+        "note": "Raw CLI stdout/stderr bytes are preserved in .raw.txt, including permission diagnostics; .events.jsonl is an explicit normalized derivative. Session exports are sanitized JSON. No diagnostic is deleted or called a successful tool action."
+      }
+    },
+    {
+      "name": "opencode_models_and_role",
+      "verdict": "PASS",
+      "details": {
+        "unexpected_models_or_roles": [],
+        "expected": "plan / cityucs/CS5351/DeepSeek-V4-Flash",
+        "note": "Checks only this task's exported message model identifiers and launcher metadata, not network interception or a human gate."
+      }
+    },
+    {
+      "name": "git_diff_check_and_new_document_whitespace",
+      "verdict": "PASS",
+      "details": {
+        "git_diff_check_exit": 0,
+        "git_output": "",
+        "untracked_document_errors": [],
+        "note": "Raw agent evidence is preserved byte-for-byte and is not reformatted as an authored document."
+      }
+    }
+  ],
+  "commands": [
+    {
+      "command": [
+        "git",
+        "-C",
+        "/Users/e1bae/src/homework/5351/project/sa-centay-2026-11-14",
+        "rev-parse",
+        "--verify",
+        "827fd32f956a0601df3e1fd253d5cc98044fff88^{commit}"
+      ],
+      "exit_code": 0,
+      "stdout": "827fd32f956a0601df3e1fd253d5cc98044fff88\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "-C",
+        "/Users/e1bae/src/homework/5351/project/sa-centay-2026-11-14",
+        "status",
+        "--short",
+        "--branch",
+        "--untracked-files=all"
+      ],
+      "exit_code": 0,
+      "stdout": "## docs/sa-orchestration\n M docs/ai-use-log.yaml\n M docs/architecture/evaluation-table.md\n M docs/architecture/invariants.md\n M docs/architecture/memory-design.md\n M docs/architecture/runtime-policy-catalog.md\n M docs/architecture/trace-matrix.md\n M docs/code-governance/structural-constraints.md\n M docs/code-governance/verification-constraints.md\n M docs/review-memo.md\n?? docs/architecture/adr/002-orchestration-contract-and-termination.md\n?? docs/architecture/orchestration-review-checklist.md\n?? transcripts/61061965-XIE_Shentai.md\n?? transcripts/raw/61061965-XIE_Shentai/README.md\n?? transcripts/raw/61061965-XIE_Shentai/artifact-credential-audit.json\n?? transcripts/raw/61061965-XIE_Shentai/baseline-query-reference.md\n?? transcripts/raw/61061965-XIE_Shentai/coordinator-review-resolutions.md\n?? transcripts/raw/61061965-XIE_Shentai/course-sa-requirements-audit.md\n?? transcripts/raw/61061965-XIE_Shentai/framework-source-audit.md\n?? transcripts/raw/61061965-XIE_Shentai/peer-interface-audit.md\n?? transcripts/raw/61061965-XIE_Shentai/peer-scenario-arithmetic.json\n?? transcripts/raw/61061965-XIE_Shentai/preflight-prompt.md\n?? transcripts/raw/61061965-XIE_Shentai/preflight.events.jsonl\n?? transcripts/raw/61061965-XIE_Shentai/preflight.meta.json\n?? transcripts/raw/61061965-XIE_Shentai/preflight.raw.txt\n?? transcripts/raw/61061965-XIE_Shentai/preflight.session.json\n?? transcripts/raw/61061965-XIE_Shentai/preservation-verification.json\n?? transcripts/raw/61061965-XIE_Shentai/raw-bundle-manifest.json\n?? transcripts/raw/61061965-XIE_Shentai/round1-analysis-prompt.md\n?? transcripts/raw/61061965-XIE_Shentai/round1-analysis.events.jsonl\n?? transcripts/raw/61061965-XIE_Shentai/round1-analysis.meta.json\n?? transcripts/raw/61061965-XIE_Shentai/round1-analysis.raw.txt\n?? transcripts/raw/61061965-XIE_Shentai/round1-analysis.session.json\n?? transcripts/raw/61061965-XIE_Shentai/round2-authoring-prompt.md\n?? transcripts/raw/61061965-XIE_Shentai/round2-authoring.events.jsonl\n?? transcripts/raw/61061965-XIE_Shentai/round2-authoring.meta.json\n?? transcripts/raw/61061965-XIE_Shentai/round2-authoring.raw.txt\n?? transcripts/raw/61061965-XIE_Shentai/round2-authoring.session.json\n?? transcripts/raw/61061965-XIE_Shentai/round3-review-prompt.md\n?? transcripts/raw/61061965-XIE_Shentai/round3-review.events.jsonl\n?? transcripts/raw/61061965-XIE_Shentai/round3-review.meta.json\n?? transcripts/raw/61061965-XIE_Shentai/round3-review.raw.txt\n?? transcripts/raw/61061965-XIE_Shentai/round3-review.session.json\n?? transcripts/raw/61061965-XIE_Shentai/round4-final-review-prompt.md\n?? transcripts/raw/61061965-XIE_Shentai/round4-final-review.events.jsonl\n?? transcripts/raw/61061965-XIE_Shentai/round4-final-review.meta.json\n?? transcripts/raw/61061965-XIE_Shentai/round4-final-review.raw.txt\n?? transcripts/raw/61061965-XIE_Shentai/round4-final-review.session.json\n?? transcripts/raw/61061965-XIE_Shentai/round5-delivery-peer-prompt.md\n?? transcripts/raw/61061965-XIE_Shentai/round5-delivery-peer-response.md\n?? transcripts/raw/61061965-XIE_Shentai/round5-delivery-peer.events.jsonl\n?? transcripts/raw/61061965-XIE_Shentai/round5-delivery-peer.meta.json\n?? transcripts/raw/61061965-XIE_Shentai/round5-delivery-peer.raw.txt\n?? transcripts/raw/61061965-XIE_Shentai/round5-delivery-peer.session.json\n?? transcripts/raw/61061965-XIE_Shentai/round6-context-peer-prompt.md\n?? transcripts/raw/61061965-XIE_Shentai/round6-context-peer-response.md\n?? transcripts/raw/61061965-XIE_Shentai/round6-context-peer.events.jsonl\n?? transcripts/raw/61061965-XIE_Shentai/round6-context-peer.meta.json\n?? transcripts/raw/61061965-XIE_Shentai/round6-context-peer.raw.txt\n?? transcripts/raw/61061965-XIE_Shentai/round6-context-peer.session.json\n?? transcripts/raw/61061965-XIE_Shentai/round7-delivery-followup-prompt.md\n?? transcripts/raw/61061965-XIE_Shentai/round7-delivery-followup-response.md\n?? transcripts/raw/61061965-XIE_Shentai/round7-delivery-followup.events.jsonl\n?? transcripts/raw/61061965-XIE_Shentai/round7-delivery-followup.meta.json\n?? transcripts/raw/61061965-XIE_Shentai/round7-delivery-followup.raw.txt\n?? transcripts/raw/61061965-XIE_Shentai/round7-delivery-followup.session.json\n?? transcripts/raw/61061965-XIE_Shentai/round8-context-followup-prompt.md\n?? transcripts/raw/61061965-XIE_Shentai/round8-context-followup-response.md\n?? transcripts/raw/61061965-XIE_Shentai/round8-context-followup.events.jsonl\n?? transcripts/raw/61061965-XIE_Shentai/round8-context-followup.meta.json\n?? transcripts/raw/61061965-XIE_Shentai/round8-context-followup.raw.txt\n?? transcripts/raw/61061965-XIE_Shentai/round8-context-followup.session.json\n?? transcripts/raw/61061965-XIE_Shentai/sa-static-validation.json\n?? transcripts/raw/61061965-XIE_Shentai/sa-static-validation.md\n?? transcripts/raw/61061965-XIE_Shentai/validate-sa-docs.py.txt\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "-C",
+        "/Users/e1bae/src/homework/5351/project/sa-centay-2026-11-14",
+        "diff",
+        "--name-only",
+        "-z",
+        "827fd32f956a0601df3e1fd253d5cc98044fff88",
+        "--"
+      ],
+      "exit_code": 0,
+      "stdout": "docs/ai-use-log.yaml\u0000docs/architecture/evaluation-table.md\u0000docs/architecture/invariants.md\u0000docs/architecture/memory-design.md\u0000docs/architecture/runtime-policy-catalog.md\u0000docs/architecture/trace-matrix.md\u0000docs/code-governance/structural-constraints.md\u0000docs/code-governance/verification-constraints.md\u0000docs/review-memo.md\u0000",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "-C",
+        "/Users/e1bae/src/homework/5351/project/sa-centay-2026-11-14",
+        "ls-files",
+        "--others",
+        "--exclude-standard",
+        "-z"
+      ],
+      "exit_code": 0,
+      "stdout": "docs/architecture/adr/002-orchestration-contract-and-termination.md\u0000docs/architecture/orchestration-review-checklist.md\u0000transcripts/61061965-XIE_Shentai.md\u0000transcripts/raw/61061965-XIE_Shentai/README.md\u0000transcripts/raw/61061965-XIE_Shentai/artifact-credential-audit.json\u0000transcripts/raw/61061965-XIE_Shentai/baseline-query-reference.md\u0000transcripts/raw/61061965-XIE_Shentai/coordinator-review-resolutions.md\u0000transcripts/raw/61061965-XIE_Shentai/course-sa-requirements-audit.md\u0000transcripts/raw/61061965-XIE_Shentai/framework-source-audit.md\u0000transcripts/raw/61061965-XIE_Shentai/peer-interface-audit.md\u0000transcripts/raw/61061965-XIE_Shentai/peer-scenario-arithmetic.json\u0000transcripts/raw/61061965-XIE_Shentai/preflight-prompt.md\u0000transcripts/raw/61061965-XIE_Shentai/preflight.events.jsonl\u0000transcripts/raw/61061965-XIE_Shentai/preflight.meta.json\u0000transcripts/raw/61061965-XIE_Shentai/preflight.raw.txt\u0000transcripts/raw/61061965-XIE_Shentai/preflight.session.json\u0000transcripts/raw/61061965-XIE_Shentai/preservation-verification.json\u0000transcripts/raw/61061965-XIE_Shentai/raw-bundle-manifest.json\u0000transcripts/raw/61061965-XIE_Shentai/round1-analysis-prompt.md\u0000transcripts/raw/61061965-XIE_Shentai/round1-analysis.events.jsonl\u0000transcripts/raw/61061965-XIE_Shentai/round1-analysis.meta.json\u0000transcripts/raw/61061965-XIE_Shentai/round1-analysis.raw.txt\u0000transcripts/raw/61061965-XIE_Shentai/round1-analysis.session.json\u0000transcripts/raw/61061965-XIE_Shentai/round2-authoring-prompt.md\u0000transcripts/raw/61061965-XIE_Shentai/round2-authoring.events.jsonl\u0000transcripts/raw/61061965-XIE_Shentai/round2-authoring.meta.json\u0000transcripts/raw/61061965-XIE_Shentai/round2-authoring.raw.txt\u0000transcripts/raw/61061965-XIE_Shentai/round2-authoring.session.json\u0000transcripts/raw/61061965-XIE_Shentai/round3-review-prompt.md\u0000transcripts/raw/61061965-XIE_Shentai/round3-review.events.jsonl\u0000transcripts/raw/61061965-XIE_Shentai/round3-review.meta.json\u0000transcripts/raw/61061965-XIE_Shentai/round3-review.raw.txt\u0000transcripts/raw/61061965-XIE_Shentai/round3-review.session.json\u0000transcripts/raw/61061965-XIE_Shentai/round4-final-review-prompt.md\u0000transcripts/raw/61061965-XIE_Shentai/round4-final-review.events.jsonl\u0000transcripts/raw/61061965-XIE_Shentai/round4-final-review.meta.json\u0000transcripts/raw/61061965-XIE_Shentai/round4-final-review.raw.txt\u0000transcripts/raw/61061965-XIE_Shentai/round4-final-review.session.json\u0000transcripts/raw/61061965-XIE_Shentai/round5-delivery-peer-prompt.md\u0000transcripts/raw/61061965-XIE_Shentai/round5-delivery-peer-response.md\u0000transcripts/raw/61061965-XIE_Shentai/round5-delivery-peer.events.jsonl\u0000transcripts/raw/61061965-XIE_Shentai/round5-delivery-peer.meta.json\u0000transcripts/raw/61061965-XIE_Shentai/round5-delivery-peer.raw.txt\u0000transcripts/raw/61061965-XIE_Shentai/round5-delivery-peer.session.json\u0000transcripts/raw/61061965-XIE_Shentai/round6-context-peer-prompt.md\u0000transcripts/raw/61061965-XIE_Shentai/round6-context-peer-response.md\u0000transcripts/raw/61061965-XIE_Shentai/round6-context-peer.events.jsonl\u0000transcripts/raw/61061965-XIE_Shentai/round6-context-peer.meta.json\u0000transcripts/raw/61061965-XIE_Shentai/round6-context-peer.raw.txt\u0000transcripts/raw/61061965-XIE_Shentai/round6-context-peer.session.json\u0000transcripts/raw/61061965-XIE_Shentai/round7-delivery-followup-prompt.md\u0000transcripts/raw/61061965-XIE_Shentai/round7-delivery-followup-response.md\u0000transcripts/raw/61061965-XIE_Shentai/round7-delivery-followup.events.jsonl\u0000transcripts/raw/61061965-XIE_Shentai/round7-delivery-followup.meta.json\u0000transcripts/raw/61061965-XIE_Shentai/round7-delivery-followup.raw.txt\u0000transcripts/raw/61061965-XIE_Shentai/round7-delivery-followup.session.json\u0000transcripts/raw/61061965-XIE_Shentai/round8-context-followup-prompt.md\u0000transcripts/raw/61061965-XIE_Shentai/round8-context-followup-response.md\u0000transcripts/raw/61061965-XIE_Shentai/round8-context-followup.events.jsonl\u0000transcripts/raw/61061965-XIE_Shentai/round8-context-followup.meta.json\u0000transcripts/raw/61061965-XIE_Shentai/round8-context-followup.raw.txt\u0000transcripts/raw/61061965-XIE_Shentai/round8-context-followup.session.json\u0000transcripts/raw/61061965-XIE_Shentai/sa-static-validation.json\u0000transcripts/raw/61061965-XIE_Shentai/sa-static-validation.md\u0000transcripts/raw/61061965-XIE_Shentai/validate-sa-docs.py.txt\u0000",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "-C",
+        "/Users/e1bae/src/homework/5351/project/sa-centay-2026-11-14",
+        "show",
+        "827fd32f956a0601df3e1fd253d5cc98044fff88:docs/architecture/memory-design.md"
+      ],
+      "exit_code": 0,
+      "stdout": "# Memory and State Design\n\n> **Purpose:** How the research agent stores, passes and discards state and memory: state structure, ownership and lifecycle.\n> **Authoritative for:** state and memory design. Graph state types live in `src/open_deep_research/state.py`.\n> **Maintained by:** owners of modules that add or change state write a module section (§5); §1–§4 are integrated from those sections before SA Review. Modules that do not touch state add nothing.\n> **Last updated:** 2026-11-12\n\n## 1. State Model\n\n| State type | Graph | Key fields | Owning module | Shared contract? |\n|---|---|---|---|---|\n| `AgentState` | `deep_researcher` | TBD | TBD | TBD |\n| `SupervisorState` | supervisor subgraph | TBD | TBD | TBD |\n| `ResearcherState` / `ResearcherOutputState` | researcher subgraph | TBD | TBD | TBD |\n\n## 2. Lifecycle\n\nHow each field is created, updated (reducer), passed between graphs and cleared. *TBD.*\n\n## 3. Context and Memory Limits\n\nToken budgets, trimming and compression rules. *TBD.*\n\n## 4. Persistence\n\nCheckpointers and anything stored beyond a single run. *TBD.*\n\n## 5. Module Sections\n\nCopy the example for your module. Before SA Review, check §5 of the other modules for conflicting field names, reducers or owners.\n\n### <Module> (REQ-NNN, ADR-NNN)\n\n**Fields added or changed**\n\n| State type | Field | Type | Reducer | Written by | Read by | Created → cleared |\n|---|---|---|---|---|---|---|\n| `SupervisorState` | `<field>` | `<type>` | override / append | `<component>` | `<components>` | `<when>` → `<when>` |\n\n- **Ownership:** which component is the only writer of each field.\n- **Lifecycle:** when the fields are created, updated and cleared within a run.\n- **Shared contract:** whether other modules read these fields, and which owners must approve changes (`structural-constraints.md` §6).\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "-C",
+        "/Users/e1bae/src/homework/5351/project/sa-centay-2026-11-14",
+        "show",
+        "827fd32f956a0601df3e1fd253d5cc98044fff88:docs/architecture/runtime-policy-catalog.md"
+      ],
+      "exit_code": 0,
+      "stdout": "# Runtime Policy Catalog\n\n> **Purpose:** What the research agent does at runtime when something goes wrong: exceptions, retries, degradation and failure paths.\n> **Authoritative for:** runtime handling policies. Each policy traces to a requirement or invariant.\n> **Maintained by:** owners of modules with exception, retry, degradation or failure handling write a module section (§2); §1 is integrated from those sections before SA Review. Modules without such handling add nothing.\n> **Last updated:** 2026-11-12\n\n## 1. Policies\n\n| Policy ID | Trigger | Detection | Behaviour | Retry / degradation | Outcome effect | Module | Source | Test |\n|---|---|---|---|---|---|---|---|---|\n| POL-001 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |\n\n## 2. Module Sections\n\nCopy the example for your module and number policies with the next free `POL-NNN`; numbers are unified at integration.\n\n### <Module> (REQ-NNN, ADR-NNN)\n\n| Policy ID | Trigger | Detection | Behaviour | Retry / degradation | Outcome effect | Source | Test |\n|---|---|---|---|---|---|---|---|\n| POL-NNN | e.g. a researcher raises an exception | how deterministic code recognises it | what the system does | retries, limits, fallback, or none | effect on the run outcome (`complete`, `partial`, `failed`, REQ-004) | REQ-NNN / INV-NNN | `test/offline/<file>::<test>` |\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "-C",
+        "/Users/e1bae/src/homework/5351/project/sa-centay-2026-11-14",
+        "show",
+        "827fd32f956a0601df3e1fd253d5cc98044fff88:docs/code-governance/structural-constraints.md"
+      ],
+      "exit_code": 0,
+      "stdout": "# Structural Constraints\n\n> **Purpose:** The rules every member follows when changing code structure, so that parallel work by six people can be merged.\n> **Authoritative for:** source layout, change rules, dependency direction and code-level traceability. *Which* modules exist is decided in `docs/architecture/architecture-blueprint.md` §4; where a specific requirement lands is decided in its ADR.\n> **Maintained by:** humans for §1–§9; each module owner writes their module's section in §10, integrated before SA Review.\n> **Last updated:** 2026-11-12\n\n## 1. Source Layout\n\n| Path | Role | New work goes here? |\n|---|---|---|\n| `src/open_deep_research/` | Baseline implementation: `deep_researcher.py` (graphs and nodes), `state.py`, `configuration.py`, `prompts.py`, `utils.py` | Yes |\n| `src/open_deep_research/<extension>/` | One extension module per architectural element (blueprint §4) | Yes, by its owner |\n| `src/security/` | Supabase JWT and LangGraph auth, loaded through `langgraph.json` | Only with separate review |\n| `test/` | Existing LLM- and API-dependent evaluation scripts | No |\n| `test/offline/` | Deterministic tests: no network, no LLM calls, run in CI | Yes, primary test location |\n| `test/live/` | Tests that call real models or APIs, run on demand | Yes, when a module test case requires it (`verification-constraints.md` §7) |\n| `scripts/` | Project tooling used by CI and humans, e.g. `validate_requirements.py` | Only with human approval |\n\n`[tool.setuptools] packages` in `pyproject.toml` lists `open_deep_research` and `test`. A new extension subpackage is added to that list in the same PR, or a non-editable install omits it.\n\n## 2. Graphs and Nodes\n\n1. **Thin nodes** (accepted 2026-10-13): graph wiring, node names and node signatures stay in `deep_researcher.py`; a node body calls the module that owns its logic and contains no architectural logic of its own.\n2. **Topology:** the three baseline graphs and their nodes (blueprint §3) stay unchanged. Adding or removing a node or edge needs an accepted ADR.\n\n## 3. Tool Assembly\n\n1. Researcher tools have one entry point, `utils.get_all_tools(config)`, which adds core tools (`ResearchComplete`, `think_tool`), then search tools for the configured `SearchAPI` (`utils.get_search_tool`), then MCP tools (`utils.load_mcp_tools`, wrapped by `utils.wrap_mcp_authenticate_tool`; `existing_tool_names` prevents name clashes).\n2. `SearchAPI` values are `tavily`, `openai`, `anthropic` and `none`.\n3. The supervisor's tools (`ConductResearch`, `ResearchComplete`, `think_tool`) are bound directly in the `supervisor` node.\n\nA new researcher tool is implemented in `utils.py` or the owning extension module and registered through `get_all_tools()`; no node assembles its own tool set.\n\n## 4. Models and API Keys\n\n1. The baseline creates chat models in two places only: the shared `configurable_model` in `deep_researcher.py`, configured per call for `research_model`, `compression_model` and `final_report_model`, and the summarization model in `utils.tavily_search` (`summarization_model`). New code reuses these and creates no other model client.\n2. API keys are obtained only through `utils.get_api_key_for_model()` (or `utils.get_tavily_api_key()` for Tavily), never read directly.\n\n## 5. Module Boundaries and Dependency Direction\n\n| Rule | Description |\n|---|---|\n| One element, one module | Each architectural element in the blueprint maps to exactly one module, and a module takes on no second responsibility. |\n| Dependency direction | `deep_researcher.py` → extension modules → shared modules (`state.py`, `configuration.py`, `prompts.py`, `utils.py`). No module imports `deep_researcher.py`. Any exception is recorded in blueprint §6. |\n| No logic in configuration and prompts | `prompts.py` holds templates only; `configuration.py` imports no other project module. |\n| Extend, never replace | Do not delete baseline nodes, tools or configuration fields, and do not build a parallel implementation of existing behaviour. Fix or extend it in place. |\n| Auth is independent | The research graph does not import `src/security/auth.py`. |\n\n## 6. Shared Contracts\n\nA change to a type in `state.py`, or to any interface another owner's module reads, needs the approval of every owner who reads it, recorded in the PR review. Shared contracts introduced by a requirement are defined in that requirement's ADR and covered by the shared contract tests (`verification-constraints.md` §3).\n\n## 7. Safety-Relevant Code\n\nCode implementing a requirement marked `safety_relevant: true` in `requirements.yaml` must:\n\n1. make the decision in deterministic code that does not call a model — the model's output is input to the decision, never the decision itself;\n2. have an accepted ADR and a review by a second owner besides the author;\n3. have a test that fails when the related invariant is violated.\n\n## 8. Where New Work Goes\n\n1. **Logic for an improvement:** in the owner's extension module, called from the existing node.\n2. **Configuration:** a field in `Configuration` (MCP settings in `MCPConfig`) with `x_oap_ui_config` metadata. An improvement that changes runtime behaviour gets one flag so it can be compared with the baseline; the default stays at the baseline behaviour until the requirement is `verified`, and the PR that marks it verified switches the default.\n3. **Prompts:** in `prompts.py`, filled through `format()`. Moving prompts to versioned `prompts/*.yaml` is proposed in blueprint §11.\n4. **Dependencies:** declared in `pyproject.toml` with their purpose, locked in `uv.lock`, agreed with the human first.\n\n## 9. Traceability in Code\n\nEvery new module and public function names, in its docstring, the requirement ID and the ADR or invariant it implements, for example `REQ-003, ADR-002, INV-003`. Every test module states the RIDs it verifies in its docstring (`verification-constraints.md` §3).\n\n## 10. Module Constraints\n\nCopy the example for your module. At integration, check that responsibilities do not overlap, every dependency follows §5 or is listed in blueprint §6, and no two modules write the same state field.\n\n### <Module> (REQ-NNN, ADR-NNN)\n\n| Item | Constraint |\n|---|---|\n| Path | `src/open_deep_research/<module>/` |\n| Responsibility | One sentence; what the module decides or produces |\n| Public interface | Functions and types other code may call |\n| Called from | Nodes or modules that call it, e.g. `supervisor_tools` in `deep_researcher.py` |\n| May depend on | e.g. `state.py`, `configuration.py`, `utils.py` |\n| Must not depend on | e.g. `deep_researcher.py`, other extension modules, model clients in deterministic code |\n| Shared contracts | Types or state fields it reads or writes that other modules also use |\n| Configuration flag | `Configuration` field that switches the behaviour, and its default (§8) |\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "-C",
+        "/Users/e1bae/src/homework/5351/project/sa-centay-2026-11-14",
+        "show",
+        "827fd32f956a0601df3e1fd253d5cc98044fff88:docs/code-governance/verification-constraints.md"
+      ],
+      "exit_code": 0,
+      "stdout": "# Verification Constraints\n\n> **Purpose:** One shared way to decide that a requirement is really done.\n> **Authoritative for:** verification layers, test conventions, commands, CI gates, verdicts and evidence, module test requirements and the Definition of Done.\n> **Maintained by:** humans for §1–§6 and §8; each module owner writes their module's test requirements in §7, integrated before SA Review.\n> **Last updated:** 2026-11-12\n\n## 1. Three Verification Layers\n\n| Layer | Meaning | Where it runs |\n|---|---|---|\n| **Structural** | Code organisation, schemas, module boundaries, docstring RIDs and lint conform to the rules | CI: schema and static-analysis gates |\n| **Regression** | Existing behaviour and shared contracts still hold | CI: every suite in `test/offline/` |\n| **Behavioural** | The requirement's behaviour meets its fit criterion | New offline tests; `test/live/` or `test/run_evaluate.py` when a case needs a real model; human confirmation |\n\n## 2. Principles\n\n1. Every fit-criterion check and metric in `requirements.yaml` has at least one test or a named piece of review evidence; its `verification` field points to it.\n2. Every invariant has a test that fails when the invariant is violated.\n3. A change runs its new tests and every prior offline suite; any regression blocks the merge.\n4. Module test requirements (§7) are approved in SA Review (Gate 1) before tests are written, and the tests are approved before implementation (Gate 2). Tests are written by Test Author and never changed by Build.\n5. Prefer deterministic offline tests; use live tests for final behavioural evidence only.\n\n## 3. Test Conventions\n\n- **Offline tests** (`test/offline/`) use fake models and fake researchers, make no network calls and need no API keys, so supervisor logic, termination, scheduling and context handling run in CI at no token cost.\n- **Live tests** (`test/live/`) call real models or APIs, run on demand rather than on every commit, and are marked `automated: false` in `requirements.yaml` when a human must judge the result.\n- **Names:** test files are named after the behaviour they cover, `test_<topic>.py` (for example `test_failure_propagation.py`); test functions describe the expected behaviour. Requirement IDs are not part of file names, so renumbering requirements does not rename tests.\n- **Traceability:** the first line of every test module's docstring lists the RIDs it verifies, for example `\"\"\"REQ-002: no delegated task is lost or silently treated as completed.\"\"\"`. The requirement's `verification` field gives the exact `path::test_name`.\n- **Shared contract tests:** when a requirement defines a shared contract (`structural-constraints.md` §6), its contract tests live in `test/offline/test_contracts.py` and every PR runs them.\n\n## 4. Commands\n\n| Check | Command |\n|---|---|\n| Requirements schema and ID consistency | `uv run python scripts/validate_requirements.py` |\n| Lint (gated paths) | `uv run ruff check src/open_deep_research test/offline scripts` |\n| Type check (optional, not gated) | `uv run mypy src/open_deep_research` |\n| Offline tests | `uv run pytest test/offline` |\n| Live and evaluation tests | `uv run pytest test/live`, `uv run python test/run_evaluate.py` |\n\n`ruff format` is applied to new files and changed lines only; do not reformat untouched baseline code. Install tools with `uv sync --extra dev`.\n\n## 5. CI Gates\n\nThe course requires six blocking gates. Their state in `.github/workflows/ci.yml`:\n\n| Course gate | CI job | What it checks | Status |\n|---|---|---|---|\n| Schema | `requirements-schema` | `requirements.yaml` against `req-schema.json`, plus unique and resolvable IDs | Active |\n| Static analysis | `static-analysis` | `ruff check` on the gated paths | Active; mypy planned |\n| Regression | `offline-tests` | `pytest test/offline` | Active; reports `NOT_RUN` while the directory has no tests |\n| Test approval | — | The approval record has Gate 2 for every PR that changes `src/`, and the PR's tests match the approved test commit | Planned |\n| AI-use log | — | `docs/ai-use-log.yaml` is valid and has an entry for the PR | Planned |\n| Semantic evaluation | — | Live evaluation of fit criteria for prompt or model changes | Planned |\n\nLint debt outside the gated paths is tracked in `docs/debt-register.md`; a path joins the static-analysis gate once it is clean.\n\n## 6. Verdicts and Evidence\n\n- Verdicts are only `PASS`, `FAIL`, `NOT_RUN`, `BLOCKED` and `N/A`. A skipped test is `NOT_RUN`, never `PASS`.\n- No check is reported as passed without execution evidence. A mandatory check that is `FAIL`, `NOT_RUN` or `BLOCKED` keeps the requirement from `verified`.\n- Evidence goes to `docs/test-reports/<task-id>.md`: the baseline run by Test Author and the verification by Verify, each with commit, commands, verdict per check, and logs or diffs where relevant.\n- Offline tests run without network or secrets (§3). Verify changes no file other than its report; the PR diff shows any change made during verification.\n\n## 7. Module Test Requirements\n\nCopy the example for your module. Every acceptance criterion (C-/M-) of the module's requirements and every invariant it enforces needs at least one case, and the module lists the existing suites it can affect. At integration, check that no criterion or invariant is left without a case.\n\n### <Module> (REQ-NNN, ADR-NNN)\n\n| Case | Covers | Type | Input | Expected result | Test |\n|---|---|---|---|---|---|\n| TC-001 | REQ-NNN C-NNN | normal | | | `test/offline/<file>::<test>` |\n| TC-002 | INV-NNN | exception | | | |\n| TC-003 | REQ-NNN M-NNN | boundary | | | |\n\n- **Regression:** existing suites to re-run, including `test/offline/test_contracts.py` if a shared contract changes.\n- **Live or human checks:** cases marked `automated: false` in `requirements.yaml`, and where their evidence goes.\n\n## 8. Definition of Done\n\n| # | Condition | Done by |\n|---|---|---|\n| 1 | Every fit-criterion item has an approved test or recorded review, and the tests pass | Test Author (tests), Build (passing), confirmed by Verify |\n| 2 | All prior offline suites pass | Verify |\n| 3 | All active CI gates are green | CI |\n| 4 | Behaviour conforms to the fit criterion, with evidence in `docs/test-reports/` | Verify, confirmed by a human |\n| 5 | `trace-matrix.md` row complete for architecture, code and tests | Module owner |\n| 6 | If a boundary changed: `invariants.md` updated and its test passes | Human, Test Author |\n| 7 | If an architectural decision arose: ADR accepted or `evaluation-table.md` entry recorded | Human |\n| 8 | `docs/ai-use-log.yaml` and `docs/review-memo.md` updated | Human |\n| 9 | Gate 3 passed: two approvals, PR merged | Humans |\n| 10 | `status` in `requirements.yaml` advanced to `verified` | Human |\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "-C",
+        "/Users/e1bae/src/homework/5351/project/sa-centay-2026-11-14",
+        "show",
+        "827fd32f956a0601df3e1fd253d5cc98044fff88:docs/architecture/invariants.md"
+      ],
+      "exit_code": 0,
+      "stdout": "# Invariants\n\n> **Purpose:** Properties of the research agent (the product) that no change may violate, each traced to a requirement, an enforcing component, a test and a fallback. Rules for coding agents belong in `docs/architecture/permission-model.md` and `.opencode/rules.md`, not here.\n> **Authoritative for:** the detailed rule behind each `invariant`-type or safety-relevant requirement. Where an entry here differs from `docs/req/requirements.yaml`, the requirement wins and the difference must be reported.\n> **Maintained by:** each module owner adds the entries for their module; they are integrated and renumbered before SA Review.\n> **Status:** All entries are *Proposed* until SA Review. Enforcing components are responsibility assignments, not implemented code.\n> **Last updated:** 2026-11-12\n\nEvery entry uses the same fields:\n\n- **Statement** — the property, in one or two sentences.\n- **Module** — the module from `architecture-blueprint.md` §4 that enforces it.\n- **Source** — the requirement IDs it details.\n- **Status** — *Proposed*, *Accepted*, *Deferred* or *Retired*.\n- **Enforcing component** — where the property is enforced.\n- **Verification** — the offline test that fails on violation, plus any runtime monitor.\n- **Fallback** — what the system does when the property cannot be kept.\n\n## INV-001 — Compression never drops the newest context\n\n- **Statement:** When compression trims context to fit a token limit, the research topic, the compression instruction, the latest AI turn and the tool results after it are never removed, and no tool result is kept without the AI message that requested it.\n- **Module:** context\n- **Source:** REQ-005\n- **Status:** Proposed\n- **Enforcing component:** the token-limit branch of `compress_research` and its trimming helper (module assigned in Design).\n- **Verification:** `test/offline/test_context_compaction.py`; monitor `latest_turn_preservation_rate == 1.0`.\n- **Fallback:** remove whole turns from the oldest end; if the limit still cannot be met, end the task with a failed result of category `token_limit`. Never drop the latest turn and never return placeholder text as a summary.\n\n## INV-002 — No failure is reported as complete research\n\n- **Statement:** A run with an unhandled exception, a failed or partial research task, a non-`covered` exit or a failed report generation never ends with research outcome `complete`.\n- **Module:** delivery\n- **Source:** REQ-002, REQ-004\n- **Status:** Proposed\n- **Enforcing component:** the failure branch of `supervisor_tools`; the run-outcome computation before and after `final_report_generation`.\n- **Verification:** `test/offline/test_failure_propagation.py`, `test/offline/test_run_outcome.py`; monitor `false_complete_outcome_count == 0`.\n- **Fallback:** record the failed task with category and message, keep sibling results, and deliver outcome `partial` with a system-added limitations section, or `failed` with an empty report. Never swallow an exception.\n\n## INV-003 — Research is bounded and every exit has one reason\n\n- **Statement:** Each research loop is bounded by its iteration cap and each task by its tool-call budget; every loop exit records exactly one exit reason, and only `covered` can lead to outcome `complete`.\n- **Module:** orchestration\n- **Source:** REQ-001, REQ-003\n- **Status:** Proposed\n- **Enforcing component:** the termination check in the supervisor loop; the task budget in the task specification.\n- **Verification:** `test/offline/test_research_termination.py`, `test/offline/test_task_contract.py`; monitor `exit_without_single_reason_count == 0`.\n- **Fallback:** at the cap, start no new delegations, end unrun delegations as failed with reason `not_run`, and exit with `budget_exhausted`. A completion request below the coverage threshold is refused, not accepted.\n\n## INV-004 — Every report citation resolves to a retrieved source\n\n- **Statement:** Every citation identifier in a report resolves to exactly one source that was retrieved during the run; a report whose required facts lack resolvable citations is not delivered as complete.\n- **Module:** citations\n- **Source:** none. REQ-006 covers citation format only and lists deterministic citation validation as out of scope.\n- **Status:** Deferred\n- **Enforcing component:** a citation validator at report generation (proposed).\n- **Verification:** offline fixed-source tests for missing, duplicate and malformed identifiers and unsourced facts; monitor `citation_integrity_violation_count == 0`.\n- **Fallback:** correct only format issues that the source list determines; otherwise mark the evidence as missing. Never fabricate a URL or reference.\n\n## INV-005 — Search results are never mistaken for evidence they do not contain\n\n- **Statement:** Every search source is reached through the single tool entry point and returns the same result contract; an unknown provider is rejected at start-up, an invalid result is a failed search, and an empty result is a successful search that carries no evidence.\n- **Module:** search\n- **Source:** REQ-007, REQ-008\n- **Status:** Proposed\n- **Enforcing component:** search configuration validation at graph start; the search adapter called through `utils.get_all_tools()`.\n- **Verification:** `test/offline/test_search_configuration.py`, `test/offline/test_search_fallback.py` with fake providers (normal, empty, timeout, invalid, unknown).\n- **Fallback:** on an eligible error, try only the configured fallback sources in order and record each attempt; when all fail, return an explicit search failure. Never substitute a source that is not configured.\n\n## Adding an Entry\n\nCopy an entry, take the next free `INV-NNN` number, and fill every field. Never reuse a retired number. Add the INV ID to the requirement's row in `trace-matrix.md` and to the ADR's §6. At integration the integrator may renumber entries and updates every reference.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "-C",
+        "/Users/e1bae/src/homework/5351/project/sa-centay-2026-11-14",
+        "show",
+        "827fd32f956a0601df3e1fd253d5cc98044fff88:docs/architecture/evaluation-table.md"
+      ],
+      "exit_code": 0,
+      "stdout": "# Evaluation Table\n\n> **Purpose:** ADD results: for each architectural question, 2–3 candidate solutions compared on pros, cons, complexity and testability, and the choice made.\n> **Authoritative for:** option comparisons. The decision itself is recorded in the ADR named in the entry.\n> **Maintained by:** each module owner adds the entries for their module; entries are integrated before SA Review (`Prompt.md` §4).\n> **Last updated:** 2026-11-12\n\n## How to Add an Entry\n\n1. Copy the example below, take the next free `EVAL-NNN` number and keep the same fields.\n2. **ASR:** list the requirements and the acceptance criteria (C-/M- IDs from `docs/req/requirements.yaml`) that shape the decision.\n3. **Candidates:** describe 2–3 options; rate complexity and offline testability as Low, Medium or High.\n4. **Choice:** name the chosen option and why it wins, say why each other option was rejected, then write the ADR.\n\n## EVAL-NNN: <Question being decided>\n\n- **Module:** <module from `architecture-blueprint.md` §4>\n- **Owner:** <name>\n- **Decision recorded in:** ADR-NNN\n- **Status:** Open | Decided\n\n**ASR**\n\n| Requirement | Acceptance criteria | Quality attributes at stake |\n|---|---|---|\n| REQ-NNN | C-NNN, M-NNN | e.g. correctness, testability, cost |\n\n**Candidates**\n\n| Option | Summary | Components touched | Pros | Cons | Complexity | Offline testability |\n|---|---|---|---|---|---|---|\n| A | | | | | Low / Medium / High | Low / Medium / High |\n| B | | | | | | |\n| C (optional) | | | | | | |\n\n**Choice:** <option> — <why it wins>.\n\n**Rejected and why:** <option>: <reason>.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "-C",
+        "/Users/e1bae/src/homework/5351/project/sa-centay-2026-11-14",
+        "show",
+        "827fd32f956a0601df3e1fd253d5cc98044fff88:docs/review-memo.md"
+      ],
+      "exit_code": 0,
+      "stdout": "# Review Memo\n\n> **Purpose:** Records of SA Reviews (Gate 1), pull request reviews (Gate 3) and the human reviews named in a requirement's fit criterion (`automated: false` checks).\n> **Maintained by:** reviewers.\n> **Last updated:** 2026-11-12\n\n## SA Review Template\n\n### SA-NNN: <scope, e.g. architecture of all modules>\n\n- **Date:** YYYY-MM-DD\n- **Participants:** <names>\n- **Reviewed:** ADR-NNN, EVAL-NNN, module sections in `invariants.md`, `memory-design.md`, `runtime-policy-catalog.md`, `structural-constraints.md` §10, `verification-constraints.md` §7, `trace-matrix.md`\n\n| Item | Finding | Resolution |\n|---|---|---|\n| ADR-NNN | | |\n\n- **Decision per ADR:** ADR-NNN Accepted | changes requested\n- **Outcome:** Gate 1 passed for REQ-NNN, ... | another review needed\n\n## PR Review Template\n\n### PR #NNN: <title>\n\n- **Requirements:** REQ-NNN\n- **Author / reviewers:** <names>\n- **Date:** YYYY-MM-DD\n- **Verification evidence checked:** `docs/test-reports/<task-id>.md`, CI run link\n- **Findings:** issues raised and how each was resolved.\n- **Decision:** approved | changes requested\n\n## Requirement Review Template\n\n### REVIEW-NNN: <requirement and check, e.g. REQ-007 C-005 search provider configuration review>\n\n- **Reviewer:** <name>\n- **Date:** YYYY-MM-DD\n- **Procedure:** what the reviewer did.\n- **Verdict:** PASS | FAIL | NOT_RUN | BLOCKED | N/A, with reasons.\n\n## Records\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "-C",
+        "/Users/e1bae/src/homework/5351/project/sa-centay-2026-11-14",
+        "show",
+        "827fd32f956a0601df3e1fd253d5cc98044fff88:docs/architecture/trace-matrix.md"
+      ],
+      "exit_code": 0,
+      "stdout": "# Requirement Traceability Matrix\n\n> **Purpose:** Trace every requirement through Design, Code, Test and runtime Monitor, so that any requirement can be followed forward to its evidence at any time.\n> **Authoritative for:** the links between artifacts. Requirement content, type and status come from `docs/req/requirements.yaml`; if a cell here disagrees with it, the YAML wins and the row is corrected.\n> **Maintained by:** each module owner fills the rows of their requirements: architectural consequence, ADR / invariant, component and verification method during SA; code and test evidence after implementation.\n> **Last updated:** 2026-11-12\n\nCell conventions: `TBD` = not decided yet; `Proposed:` = from a document that is not yet accepted; `planned:` = named in the requirement's `verification` field but not written yet. Update the row in the same PR whenever the requirement's design, code or tests change.\n\n## Traceability Matrix\n\n| Requirement ID | Title | Type | Status | Architectural Consequence | ADR / Invariant | Enforcing Component / Code | Test / Evidence | Runtime Monitor |\n|---|---|---|---|---|---|---|---|---|\n| REQ-001 | Typed task contract | functional | approved | TBD | INV-003 (Proposed) | Proposed: `orchestration/` | planned: `test/offline/test_task_contract.py` | `unsourced_finding_counted_count` |\n| REQ-002 | No task lost or silently completed | invariant | approved | TBD | INV-002 (Proposed) | Proposed: `orchestration/` or `delivery/` | planned: `test/offline/test_failure_propagation.py` | `dropped_delegation_count`, `failure_text_in_notes_count` |\n| REQ-003 | Coverage-based termination | invariant | approved | TBD | INV-003 (Proposed) | Proposed: `orchestration/` | planned: `test/offline/test_research_termination.py`, `test/live/test_research_termination_live.py` | `exit_without_single_reason_count`, `premature_complete_accepted_count` |\n| REQ-004 | Run outcome in output | functional | approved | TBD | INV-002 (Proposed) | Proposed: `delivery/` | planned: `test/offline/test_run_outcome.py` | `false_complete_outcome_count` |\n| REQ-005 | Compression keeps newest context | invariant | approved | TBD | INV-001 (Proposed) | Proposed: `context/` | planned: `test/offline/test_context_compaction.py` | `latest_turn_preservation_rate`, `orphan_tool_message_count` |\n| REQ-006 | One citation format | invariant | approved | TBD | TBD | Proposed: `citations/` | planned: `test/offline/test_prompt_citation_contract.py`, `test/live/test_report_citations_live.py` | TBD |\n| REQ-007 | Search setup documented and validated | functional | approved | TBD | INV-005 (Proposed) | Proposed: `search/` | planned: `test/offline/test_search_configuration.py`; review in `docs/review-memo.md` | TBD |\n| REQ-008 | Search fallback | functional | approved | TBD | INV-005 (Proposed) | Proposed: `search/` | planned: `test/offline/test_search_fallback.py` | TBD |\n| REQ-009 | Valid evaluator scores | invariant | approved | TBD | TBD | Proposed: `test/evaluation/` | planned: `test/offline/test_evaluator_validity.py` | `out_of_range_score_count` |\n| REQ-010 | Evaluate an existing report | functional | approved | TBD | TBD | Proposed: `test/evaluation/` | planned: `test/offline/test_report_evaluation_entry.py`; review in `docs/review-memo.md` | TBD |\n\n## Example (Reference Only — VHIS Course Example)\n\n| Requirement ID | Title | Type | Status | Architectural Consequence | ADR / Invariant | Enforcing Component / Code | Test / Evidence | Runtime Monitor |\n|---|---|---|---|---|---|---|---|---|\n| REQ-VHIS-NFR-SAFETY-001 | Over-limit claims are never auto-approved | invariant | verified (example) | Fail-closed boundary: over-limit claims cannot be auto-approved | ADR-001 / INV-001 | Policy Core: `enforce_business_limits()` | Boundary ±1 tests; adversarial fuzzing (0 escapes) | `over_limit_auto_approve_count` = 0 |\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "-C",
+        "/Users/e1bae/src/homework/5351/project/sa-centay-2026-11-14",
+        "show",
+        "827fd32f956a0601df3e1fd253d5cc98044fff88:docs/ai-use-log.yaml"
+      ],
+      "exit_code": 0,
+      "stdout": "# AI-use log: one entry per AI-assisted activity (course deliverable D1, kept up to date).\n# Maintained by humans; agents draft entries in their build reports.\n#\n# Entry fields:\n#   id:          AIU-NNN, never reused\n#   date:        YYYY-MM-DD, or the first and last day of the activity\n#   member:      team member who supervised the activity (owner nickname)\n#   purpose:     what the AI was asked to do\n#   prompt:      the main instruction given to the AI, lightly edited for clarity\n#   requirements: [REQ-NNN, ...] or []\n#   artifacts:   files or PRs produced or changed\n#   supervision: how the human checked or corrected the output\n#   transcript:  path under transcripts/, or null\nentries:\n  - id: AIU-001\n    date: \"2026-11-10\"\n    member: AlchemyHAN\n    purpose: >-\n      Check whether the reported problem exists in our code base and draft requirements for it.\n    prompt: >-\n      Our team is improving Open Deep Research. My assignment is the problem that some sub-agent\n      failures are not reported and the run goes straight to \"research complete\" (upstream issues\n      #283 and #284). Confirm whether this problem exists and is reasonable to address, design the\n      requirement, and write it as YAML that follows req-schema.json.\n    requirements: [REQ-002, REQ-004]\n    artifacts:\n      - docs/req/requirements.yaml\n    supervision: >-\n      The AI reproduced the defect with offline probes against the current code. The member\n      reviewed the draft, compared it with teammates' requirements to find overlaps, and decided\n      how responsibilities were split.\n    transcript: null\n\n  - id: AIU-002\n    date: \"2026-11-11\"\n    member: AlchemyHAN\n    purpose: >-\n      Consolidate the team's merged requirements into one consistent, schema-valid set.\n    prompt: >-\n      We have merged the team's requirements.yaml, but it still contains conflicts,\n      inconsistencies, formatting problems and uneven levels of detail; some parts are imprecise\n      or incomplete and others are redundant. Revise it as a whole: remove redundancy, split or\n      merge coupled requirements, resolve conflicts, and renumber the requirements from REQ-001.\n    requirements: [REQ-001, REQ-002, REQ-003, REQ-004, REQ-005, REQ-006, REQ-007, REQ-008, REQ-009, REQ-010]\n    artifacts:\n      - docs/req/requirements.yaml\n      - docs/req/req-schema.json\n    supervision: >-\n      Claims in each requirement were checked against the source code and upstream issues. The\n      member supplied the owners' nicknames, reviewed the result, removed revision-history notes,\n      and approved all ten requirements for the team.\n    transcript: null\n\n  - id: AIU-003\n    date: \"2026-11-11\"\n    member: AlchemyHAN\n    purpose: >-\n      Place the team's governance documents in the repository and turn them into one consistent\n      set of instructions for coding agents.\n    prompt: >-\n      Move the remaining requirements-engineering documents into their places in the project.\n      Then review them as a coding agent would read them: find inconsistencies, duplication and\n      conflicts, and improve and standardise these harness files. Use Python 3.12. We are still in\n      requirements engineering, so leave invariants and architecture content mostly empty and only\n      unify the format for later; move the architecture blueprint under docs/architecture.\n    requirements: []\n    artifacts:\n      - AGENTS.md\n      - Prompt.md\n      - .opencode/rules.md\n      - .agent/rules.md\n      - docs/architecture/\n      - docs/code-governance/\n      - README.md\n      - langgraph.json\n    supervision: >-\n      The member reviewed every change, decided which open items and placeholder notes to keep,\n      and asked for redundant text to be removed.\n    transcript: null\n\n  - id: AIU-004\n    date: \"2026-11-11\"\n    member: AlchemyHAN\n    purpose: >-\n      Add requirement validation to CI and shared editor settings.\n    prompt: >-\n      Make CI run validate_requirements.py, and add an .editorconfig that enforces Unix line\n      endings and sets the indentation.\n    requirements: []\n    artifacts:\n      - scripts/validate_requirements.py\n      - .github/workflows/ci.yml\n      - .github/dependabot.yml\n      - .python-version\n      - .editorconfig\n      - .gitattributes\n    supervision: >-\n      Every CI job was run locally with the same commands before the push, and the member\n      confirmed the result on GitHub.\n    transcript: null\n\n  - id: AIU-005\n    date: \"2026-11-11/2026-11-12\"\n    member: AlchemyHAN\n    purpose: >-\n      Design the coding-agent permission model and the OpenCode configuration that enforces it.\n    prompt: >-\n      Decide how the permissions are put into practice. Keep them practical rather than overly\n      strict: Build and Test must be able to run commands and commit, users may ask the agent to\n      push, reset or rebase, and models should be able to use read-only web tools and the Context7\n      MCP server. Add a separate role that only writes tests, so that Build only writes the\n      implementation.\n    requirements: []\n    artifacts:\n      - .opencode/permissions.jsonc\n      - .opencode/opencode.jsonc\n      - docs/architecture/permission-model.md\n      - docs/code-governance/mcp-tool-manifest.md\n    supervision: >-\n      The configuration was loaded with OpenCode 2.2.7 and the resolved rules were checked against\n      an acceptance matrix (83/83 cases). The member set the policy for each tier and reviewed the\n      role split.\n    transcript: null\n\n  - id: AIU-006\n    date: \"2026-11-12\"\n    member: AlchemyHAN\n    purpose: >-\n      Align the workflow with the team's software-architecture process and prepare templates for\n      every member's module sections.\n    prompt: >-\n      We are entering the SA phase: ASR, ADD with 2–3 candidate architectures per module, ADRs,\n      each member's module sections in the shared architecture and constraint documents,\n      integration into one blueprint, SA Review, then tests, implementation by a coding agent and\n      verification. Update the existing documents to follow this process, and provide templates\n      with one example entry each so that members can add their own content and we can integrate\n      it later.\n    requirements: []\n    artifacts:\n      - Prompt.md\n      - docs/architecture/\n      - docs/code-governance/structural-constraints.md\n      - docs/code-governance/verification-constraints.md\n      - docs/review-memo.md\n    supervision: >-\n      The member defined the process and reviewed the templates, keeping them free of\n      pre-assigned owners and of architecture content that belongs to the SA phase.\n    transcript: null\n\n  - id: AIU-007\n    date: \"2026-11-12\"\n    member: AlchemyHAN\n    purpose: >-\n      Draft team announcements and open the pull request for the changes above.\n    prompt: >-\n      Write a short notice for the team explaining what each member needs to do in the SA phase.\n      Then open a pull request and push the changes.\n    requirements: []\n    artifacts:\n      - https://github.com/Requirements-Strike-Team-RST/Open_Deepsearch_ULTRA/pull/4\n    supervision: >-\n      The member edited the announcement before sending it, and reviewed the commits and the PR\n      description; merging waits for two other members' approvals.\n    transcript: null\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "-C",
+        "/Users/e1bae/src/homework/5351/project/sa-centay-2026-11-14",
+        "diff",
+        "--check",
+        "827fd32f956a0601df3e1fd253d5cc98044fff88",
+        "--"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "gated_followups": [
+    {
+      "check": "product contract/behavior tests",
+      "verdict": "NOT_RUN",
+      "reason": "SA only; no product/test code was written or executed by this tool."
+    },
+    {
+      "check": "offline regression tests",
+      "verdict": "NOT_RUN",
+      "reason": "This tool invokes no pytest command and imports no project source."
+    },
+    {
+      "check": "live model/search tests",
+      "verdict": "NOT_RUN",
+      "reason": "No network or model API invocation is performed."
+    },
+    {
+      "check": "human module review / Gate 1 / Gate 2",
+      "verdict": "NOT_RUN",
+      "reason": "An automated static audit cannot approve a human gate."
+    }
+  ],
+  "limitations": [
+    "Static syntax/scope/traceability checks do not prove design correctness or runtime fit.",
+    "External proposed ADR references resolve source provenance only; no shared-reader approval is inferred.",
+    "No secrets, project .env files, direct .git files, network request or model API is read/run by this tool."
+  ]
+}

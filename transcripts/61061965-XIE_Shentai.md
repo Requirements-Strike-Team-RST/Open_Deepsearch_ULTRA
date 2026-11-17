@@ -27,9 +27,8 @@ made by the AI coordinator and must not be presented as student review.
 
 ## Session evidence
 
-Raw prompts, unchanged CLI logs, derived JSONL tool/output events and OpenCode's sanitised session exports
-were stored under `transcripts/raw/61061965-XIE_Shentai/`. That folder was removed at
-integration on 2026-11-17 and remains in the Git history (commit `2420589`).
+Raw prompts, unchanged CLI logs, derived JSONL tool/output events and OpenCode's sanitised session exports are
+stored under [raw/61061965-XIE_Shentai](raw/61061965-XIE_Shentai/).
 Only this task's sessions are included. Credentials and unrelated browser/history
 content are excluded. The user message containing a Canvas credential is not copied.
 Each `.raw.txt` preserves captured stdout/stderr bytes; `.events.jsonl` is an explicit
@@ -112,7 +111,7 @@ It is not a retrospective claim that the original design covered these boundarie
 | H-08 | The student asked whether the SA prevents token-truncated output from appearing complete, requested a main-chat follow-up, and then suggested actually checking truncation. | Codex located the metadata boundary and designed/executed the gateway, locked-adapter and isolated-source experiments. The student asked the question; the technical diagnosis and probe authorship belong to Codex. |
 | H-09 | The student suggested budget.py/evidence.py separation, asked about submitted peer work/difficulty/iteration, and authorised reading the old HackMD/index and continuing SA if no original-HackMD change or peer-development disruption is required. | Read current references and remote metadata; preserve shared DTO/helper/context signatures, draft internal separation and completion acceptance, retain final Git/shared operations for the student. This authorises preparation, not approval of the proposed policy or any gate. |
 
-The dated evidence record (`raw/61061965-XIE_Shentai/followup-20261115-experiments.md`, in Git history)
+The [dated evidence record](raw/61061965-XIE_Shentai/followup-20261115-experiments.md)
 links the supplied visible-message sidechat, selected current student requests,
 reference comparisons, scripts, raw synthetic gateway responses and experiment
 results. The sidechat is a visible-message extraction, not a native complete raw
@@ -155,7 +154,7 @@ Codex checked the full release manifest, current remote heads, branch-name
 availability and sensitive-token patterns. A read-only AI presubmit audit found no
 blocking design/evidence issue for a Draft release. The full staged whitespace
 check then found two original Markdown captures with inherited trailing spaces.
-Their deterministic gzip storage mapping (`raw/61061965-XIE_Shentai/followup-20261115/raw-source-storage.json`, in Git history)
+Their [deterministic gzip storage mapping](raw/61061965-XIE_Shentai/followup-20261115/raw-source-storage.json)
 records original hashes and verified decompressed-byte equality. Original OpenCode
 captures are unchanged. This storage correction is not a rewrite of source evidence.
 

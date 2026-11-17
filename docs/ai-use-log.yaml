@@ -386,6 +386,7 @@ entries:
     requirements: [REQ-001, REQ-003, REQ-002]
     artifacts:
       - transcripts/61061965-XIE_Shentai.md
+      - transcripts/raw/61061965-XIE_Shentai/followup-20261115-experiments.md
     supervision: >-
       The student supplied the concrete questions and authorised the investigation. Codex
       performed read-only reference/GitHub checks and three direct school-DeepSeek HTTP

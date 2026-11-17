@@ -1,0 +1,166 @@
+{
+  "generated_at": "2026-11-15T09:32:52.518653+08:00",
+  "note": "Dated supplementary evidence only; original 11/14 raw bundle is unchanged. Self excluded.",
+  "files": [
+    {
+      "path": "followup-20261115/budget-evidence-and-truncation-audit.md",
+      "bytes": 33696,
+      "sha256": "4aa8c412ff11a1e991229cb7bf1c0526ea5590df481a7c0d2d7b5c37f10c17dc"
+    },
+    {
+      "path": "followup-20261115/context-head-budget-truncation-audit.md",
+      "bytes": 2868,
+      "sha256": "312f34e0dc6f6c596180bc0cfd663f51c60d37936c730a500902f053f5e4dec1"
+    },
+    {
+      "path": "followup-20261115/current-user-instructions.txt",
+      "bytes": 1006,
+      "sha256": "91e37d53439bb6df51cba8064c36eee2503f61b9ec009bbd4a97ed4085ccaca6"
+    },
+    {
+      "path": "followup-20261115/gateway-forced-length.response.json",
+      "bytes": 702,
+      "sha256": "10ea4b9b416b42793caa47b98b5fc6e81a3dc0810622e6e36b71a58de2f0447c"
+    },
+    {
+      "path": "followup-20261115/gateway-short-control.response.json",
+      "bytes": 561,
+      "sha256": "30f2a178be002e112fa13f04f03512bc25b7e3e0c671cb6cbfa957c099f340c0"
+    },
+    {
+      "path": "followup-20261115/gateway-tool-control.response.json",
+      "bytes": 737,
+      "sha256": "99e270a3d5c39b5af520ff5e2d2926439ba3a0494d6ff2054aa04d38450caf46"
+    },
+    {
+      "path": "followup-20261115/github-progress-snapshot.md",
+      "bytes": 13227,
+      "sha256": "1a1e3861d82967053e412154c596fa6dbd3d324ee8be4edfea72f0de06ea87ac"
+    },
+    {
+      "path": "followup-20261115/probe-langchain-metadata.py",
+      "bytes": 2763,
+      "sha256": "c720f1a9f30f04e04080d6e860f73af7b7622f123cf8fbc75c1c5aa77eeec35c"
+    },
+    {
+      "path": "followup-20261115/probe-output-truncation.py",
+      "bytes": 11586,
+      "sha256": "25e47cb130b3a84ef31d173267cee91e40ea902b331ff09091912deb55b07707"
+    },
+    {
+      "path": "followup-20261115/raw-source-storage.json",
+      "bytes": 701,
+      "sha256": "d16ee0043e0d08ca27d3c7702083efea7b10cc662982982050f3ffaa34f4b3f2"
+    },
+    {
+      "path": "followup-20261115/reference-audit/all-sheet-hackmd-links.json",
+      "bytes": 1605,
+      "sha256": "7d3553781641b4e15fc602280f2cffb1de5cd10b2552b975400b0b52d00e8eb5"
+    },
+    {
+      "path": "followup-20261115/reference-audit/contract-comparison.json",
+      "bytes": 926,
+      "sha256": "73fb659cdcf834d1b0889c5be3bdeefba1ec05ad7d24d06c92787e9850c6c1a3"
+    },
+    {
+      "path": "followup-20261115/reference-audit/document-link-inventory.md",
+      "bytes": 5025,
+      "sha256": "7b1ff118ad387662d572c041315b4ff36dc3ab4036c19ba0fef00199cf2ecac7"
+    },
+    {
+      "path": "followup-20261115/reference-audit/orchestration-contract-current.md",
+      "bytes": 22919,
+      "sha256": "d2840c0e4eb13e99fb00e85d19985dc6fc690314e0f83f20e5b01c999fff49a5"
+    },
+    {
+      "path": "followup-20261115/reference-audit/progress-tracker-current.md.gz",
+      "bytes": 4000,
+      "sha256": "9675807cccfb50076ac7ac709b647d9d0c85471486305891f6fb6809ee2c7900"
+    },
+    {
+      "path": "followup-20261115/reference-audit/progress-tracker-linked-urls.json",
+      "bytes": 1264,
+      "sha256": "4fa06b5ab4935484f0bc583864a7b6467953cd49e85644d33d2dd2734490373f"
+    },
+    {
+      "path": "followup-20261115/reference-audit/reference-and-interface-audit.md",
+      "bytes": 9898,
+      "sha256": "f18cbbc18cb4047bffe32a7d4cd4e999c2638d338b0487c33d2c560c630fc8ef"
+    },
+    {
+      "path": "followup-20261115/reference-audit/retrieval-manifest.json",
+      "bytes": 2152,
+      "sha256": "848d5022074a2f7d835e84d15f84e3e7a58dc17ee4d6b08fd6629b96e606b76c"
+    },
+    {
+      "path": "followup-20261115/reference-audit/sheet-index-2026-11-14.parsed.json",
+      "bytes": 262040,
+      "sha256": "9b654c650c275f296f10416d68a1c91ee2583acb29b2ed90958fd10e4065edde"
+    },
+    {
+      "path": "followup-20261115/reference-audit/sheet-index-current.parsed.json",
+      "bytes": 262040,
+      "sha256": "9b654c650c275f296f10416d68a1c91ee2583acb29b2ed90958fd10e4065edde"
+    },
+    {
+      "path": "followup-20261115/reference-audit/sheet-index-semantic-comparison.json",
+      "bytes": 584,
+      "sha256": "e85b2920a359ec64f72474ca8eb20afb33e6aa6dbdfa49fe0225730a925e9904"
+    },
+    {
+      "path": "followup-20261115/reference-audit/team-document-index-current.xlsx",
+      "bytes": 18389,
+      "sha256": "e1a0ff9c52d0100c5843cce464321077a8b25623c9b17fc529716d07145b7dfb"
+    },
+    {
+      "path": "followup-20261115/sidechat-visible-message-handoff.md.gz",
+      "bytes": 40796,
+      "sha256": "618f4466926d335c535fa2cf585b7268fc503c0db22dfdac9083d911a785e7d4"
+    },
+    {
+      "path": "followup-20261115/truncation-gateway-results.json",
+      "bytes": 1701,
+      "sha256": "38fe2f6bb059a85f75b274095bd1da2e1908ed05029290855059f192911733a0"
+    },
+    {
+      "path": "followup-20261115/truncation-gateway-tool-results.json",
+      "bytes": 910,
+      "sha256": "d82dd63672061d8ce0b9d125bdf003b2c8120c94daf2cd4c9fa1be3e942f166e"
+    },
+    {
+      "path": "followup-20261115/truncation-langchain-results.json",
+      "bytes": 2158,
+      "sha256": "6535f76b0cb065d7a98767ef916a72bcc4b31354def413aae212cdc3a53147f9"
+    },
+    {
+      "path": "followup-20261115/truncation-offline-results.json",
+      "bytes": 3444,
+      "sha256": "5a0ac27060b66fd4686314737ebfc9c396215e56b9456ebc99f44500b964e365"
+    },
+    {
+      "path": "followup-20261115-credential-audit.json",
+      "bytes": 222,
+      "sha256": "d607a8ae8581a087224de73e3ddbe222f726bed7283eccd13b772f56d935b2dc"
+    },
+    {
+      "path": "followup-20261115-experiments.md",
+      "bytes": 6563,
+      "sha256": "e398957fcc7ff046a6d473e8d149737883baae16982b16002362918410ba96a6"
+    },
+    {
+      "path": "followup-20261115-preservation.json",
+      "bytes": 134,
+      "sha256": "6276df58f35c08ad12f30da156b3c63edfc4c152ad336e5802b8f755f2ec34ac"
+    },
+    {
+      "path": "followup-20261115-static-validation.json",
+      "bytes": 83443,
+      "sha256": "50285073101dfca484aa3f8149a78e962a3fb5e1e02f5b25d8d8c4234542a01d"
+    },
+    {
+      "path": "followup-20261115-static-validation.md",
+      "bytes": 1803,
+      "sha256": "38bee8fc866517b4309b509151cca696827192d707c16442ad74a7c2b3cc03a6"
+    }
+  ]
+}
