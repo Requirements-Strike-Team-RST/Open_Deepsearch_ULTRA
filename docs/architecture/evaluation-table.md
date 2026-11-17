@@ -123,6 +123,12 @@ The decision has to answer four distinct sub-questions sharing one loop: (a) the
 - **Owner:** sszfot
 - **Decision recorded in:** ADR-001
 - **Status:** Open (provisional selection of B; awaiting SA Review)
+## EVAL-001: How should evaluation produce valid metric results and score an existing report?
+
+- **Module:** evaluation
+- **Owner:** DopplerXD
+- **Decision recorded in:** ADR-001
+- **Status:** Decided
 
 **ASR**
 
@@ -136,6 +142,8 @@ The outcome depends on information from two different moments: the research exit
 | REQ-007 | C-001, C-002, C-003, C-004, C-005 | correctness (fail before model/search calls), testability, modularity, behaviour preservation |
 
 Architectural drivers (provisional IDs, see ADR-001 §1): ASR-007-01 validate on every path to a model/search call; ASR-007-02 native provider ↔ `research_model`; ASR-007-03 static MCP capability versus runtime availability; ASR-007-04 unsupported provider lists the supported set (including via `SEARCH_API`); ASR-007-05 pure and offline-testable; ASR-007-06 preserve valid behaviour and topology; ASR-007-07 documentation consistency; ASR-007-08 a statically declared but unusable MCP must not silently produce a no-search run; ASR-007-09 an explicit search-capability predicate replaces the tool-count check.
+| REQ-009 | C-001, C-002, C-003, C-004, M-001 | Correctness of the score; deterministic validation; failure isolation; offline testability; compatibility with the LangSmith benchmark entry |
+| REQ-010 | C-001, C-002, C-003 | Separation from the research graph and search; input validation before any evaluator; documented use; low operating cost |
 
 **Candidates**
 
@@ -200,3 +208,22 @@ Architectural drivers (provisional IDs, see ADR-001 §1): ASR-007-01 validate on
 **Choice:** B — the only option that validates before every model/search call on all paths while keeping validation pure, single-responsibility, offline-testable and inside the `search/` module boundary (provisional; pending SA Review).
 
 **Rejected and why:** A — breaks the thin-node rule and is placement-fragile. C — validates too late (after the clarification and brief model calls) and couples validation to tool assembly and REQ-008.
+| A | Harden `test/evaluators.py` in place and add a separate entry file | `test/evaluators.py`, `test/prompts.py`, a new entry script | Smallest file churn; baseline entry untouched; direct reuse of existing functions | Validation, judge construction, LangSmith serialisation and entry logic stay mixed; the import-time model side effect is harder to remove safely; no clean module boundary for pure tests | Low | Medium |
+| B | New `test/evaluation/` core package plus a thin compatibility adapter in `test/evaluators.py` | New `test/evaluation/` package; `test/evaluators.py`; `test/prompts.py`; README | Deterministic validation and entry are separable and testable with a fake judge; judge is constructed lazily; baseline evaluator names and return shapes are preserved; `test/run_evaluate.py` unchanged; matches the blueprint module path | More files and an adapter mapping; a small amount of indirection | Medium | High |
+| C | Duplicate the evaluators in a standalone evaluation service and leave the baseline untouched | New standalone service; existing scripts unchanged | Strong isolation from the benchmark path | Two sources of truth; REQ-009 fixes do not reach the benchmark; duplicated maintenance; violates “extend, never replace” | High | High |
+
+**Choice:** option B — it separates deterministic validation and the evaluation-only entry from the LangSmith adapter, keeps the baseline entry compatible, and allows every REQ-009 and REQ-010 case to run offline with an injected judge. It also places the module at the path assigned by `architecture-blueprint.md` §4.
+
+**Rejected and why:** option A: the core logic remains coupled to the evaluator functions and the import-time model construction, which makes failure isolation and offline tests harder to guarantee. option C: it duplicates metric logic, leaves the benchmark path broken, and creates two sources of truth for the same scores.
+
+The decision, interfaces and implementation steps are in ADR-001.
+
+**Open for module review:** the following remain proposed until SA Review:
+
+- **Path whitelist:** `structural-constraints.md` §1 lists top-level `test/` as not for new work, while `architecture-blueprint.md` §4 assigns this module to `test/evaluation/`. BroZhai's suggestion is to add `test/evaluation/` as the only whitelisted `test/` subdirectory for new architecture code; tests remain in `test/offline/` and `test/live/`.
+- **Evaluation judge client:** `judge.py` needs one lazy, injectable evaluation-only chat client, which is an exception to `structural-constraints.md` §4 because `configurable_model` lives in `deep_researcher.py` and §5 forbids importing it. Provider credential resolution is part of the same proposed exception.
+- **Raw judge interface:** confirm that rating and `grounded` fields stay raw until `validation.py` checks them, before any Pydantic conversion.
+- **Judge failure semantics:** confirm exit code `3` for judge initialisation, real OpenAI 401 `AuthenticationError` and 403 `PermissionDeniedError`, with per-metric results and completed scores preserved.
+- **LangSmith live behaviour:** SDK type compatibility is checked; live `aevaluate` and UI behaviour with a null score remain `NOT_RUN`.
+
+Confirm these at module review and integration.

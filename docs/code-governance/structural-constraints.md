@@ -176,3 +176,40 @@ Additional rules for this module:
 | Configuration flag | None: baseline behaviour is preserved and no new `Configuration` field is added |
 
 REQ-008 (search fallback) will also live in this module and is designed separately; this section covers REQ-007 only. Two call sites are intentional: `clarify_with_user` is the public boundary, and `researcher` is required because the researcher subgraph is compiled and directly invokable (ADR-001 §2.2, §10). `supervisor` binds no search tool and `researcher_tools` is reached only after `researcher` validated, so neither needs a check.
+### evaluation (REQ-009, REQ-010, ADR-001)
+
+| Item | Constraint |
+|---|---|
+| Path | `test/evaluation/` |
+| Responsibility | Validate and normalise evaluator outputs, produce `scored` or `not_evaluable` metric results, and provide an evaluation-only entry for an existing report. |
+| Public interface | `evaluate_existing_report(question, report, *, reference_answer=None, research_brief=None, evidence=None, judge=None) -> EvaluationResult`; `MetricStatus`, `MetricResult`, `EvaluationResult`, `EvaluationInputError`, `JudgeFailure`, `JudgeUnavailableError`, `JudgeAuthenticationError`, `JudgePermissionError`; CLI `python -m test.evaluation.evaluate_report`. |
+| Called from | The compatibility adapter in `test/evaluators.py` (and therefore `test/run_evaluate.py`), and the CLI. |
+| May depend on | `test/prompts.py`; the Python standard library (`datetime`, `hashlib`, `json`, `typing`); `pydantic` for raw judge schemas; and the provider SDK only inside `judge.py`'s lazy factory and provider-error mapping. |
+| Must not depend on | `open_deep_research.deep_researcher`, `open_deep_research.utils`, the research graph, search providers or search tools, `test.run_evaluate` import-time state, or any extension module. No model client is constructed at import. |
+| Shared contracts | None: no `state.py` type or graph state field is added. The baseline LangSmith evaluator names, keys and return shapes are preserved by `test/evaluators.py`. |
+| Configuration flag | None: the module is evaluation-only and adds no runtime behaviour flag. |
+
+`test/evaluators.py` is a thin compatibility adapter; evaluation logic lives only in `test/evaluation/`.
+
+**Dependency layers.**
+
+| Layer | Rule | Evidence |
+|---|---|---|
+| Import dependency | No `open_deep_research.deep_researcher`, `open_deep_research.utils`, `test.run_evaluate` or search/MCP import. Provider SDK imports are lazy inside `judge.py`. | TC-EVAL-011 clean subprocess |
+| Client creation | One lazy, injectable evaluation judge client in `judge.py`; no client at import; no research/search client. | TC-EVAL-009, TC-EVAL-011 |
+| Network request | Only judge model calls; zero research/search calls or connections. | TC-EVAL-010 socket and call blockers |
+
+**Approved rules that remain binding:** §5 dependency direction, §7 deterministic boundary for safety-relevant code, §8 configuration and prompt placement, and the §4 baseline rule that the research graph reuses the shared model client.
+
+**Proposed rule exceptions (not approved until module review and SA Review):**
+
+1. **Path whitelist (BroZhai suggestion):** add `test/evaluation/` as the only `test/` subdirectory open to new architecture code. Proposed §1 rows:
+
+   | Path | Role | New work goes here? |
+   |---|---|---|
+   | `test/` | Existing LLM- and API-dependent evaluation scripts | No (except `test/evaluation/`) |
+   | `test/evaluation/` | Evaluation module (REQ-009, REQ-010); offline paths make no network calls | Yes, evaluation owner only |
+
+   `test/evaluation/` is code, not a test location; tests remain in `test/offline/` and `test/live/`. §1 is human-owned and is not edited here.
+
+2. **Evaluation judge client:** `judge.py` may construct one lazy, injectable evaluation-only chat client. This is an exception to §4 because the shared `configurable_model` lives in `deep_researcher.py`, which §5 forbids the module from importing. Provider credential resolution is delegated to the client/provider instead of `utils.get_api_key_for_model()`, because importing `utils` would pull search/MCP modules. If accepted, record it in `architecture-blueprint.md` §6.

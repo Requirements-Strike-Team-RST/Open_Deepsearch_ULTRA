@@ -219,6 +219,21 @@ entries:
       - docs/architecture/adr/005-context-compression.md
       - docs/architecture/invariants.md
       - docs/architecture/memory-design.md
+    date: "2026-11-13"
+    member: DopplerXD
+    purpose: >-
+      Analyse and document the evaluation module architecture for REQ-009 and REQ-010.
+    prompt: >-
+      Follow the repository SA workflow, compare three candidate designs, and document the
+      selected evaluation package and compatibility adapter. Map each acceptance criterion
+      to the ADR, invariants, runtime policies, structural constraints and planned tests.
+      Apply the confirmed SHA-256 report identifier, strict rating checks before coercion,
+      LangSmith result mapping and CLI exit codes. Keep all changes within SA documents.
+    requirements: [REQ-009, REQ-010]
+    artifacts:
+      - docs/architecture/evaluation-table.md
+      - docs/architecture/adr/001-evaluation-module.md
+      - docs/architecture/invariants.md
       - docs/architecture/runtime-policy-catalog.md
       - docs/architecture/trace-matrix.md
       - docs/code-governance/structural-constraints.md
@@ -315,6 +330,35 @@ entries:
       - docs/architecture/adr/002-finalize-node-run-outcome.md
       - docs/architecture/invariants.md
       - docs/architecture/memory-design.md
+    supervision: >-
+      The member selected option B, simplified report identity to SHA-256, requested evidence
+      for packaging and LangSmith compatibility, and confirmed the remaining design choices.
+      After the built-in Plan restriction blocked repository edits, the member explicitly
+      authorised the Build role to write only the SA documents. A later intervention required
+      pre-coercion validation, a 4.0 rejection case and honest verification status. The path
+      conflict concerning test/evaluation remains recorded for module review. The ADR remains
+      Proposed; module review, integrated SA Review and implementation are pending.
+      The accompanying session record is an English translation with intervention annotations;
+      non-English filenames in tool records retain their identity through Unicode escapes.
+    transcript: transcripts/60741820-YANG_Xinchuan.md
+
+  - id: AIU-009
+    date: "2026-11-17"
+    member: DopplerXD
+    purpose: >-
+      Revise the evaluation SA documents in response to the PR #15 module review.
+    prompt: >-
+      Address AlchemyHAN's six findings and BroZhai's path-whitelist suggestion. Remove the
+      utils date dependency, separate import-boundary and call-isolation tests, complete the
+      missing cases, align the C-004 verification path, distinguish judge failures with exit
+      code 3, and document proposed client and path exceptions. Preserve completed metric
+      results and map real provider authentication and permission exceptions. Keep changes
+      within English architecture documents and test specifications.
+    requirements: [REQ-009, REQ-010]
+    artifacts:
+      - docs/architecture/adr/001-evaluation-module.md
+      - docs/architecture/evaluation-table.md
+      - docs/architecture/invariants.md
       - docs/architecture/runtime-policy-catalog.md
       - docs/architecture/trace-matrix.md
       - docs/code-governance/structural-constraints.md
@@ -440,3 +484,15 @@ entries:
           ADR-001 remains Proposed and U-1 through U-5 remain open
           pending SA Review.
         transcript: transcripts/60725623-ChensihanLIU-AIU009.md
+      - https://github.com/Requirements-Strike-Team-RST/Open_Deepsearch_ULTRA/pull/15
+    supervision: >-
+      The member accepted the review direction, required isolation between patch setup and
+      clean-import tests, and corrected the assumption that client construction proves key
+      validity. The member required completed scores to survive judge failures, comparison
+      with other viable factories, separate SDK 401/403 mappings, network blocking before
+      imports, and whole-request prompt checks. The revised proposal was authorised for SA
+      documents only. Public-rule exceptions remain Proposed, and behavioural tests and
+      integrated SA Review are pending. The member subsequently authorised submission and
+      an updated PR explanation. The transcript addendum translates user instructions and
+      labels response summaries; original tool records remain in the OpenCode session.
+    transcript: transcripts/60741820-YANG_Xinchuan.md
