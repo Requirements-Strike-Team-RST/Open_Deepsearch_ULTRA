@@ -453,6 +453,7 @@ entries:
     transcript: transcripts/61061965-XIE_Shentai.md
 
   - id: AIU-018
+  - id: AIU-009
     date: "2026-11-16"
     member: sszfot
     purpose: >-
@@ -574,3 +575,47 @@ entries:
       and drafted the announcement; the member asked for it to be posted. The member reviews the
       document changes before the integration pull request is opened.
     transcript: null
+
+  - id: AIU-010
+    date: "2026-11-17"
+    member: sszfot
+    purpose: >-
+      Draft and integrate the proposed REQ-008 search fallback
+      architecture (ADD Iterations 1 and 2, EVAL-002, ADR-002) into the
+      shared architecture and code-governance documents.
+    prompt: >-
+      For approved REQ-008, which depends on REQ-007, produce ADD
+      Iterations 1 and 2 for search fallback, then draft EVAL-002 and
+      ADR-002 and integrate them into the invariants, runtime policy
+      catalog, trace matrix, structural constraints and verification
+      constraints. Use a dedicated fallback coordinator with per-source
+      adapters and a thin tool-facing adapter, classify errors before
+      stringification, distinguish empty success from failure, distinguish
+      MCP load-stage from invocation-stage failures, and keep every
+      decision Proposed/Open. Make no implementation or test changes and
+      run only read-only validation.
+    requirements: [ REQ-008 ]
+    artifacts:
+      - docs/architecture/adr/002-search-fallback.md
+      - docs/architecture/evaluation-table.md
+      - docs/architecture/invariants.md
+      - docs/architecture/runtime-policy-catalog.md
+      - docs/architecture/trace-matrix.md
+      - docs/code-governance/structural-constraints.md
+      - docs/code-governance/verification-constraints.md
+      - docs/ai-use-log.yaml
+      - transcripts/60725623-ChensihanLIU-AIU010.md
+    supervision: >-
+      The member directed the ADD iterations, selected the dedicated
+      fallback coordinator with a thin tool-facing adapter, and required
+      that load-stage and invocation-stage failures be separated and that
+      no decision be marked approved. The Markdown diff check passed.
+      The verification matrix documents planned cases TC-027 through
+      TC-037; no test file was created and no test was executed. No
+      source code was implemented. ADR-002 remains Proposed, EVAL-002
+      remains Open, and D-1 through D-8 remain open pending SA Review.
+      The transcript was later expanded to cover the full REQ-008
+      conversation (messages 162-311) and marked as a sanitized,
+      abbreviated (non-verbatim) record; a human redaction review is
+      still required before publication.
+    transcript: transcripts/60725623-ChensihanLIU-AIU010.md
