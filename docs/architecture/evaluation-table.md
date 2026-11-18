@@ -194,6 +194,31 @@ The decision needs facts from two moments: the exit reason and task results (bef
 
 **Rejected and why:** A: core logic stays coupled to import-time side effects. C: duplicated metrics.
 
+## EVAL-008: Where ordered search fallback runs
+
+- **Module:** search
+- **Owner:** sszfot
+- **Decision recorded in:** ADR-008
+- **Status:** Decided (Proposed until SA Review)
+
+**ASR**
+
+| Requirement | Acceptance criteria | Quality attributes at stake |
+|---|---|---|
+| REQ-008 | C-001 to C-005 | Correct order, empty result is success, ineligible errors stop, explicit all-failed result, offline testability |
+
+**Candidates**
+
+| Option | Summary | Components touched | Pros | Cons | Complexity | Offline testability |
+|---|---|---|---|---|---|---|
+| A | A fallback loop in `researcher_tools` / `execute_tool_safely` | `deep_researcher.py` | Small change in one place | Logic in a graph node; the exception is already text when the node sees it | Medium | Low |
+| B | `search/fallback.py` wraps the search tools (same names and schemas) and tries the configured sources in order, classifying typed errors first | `search/`, `configuration.py`, one call in `researcher_tools` | One file; errors classified before they become text; testable with fake tools; tool lookup unchanged | One new configuration field; MCP fallback tools need one string argument | Medium | High |
+| C | Fallback inside `utils.tavily_search` | `utils.py` | No new module | Only Tavily can be the primary source; search policy in the shared `utils.py` | Low | Medium |
+
+**Choice:** B.
+
+**Rejected and why:** A: logic in a node, after the error has become text. C: covers only Tavily. The first draft of B in PR #20 (a request type, one adapter per source and a structured MCP load result) was narrowed at integration: the load result depends on REQ-007 U-5, which the team did not adopt.
+
 ## Template
 
 ```markdown

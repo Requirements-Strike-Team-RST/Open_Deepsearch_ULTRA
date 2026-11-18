@@ -22,6 +22,7 @@ Likelihood and impact are High, Medium or Low. All risks are *Open* until eviden
 | RISK-011 | evaluation | REQ-009, ADR-007 | `not_evaluable` metrics have no number, so they drop out of LangSmith averages and the average can look better than it is. | Medium / Low | The status and reason are in each metric's comment. | Reports compare runs only by averages. |
 | RISK-012 | context | REQ-005, EVAL-004 | There is no input-token check before a call; every token-limit case costs one rejected call. | Medium / Low | Recovery after the error is correct and bounded. | Compression often fails with `token_limit`, or a tokenizer is available without a new dependency (EVAL-004 option C). |
 | RISK-013 | orchestration | REQ-002 C-007, ADR-001 | `notes` hold only counted findings (claims and sources), so the report writer gets less context than the baseline compressed text and reports may become shorter. | Medium / Medium | Findings keep their claims and sources; the full summary still guides the supervisor. | Live reports are clearly thinner than the baseline; then propose a change to REQ-002 C-007. |
+| RISK-014 | search | REQ-008, ADR-008 | MCP tools often raise errors without a type or HTTP status, so they are classified `other` and do not fall back. | Medium / Medium | Classification follows `__cause__` to `httpx` errors; the error still reaches the researcher. | Live MCP failures that should have fallen back are seen; then add their error types to the table in ADR-008 §3.4. |
 
 ## Adding a Risk
 

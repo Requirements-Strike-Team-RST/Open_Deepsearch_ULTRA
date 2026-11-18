@@ -35,6 +35,8 @@ All policies are *Proposed* until SA Review. A policy applies when the flag of i
 | POL-022 | A judge call or evaluator raises | `try/except Exception` around each metric group | Only that group is `not_evaluable`; the others run | None | — | evaluation | REQ-009 C-004 / INV-009 | `test_evaluator_validity.py::test_groundedness_and_errors` |
 | POL-023 | The evaluation entry gets a blank question or report | `evaluate_existing_report` | `EvaluationInputError` before any judge call; the command exits with code 2 | None | — | evaluation | REQ-010 C-002 | `test_report_evaluation_entry.py::test_blank_input_rejected` |
 
+| POL-024 | A wrapped search tool fails while `search_fallback` is not empty | `classify_search_error` on the exception type and HTTP status, before `execute_tool_safely` | Eligible error: try the next configured source. Ineligible error: re-raise it, no fallback. A listed MCP tool that did not load or has the wrong shape: record `not available` and go on. All sources failed: raise `AllSourcesFailedError` listing each source | Each source at most once per call; no source outside the list | none by itself; with the task contract, a failed search counts as one tool call | search | REQ-008 C-001–C-005 / INV-010 | `test_search_fallback.py` |
+
 Test paths are under `test/offline/`.
 
 ## 2. Adding a Policy

@@ -16,7 +16,7 @@
 | REQ-007 | C-004 | A valid configuration must behave as before. |
 | REQ-007 | C-005 | The README must explain the providers, their model requirements and MCP search. |
 
-REQ-008 (search fallback) also belongs to this module but has no design yet; it is not covered by this ADR.
+REQ-008 (search fallback) belongs to the same module and is decided in ADR-008; this ADR only adds its configuration rule (§3.1).
 
 ## 2. Context
 
@@ -43,6 +43,7 @@ Use EVAL-006 option B: the search module checks the configuration with pure func
 | Native search matches the model (C-001) | `search_api` is `openai` or `anthropic`, and the provider of `research_model` (§3.2) is not on that search's allowlist | `search_api` and `research_model` |
 | Some search source is configured (C-002) | `search_api` is `none` and `mcp_config` is missing, has no `url` or has no `tools` | `search_api` and `mcp_config` |
 | Task contract needs tool results (REQ-001) | `task_contract_enabled` is on and `search_api` is `openai` or `anthropic` | `task_contract_enabled` and `search_api` (ADR-001 §3.2) |
+| Valid fallback sources (REQ-008, ADR-008) | An entry of `search_fallback` is neither `"tavily"` nor a tool name listed in `mcp_config.tools` | `search_fallback` and the entry |
 
 ### 3.2 Provider of the research model (U-3: B)
 

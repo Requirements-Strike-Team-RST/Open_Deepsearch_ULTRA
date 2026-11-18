@@ -68,8 +68,6 @@ Unless stated otherwise, an invariant holds when the feature flag of its module 
 - **Verification:** `test/offline/test_search_configuration.py` with a fake model that fails the test if it is called and a fake MCP loader.
 - **Fallback:** raise `SearchConfigError` or `SearchUnavailableError`; never switch to a provider that is not configured.
 
-REQ-008 (search fallback) has no design yet; its invariant is added with its ADR.
-
 ## INV-006 — Task status comes only from sourced findings
 
 - **Statement:** A finding counts only if every URL it cites was returned by a tool call in the same task. Task status (`complete`, `partial`, `failed`) is derived by code from the counted findings; the model's own claims about status, coverage or sources are never used. A result that breaks the contract is `failed` with category `invalid_result`.
@@ -109,6 +107,16 @@ REQ-008 (search fallback) has no design yet; its invariant is added with its ADR
 - **Enforcing component:** `test/evaluation/metrics.py` (`validate_rating`, `groundedness_ratio`, `evaluate_metrics`) (ADR-007). Holds with no flag.
 - **Verification:** `test/offline/test_evaluator_validity.py`; monitor `out_of_range_score_count == 0`.
 - **Fallback:** return `not_evaluable` with a reason; never clamp, round or default a score to zero.
+
+## INV-010 — Search fallback never hides a failure or changes the configured sources
+
+- **Statement:** When a search fails with an eligible error, the configured fallback sources are tried in their configured order, each at most once per call. An empty result and an ineligible error never trigger fallback. When every source fails, the researcher receives one explicit failure that lists each source and its error and cannot be mistaken for an empty result. Only configured Tavily and MCP sources are used.
+- **Module:** search
+- **Source:** REQ-008
+- **Status:** Proposed
+- **Enforcing component:** `search/fallback.py` (`apply_search_fallback`, `classify_search_error`) called from `researcher_tools` (ADR-008). Holds whenever `search_fallback` is not empty.
+- **Verification:** `test/offline/test_search_fallback.py` with fake tools.
+- **Fallback:** raise `AllSourcesFailedError` listing every attempt; never fabricate a result and never use a source that is not configured.
 
 ## Adding an Entry
 

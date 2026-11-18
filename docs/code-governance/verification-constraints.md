@@ -140,7 +140,7 @@ Each module lists one or more cases for every acceptance criterion (C-/M-) of it
 - **Regression:** all of `test/offline/` (every graph test imports `prompts.py`).
 - **Live or human checks:** TC-CIT-05 (`automated: false`), run with the semantic evaluation of the prompt change; evidence in `docs/test-reports/REQ-006.md`.
 
-### search (REQ-007, ADR-006)
+### search (REQ-007, REQ-008, ADR-006, ADR-008)
 
 | Case | Covers | Type | Input | Expected result | Test |
 |---|---|---|---|---|---|
@@ -154,6 +154,13 @@ Each module lists one or more cases for every acceptance criterion (C-/M-) of it
 | TC-SRC-08 | INV-005 (U-1) | exception | `search_api = none`, a valid `mcp_config`, and a fake MCP loader that returns no tool | `SearchUnavailableError` naming `mcp_config` in `clarify_with_user`; the fake model is never called | `test/offline/test_search_configuration.py::test_mcp_without_tools_stops_run` |
 | TC-SRC-09 | INV-005 (U-4) | boundary | `researcher` called with tools `[ResearchComplete, think_tool]`, and with the Tavily tool added | The first raises `SearchUnavailableError` before the model call; the second proceeds | `test/offline/test_search_configuration.py::test_researcher_requires_search_tool` |
 | TC-SRC-10 | REQ-007 C-005 | human | A reviewer follows the README without reading source code | They can configure each built-in provider and an MCP search server and find the needed keys | `docs/review-memo.md` (search provider configuration review) |
+| TC-SRC-11 | REQ-008 C-001; INV-010 | exception | Primary Tavily raises `tavily.errors.TimeoutError`; one working MCP fallback | Tavily tried once, then the fallback; the fallback's result is returned unchanged | `test/offline/test_search_fallback.py::test_primary_failure_uses_fallback` |
+| TC-SRC-12 | REQ-008 C-002; INV-010 | exception | Three sources; the first two raise eligible errors (connection, HTTP 503) | Tried in the configured order; the third source's result is returned | `test/offline/test_search_fallback.py::test_fallbacks_follow_configured_order` |
+| TC-SRC-13 | REQ-008 C-003; INV-010 | exception | Every source raises an eligible error, and one listed MCP tool did not load | `AllSourcesFailedError` listing each source with its category and error, including the `not available` one; its text differs from the empty-result text | `test/offline/test_search_fallback.py::test_all_sources_fail_explicitly` |
+| TC-SRC-14 | REQ-008 C-004; INV-010 | normal | Primary returns no hits without error | The empty result is returned; no fallback is tried | `test/offline/test_search_fallback.py::test_empty_result_does_not_trigger_fallback` |
+| TC-SRC-15 | REQ-008 C-005; INV-010 | exception | Primary raises `tavily.errors.BadRequestError` | The same error is raised; no fallback is tried | `test/offline/test_search_fallback.py::test_ineligible_error_does_not_trigger_fallback` |
+| TC-SRC-16 | INV-010 | boundary | One exception per row of ADR-008 §3.4, including an `httpx` error wrapped in another exception and a plain `ValueError` | Each gets the category and eligibility of the table; the plain error is `other`, not eligible | `test/offline/test_search_fallback.py::test_error_classification_is_typed` |
+| TC-SRC-17 | INV-010 | regression | `search_fallback = []`; and a non-empty list checked for tool names and schemas | With the empty list the tools are returned unwrapped; with a list, every wrapped tool keeps its name and argument schema | `test/offline/test_search_fallback.py::test_tools_unchanged_without_fallback` |
 
 - **Regression:** all of `test/offline/`.
 - **Live or human checks:** TC-SRC-10 (`automated: false`), recorded as a `REVIEW-NNN` entry.
