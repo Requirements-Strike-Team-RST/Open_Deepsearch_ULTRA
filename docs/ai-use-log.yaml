@@ -276,7 +276,6 @@ entries:
       operations to the student. Prioritise Tekon and Alchemy's quality standards.
     requirements: [REQ-001, REQ-003, REQ-002]
     artifacts:
-      - transcripts/raw/61061965-XIE_Shentai/orchestration-review-checklist.md
       - transcripts/61061965-XIE_Shentai.md
     supervision: >-
       The student supplied the scope, source hierarchy, provider restriction and student
@@ -306,7 +305,6 @@ entries:
       - docs/architecture/trace-matrix.md
       - docs/code-governance/structural-constraints.md
       - docs/code-governance/verification-constraints.md
-      - transcripts/raw/61061965-XIE_Shentai/orchestration-review-checklist.md
       - transcripts/61061965-XIE_Shentai.md
     supervision: >-
       OpenCode's first analysis was inspected by the Codex coordinator. It rejected the
@@ -332,7 +330,6 @@ entries:
       a gate, edit files or run product/live tests.
     requirements: [REQ-001, REQ-003, REQ-002]
     artifacts:
-      - transcripts/raw/61061965-XIE_Shentai/orchestration-review-checklist.md
       - transcripts/61061965-XIE_Shentai.md
     supervision: >-
       The student explicitly requested another member's perspective to challenge the work.
@@ -386,7 +383,6 @@ entries:
     requirements: [REQ-001, REQ-003, REQ-002]
     artifacts:
       - transcripts/61061965-XIE_Shentai.md
-      - transcripts/raw/61061965-XIE_Shentai/followup-20261115-experiments.md
     supervision: >-
       The student supplied the concrete questions and authorised the investigation. Codex
       performed read-only reference/GitHub checks and three direct school-DeepSeek HTTP
@@ -417,7 +413,6 @@ entries:
       - docs/architecture/trace-matrix.md
       - docs/code-governance/structural-constraints.md
       - docs/code-governance/verification-constraints.md
-      - transcripts/raw/61061965-XIE_Shentai/orchestration-review-checklist.md
       - transcripts/61061965-XIE_Shentai.md
     supervision: >-
       Codex and a read-only AI auditor checked the local revision, including stale exit,
@@ -440,7 +435,6 @@ entries:
       judgement contributed compared with AI self-review.
     requirements: [REQ-001, REQ-003, REQ-002]
     artifacts:
-      - transcripts/raw/61061965-XIE_Shentai/orchestration-review-checklist.md
       - transcripts/61061965-XIE_Shentai.md
     supervision: >-
       The student explicitly authorised first-version publication, superseding the earlier
@@ -668,3 +662,41 @@ entries:
       applying the SA-document fixes; permission configuration, CI gates and course deliverables
       were reported for the member's decision and not changed.
     transcript: transcripts/60705556-HAN_Peilin.md
+
+  - id: AIU-025
+    date: "2026-11-18"
+    member: centay
+    purpose: >-
+      Catch up with the merged SA integration and remove the orchestration module's raw transcript
+      folder, as the PR #16 review asked.
+    prompt: >-
+      Check what happened to my PR #16 and the raw files after PR #22, then complete the reviewer's
+      request; I will push and open the PR myself.
+    requirements: [REQ-001, REQ-003]
+    artifacts:
+      - transcripts/61061965-XIE_Shentai.md
+      - docs/ai-use-log.yaml
+      - docs/architecture/architecture-blueprint.md
+    supervision: >-
+      Claude Code read the PR #16 and #22 reviews and the integration commits, removed
+      transcripts/raw/61061965-XIE_Shentai/ and updated its six references. The member reviews
+      and pushes the change.
+    transcript: transcripts/61061965-XIE_Shentai.md
+
+  - id: AIU-026
+    date: "2026-11-18/2026-11-19"
+    member: centay
+    purpose: >-
+      Review the orchestration part of the integrated SA (PR #22) as module owner and verify the AI review's findings.
+    prompt: >-
+      Read-only review of ADR-001 against REQ-001/REQ-003, the integration decisions that touch orchestration,
+      cross-document consistency and the baseline anchors; report confirmed findings with severity.
+    requirements: [REQ-001, REQ-003]
+    artifacts:
+      - transcripts/61061965-XIE_Shentai.md
+    supervision: >-
+      OpenCode (architect, school CS5351/DeepSeek-V4-Flash) produced 13 findings. Claude Code checked each against
+      the files and with experiments on the locked langgraph and langchain-core versions; both "blocking" findings
+      were rejected. A wording difference in the REQ-003 stall rule was noted; the ADR already states its reading, so
+      the member kept requirements.yaml unchanged. The member decides what to post in the Discussion.
+    transcript: transcripts/61061965-XIE_Shentai.md
