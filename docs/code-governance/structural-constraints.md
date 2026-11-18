@@ -3,7 +3,7 @@
 > **Purpose:** The rules every member follows when changing code structure, so that parallel work by six people can be merged.
 > **Authoritative for:** source layout, change rules, dependency direction and code-level traceability. *Which* modules exist is decided in `docs/architecture/architecture-blueprint.md` §4; where a specific requirement lands is decided in its ADR.
 > **Maintained by:** humans for §1–§9; each module owner writes their module's section in §10, integrated before SA Review.
-> **Last updated:** 2026-11-17
+> **Last updated:** 2026-11-18
 
 ## 1. Source Layout
 
@@ -32,7 +32,7 @@
 2. `SearchAPI` values are `tavily`, `openai`, `anthropic` and `none`.
 3. The supervisor's tools (`ConductResearch`, `ResearchComplete`, `think_tool`) are bound directly in the `supervisor` node.
 
-A new researcher tool is implemented in `utils.py` or the owning extension module and registered through `get_all_tools()`; no node assembles its own tool set.
+A new researcher tool is implemented in `utils.py` or the owning extension module and registered through `get_all_tools()`; no node assembles its own tool set. Exception: `researcher_tools` passes the assembled tools through `search.apply_search_fallback` (ADR-008), which wraps them without adding a tool.
 
 ## 4. Models and API Keys
 
@@ -129,7 +129,7 @@ One section per module. At integration, check that responsibilities do not overl
 | May depend on | nothing |
 | Must not depend on | any project module |
 | Shared contracts | The citation format used by both prompts and by the findings block of ADR-001 |
-| Configuration flag | None; the prompt change is versioned instead (`Prompt.md` §9) |
+| Configuration flag | None; the prompt change gets a semantic evaluation instead (`Prompt.md` §9) |
 
 ### search (REQ-007, REQ-008, ADR-006, ADR-008)
 
@@ -139,7 +139,7 @@ One section per module. At integration, check that responsibilities do not overl
 | Responsibility | Reject an invalid search configuration, or a run without any search tool, before any model or search call; try configured fallback sources in order when a search fails |
 | Public interface | `load_search_config`, `validate_search_config`, `model_provider`, `require_search_tools`, `SearchConfigError`, `SearchUnavailableError` (`validation.py`); `apply_search_fallback`, `classify_search_error`, `AllSourcesFailedError` (`fallback.py`) |
 | Called from | `clarify_with_user` and `researcher`, as their first statements (ADR-006 §3.4), with the tools from `utils.get_all_tools`; `researcher_tools` for `apply_search_fallback` |
-| May depend on | `configuration.py`; `fallback.py` also `utils.tavily_search` |
+| May depend on | `configuration.py`; `fallback.py` also `utils.tavily_search`, `tavily.errors` and `httpx` (already in `pyproject.toml`) |
 | Must not depend on | `deep_researcher.py`, other extension modules, any model client; `validation.py` also not `utils.py` or an MCP client |
 | Shared contracts | The `search_fallback` configuration field |
 | Configuration flag | None for validation (only invalid configurations are affected); `search_fallback = []` for fallback (empty = baseline) |

@@ -46,7 +46,7 @@ Use EVAL-005 option B. `src/open_deep_research/citations/contract.py` holds thre
 
 `prompts.py` imports the constants and puts them into both templates once, at module load, with `str.replace` on the placeholders `{citation_rules}`, `{sources_section_pointer}` and `{renumber_across_findings_instruction}`. The module-level prompt names stay plain strings with only their existing runtime placeholders, so the `.format(...)` calls in `deep_researcher.py` (L547, L642-647) do not change. The constants contain no `{` or `}`.
 
-Edits to the prompts: replace both inline `<Citation Rules>` blocks; replace the "List of All Relevant Sources" label and the `"Sources"` wording with the pointer; delete the `[Title](URL)` instruction; add the renumbering instruction to the report prompt. L296 states no format and stays. The emphasis sentence at L306 sits inside the report prompt's rules block; it moves to just after `{citation_rules}`, outside the tags, so that both prompts have identical text between the tags (C-003). L302 ("each source a separate line item") is covered by "one per line" in the block.
+Edits to the prompts: replace both inline `<Citation Rules>` blocks; replace guideline 4 of the compression prompt (L200, which asks for a "Sources" section) with the pointer and delete the "List of All Relevant Sources" label (L209), so each prompt has one pointer and one rules block (C-001); delete the `[Title](URL)` instruction; add the renumbering instruction to the report prompt. L296 states no format and stays. The emphasis sentence at L306 sits inside the report prompt's rules block; it moves to just after `{citation_rules}`, outside the tags, so that both prompts have identical text between the tags (C-003). L302 ("each source a separate line item") is covered by "one per line" in the block.
 
 The flag-on findings block of ADR-001 §3.3 sits before `### Sources` and refers to the source numbers of this format; it does not state a second format.
 
@@ -84,7 +84,7 @@ Cases in `verification-constraints.md` §7 (citations). C-001 to C-003 inspect t
 
 - **Positive:** one source of truth; C-003 becomes a direct comparison; no node changes.
 - **Negative:** `prompts.py` depends on an extension module (recorded exception); the constants must stay free of braces.
-- **Neutral:** whether the model renumbers correctly is only monitored (C-004). The prompt change needs a prompt version bump and a semantic evaluation (`Prompt.md` §9).
+- **Neutral:** whether the model renumbers correctly is only monitored (C-004). The prompt change needs a semantic evaluation (`Prompt.md` §9); until the `prompts/` version scheme is decided (blueprint §11, #3), the PR names the changed prompts and the evaluation evidence.
 
 ## 9. Implementation Steps
 

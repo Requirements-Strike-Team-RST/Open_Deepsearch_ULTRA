@@ -3,7 +3,7 @@
 > **Purpose:** The risks and assumptions behind the architectural decisions, and the observation that should make the team re-evaluate a decision.
 > **Authoritative for:** design risks. Decisions are in `docs/architecture/adr/`, option comparisons in `evaluation-table.md`. Defects go to `docs/bug-diary.md`, technical debt to `docs/debt-register.md`.
 > **Maintained by:** each module owner adds the risks of their module; reviewed at every SA Review.
-> **Last updated:** 2026-11-17
+> **Last updated:** 2026-11-18
 
 Likelihood and impact are High, Medium or Low. All risks are *Open* until evidence closes them; a closed risk keeps its number and states the evidence.
 

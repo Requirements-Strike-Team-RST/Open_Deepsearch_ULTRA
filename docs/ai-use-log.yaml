@@ -181,13 +181,13 @@ entries:
     requirements: [REQ-005]
     artifacts:
       - docs/architecture/evaluation-table.md
-      - docs/architecture/adr/005-context-compression.md
+      - docs/architecture/adr/004-context-compression.md
       - docs/architecture/invariants.md
       - docs/architecture/memory-design.md
       - docs/architecture/runtime-policy-catalog.md
       - docs/architecture/trace-matrix.md
       - docs/architecture/risk-list.md
-      - docs/architecture/option-ledger.md
+      - docs/architecture/evaluation-table.md
       - docs/code-governance/structural-constraints.md
       - docs/code-governance/verification-constraints.md
       - transcripts/61061690-ZHANG_Kaidi.md
@@ -214,7 +214,7 @@ entries:
     requirements: [REQ-009, REQ-010]
     artifacts:
       - docs/architecture/evaluation-table.md
-      - docs/architecture/adr/001-evaluation-module.md
+      - docs/architecture/adr/007-evaluation-module.md
       - docs/architecture/invariants.md
       - docs/architecture/runtime-policy-catalog.md
       - docs/architecture/trace-matrix.md
@@ -247,7 +247,7 @@ entries:
       REQ-008 out of scope, change no source or tests, and mark every decision Proposed.
     requirements: [REQ-007]
     artifacts:
-      - docs/architecture/adr/001-search-configuration-validation.md
+      - docs/architecture/adr/006-search-configuration-validation.md
       - docs/architecture/evaluation-table.md
       - docs/architecture/trace-matrix.md
       - docs/architecture/invariants.md
@@ -276,7 +276,7 @@ entries:
       operations to the student. Prioritise Tekon and Alchemy's quality standards.
     requirements: [REQ-001, REQ-003, REQ-002]
     artifacts:
-      - docs/architecture/orchestration-review-checklist.md
+      - transcripts/raw/61061965-XIE_Shentai/orchestration-review-checklist.md
       - transcripts/61061965-XIE_Shentai.md
     supervision: >-
       The student supplied the scope, source hierarchy, provider restriction and student
@@ -299,14 +299,14 @@ entries:
     requirements: [REQ-001, REQ-003, REQ-002]
     artifacts:
       - docs/architecture/evaluation-table.md
-      - docs/architecture/adr/002-orchestration-contract-and-termination.md
+      - docs/architecture/adr/001-task-contract-and-termination.md
       - docs/architecture/invariants.md
       - docs/architecture/memory-design.md
       - docs/architecture/runtime-policy-catalog.md
       - docs/architecture/trace-matrix.md
       - docs/code-governance/structural-constraints.md
       - docs/code-governance/verification-constraints.md
-      - docs/architecture/orchestration-review-checklist.md
+      - transcripts/raw/61061965-XIE_Shentai/orchestration-review-checklist.md
       - transcripts/61061965-XIE_Shentai.md
     supervision: >-
       OpenCode's first analysis was inspected by the Codex coordinator. It rejected the
@@ -332,7 +332,7 @@ entries:
       a gate, edit files or run product/live tests.
     requirements: [REQ-001, REQ-003, REQ-002]
     artifacts:
-      - docs/architecture/orchestration-review-checklist.md
+      - transcripts/raw/61061965-XIE_Shentai/orchestration-review-checklist.md
       - transcripts/61061965-XIE_Shentai.md
     supervision: >-
       The student explicitly requested another member's perspective to challenge the work.
@@ -357,8 +357,8 @@ entries:
     requirements: [REQ-002, REQ-004]
     artifacts:
       - docs/architecture/evaluation-table.md
-      - docs/architecture/adr/001-task-failure-isolation.md
-      - docs/architecture/adr/002-finalize-node-run-outcome.md
+      - docs/architecture/adr/002-task-failure-isolation.md
+      - docs/architecture/adr/003-run-outcome.md
       - docs/architecture/invariants.md
       - docs/architecture/memory-design.md
       - docs/architecture/runtime-policy-catalog.md
@@ -409,7 +409,7 @@ entries:
       with no additional retry or takeover of delivery/context responsibilities.
     requirements: [REQ-001, REQ-003, REQ-002]
     artifacts:
-      - docs/architecture/adr/002-orchestration-contract-and-termination.md
+      - docs/architecture/adr/001-task-contract-and-termination.md
       - docs/architecture/evaluation-table.md
       - docs/architecture/invariants.md
       - docs/architecture/memory-design.md
@@ -417,7 +417,7 @@ entries:
       - docs/architecture/trace-matrix.md
       - docs/code-governance/structural-constraints.md
       - docs/code-governance/verification-constraints.md
-      - docs/architecture/orchestration-review-checklist.md
+      - transcripts/raw/61061965-XIE_Shentai/orchestration-review-checklist.md
       - transcripts/61061965-XIE_Shentai.md
     supervision: >-
       Codex and a read-only AI auditor checked the local revision, including stale exit,
@@ -440,7 +440,7 @@ entries:
       judgement contributed compared with AI self-review.
     requirements: [REQ-001, REQ-003, REQ-002]
     artifacts:
-      - docs/architecture/orchestration-review-checklist.md
+      - transcripts/raw/61061965-XIE_Shentai/orchestration-review-checklist.md
       - transcripts/61061965-XIE_Shentai.md
     supervision: >-
       The student explicitly authorised first-version publication, superseding the earlier
@@ -469,7 +469,7 @@ entries:
       make no implementation or test changes.
     requirements: [ REQ-007 ]
     artifacts:
-      - docs/architecture/adr/001-search-configuration-validation.md
+      - docs/architecture/adr/006-search-configuration-validation.md
       - docs/architecture/evaluation-table.md
       - docs/architecture/invariants.md
       - docs/architecture/runtime-policy-catalog.md
@@ -500,7 +500,7 @@ entries:
       within English architecture documents and test specifications.
     requirements: [REQ-009, REQ-010]
     artifacts:
-      - docs/architecture/adr/001-evaluation-module.md
+      - docs/architecture/adr/007-evaluation-module.md
       - docs/architecture/evaluation-table.md
       - docs/architecture/invariants.md
       - docs/architecture/runtime-policy-catalog.md
@@ -595,7 +595,7 @@ entries:
       run only read-only validation.
     requirements: [ REQ-008 ]
     artifacts:
-      - docs/architecture/adr/002-search-fallback.md
+      - docs/architecture/adr/008-search-fallback.md
       - docs/architecture/evaluation-table.md
       - docs/architecture/invariants.md
       - docs/architecture/runtime-policy-catalog.md

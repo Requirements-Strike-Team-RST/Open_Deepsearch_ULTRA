@@ -39,7 +39,7 @@ research_supervisor → check_research_outcome → final_report_generation → E
 
 `assess_research` applies, in order:
 
-1. `failed` when `exit_reason` is `failed`, or when no task result is `complete` or `partial` (no validated finding). The node then ends the run with `research_outcome = "failed"`, `final_report = ""`, `outcome_detail` and `failed_tasks`, and the report model is never called.
+1. `failed` when `exit_reason` is `failed`, or when no task result is `complete` or `partial` (no validated finding). The node then ends the run with `research_outcome = "failed"`, `final_report = ""`, `outcome_detail` and `failed_tasks`, and `notes` cleared (override `[]`, as the baseline report node does); it adds no message, and the report model is never called.
 2. `complete` when `exit_reason` is `covered` and every task result is `complete`.
 3. `partial` otherwise.
 
@@ -47,13 +47,13 @@ For outcomes 2 and 3 the node writes `failed_tasks` and goes to `final_report_ge
 
 ### 3.3 After the report
 
-When the flag is on, `final_report_generation` keeps its retry loop but no longer returns error text as a report. At the end it calls `finish_outcome(provisional, report_error, findings_truncated)`:
+When the flag is on, `final_report_generation` keeps its retry loop but no longer returns error text as a report. At the end it calls `finish_outcome(decision, report_error=..., findings_truncated=...)` with the decision from `assess_research`:
 
 - a report error (non-token-limit error, unknown model limit, or retries used up) → `failed`, `final_report = ""`, the error in `outcome_detail`; the node adds no error `AIMessage` to `messages`, so error text appears only in `outcome_detail`;
 - findings truncated and a report generated → `partial` (a `complete` run becomes `partial`);
 - otherwise the provisional outcome.
 
-When the outcome is `partial`, the node appends `render_limitations(task_results, findings_truncated)` to the report: one line per failed or partial task with its reason, the unanswered questions (`unanswered_questions(task_results)`, `state.py`), and a line when findings were left out. The text is built from structured results only; the report model never writes it.
+When the outcome is `partial`, the node appends `render_limitations(task_results, findings_truncated)` to the report: one line per failed or partial task with its reason, the unanswered questions (`unanswered_questions(task_results)`, `state.py`), and a line when findings were left out. The text is built from structured results only; the report model never writes it. The `AIMessage` added to `messages` holds the same text as `final_report`, including the limitations section, because chat clients show `messages`.
 
 ### 3.4 Known limit
 

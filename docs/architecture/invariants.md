@@ -4,7 +4,7 @@
 > **Authoritative for:** the detailed rule behind each `invariant`-type or safety-relevant requirement. Where an entry here differs from `docs/req/requirements.yaml`, the requirement wins and the difference must be reported.
 > **Maintained by:** each module owner adds the entries for their module; they are integrated and renumbered before SA Review.
 > **Status:** All entries are *Proposed* until SA Review, except INV-004 (*Deferred*). Enforcing components are responsibility assignments, not implemented code.
-> **Last updated:** 2026-11-17
+> **Last updated:** 2026-11-18
 
 Every entry uses the same fields:
 
@@ -16,11 +16,11 @@ Every entry uses the same fields:
 - **Verification** — the offline test that fails on violation, plus any runtime monitor.
 - **Fallback** — what the system does when the property cannot be kept.
 
-Unless stated otherwise, an invariant holds when the feature flag of its module is on (`structural-constraints.md` §8).
+Unless stated otherwise, an invariant holds when the feature flag of its module is on (`structural-constraints.md` §8). The monitors named below are the metrics of `requirements.yaml`; until a runtime component emits them, they are computed by the offline tests.
 
 ## INV-001 — Compression never drops the newest context
 
-- **Statement:** When compression trims context to fit a token limit, the research topic (or task brief), the compression instruction, the latest AI turn and the tool results after it are never removed, and no tool result is kept without the AI message that requested it.
+- **Statement:** When compression trims context to fit a token limit, the research topic (or task brief), the compression instruction, the latest AI turn and the tool results after it are never removed, and trimming never separates a tool result from the AI message that requested it. A tool result that already had no matching AI message is kept as it is.
 - **Module:** context
 - **Source:** REQ-005
 - **Status:** Proposed
@@ -60,7 +60,7 @@ Unless stated otherwise, an invariant holds when the feature flag of its module 
 
 ## INV-005 — A run never starts research without a valid search source
 
-- **Statement:** A configuration that names an unsupported search provider, pairs native search with a research model whose provider is not on that search's allowlist, has neither a search provider nor a usable MCP declaration, or enables the task contract with native search is rejected before the first model or search call of a run, with an error that names the setting to change. A run whose assembled tools contain no search tool stops before any model call with a "no search available" error.
+- **Statement:** A configuration that names an unsupported search provider, pairs native search with a research model whose provider is not on that search's allowlist, has neither a search provider nor a usable MCP declaration, enables the task contract with native search, or lists an unknown `search_fallback` entry is rejected before the first model or search call of a run, with an error that names the setting to change. A run whose assembled tools contain no search tool stops before any model call with a "no search available" error.
 - **Module:** search
 - **Source:** REQ-007 (REQ-001 for the task-contract rule); Discussion #19 (U-1 to U-4)
 - **Status:** Proposed
@@ -70,7 +70,7 @@ Unless stated otherwise, an invariant holds when the feature flag of its module 
 
 ## INV-006 — Task status comes only from sourced findings
 
-- **Statement:** A finding counts only if every URL it cites was returned by a tool call in the same task. Task status (`complete`, `partial`, `failed`) is derived by code from the counted findings; the model's own claims about status, coverage or sources are never used. A result that breaks the contract is `failed` with category `invalid_result`.
+- **Statement:** A finding counts only if it cites at least one source and every URL it cites was returned by a tool call in the same task. Task status (`complete`, `partial`, `failed`) is derived by code from the counted findings; the model's own claims about status, coverage or sources are never used. A result that breaks the contract is `failed` with category `invalid_result`.
 - **Module:** orchestration
 - **Source:** REQ-001
 - **Status:** Proposed
@@ -110,7 +110,7 @@ Unless stated otherwise, an invariant holds when the feature flag of its module 
 
 ## INV-010 — Search fallback never hides a failure or changes the configured sources
 
-- **Statement:** When a search fails with an eligible error, the configured fallback sources are tried in their configured order, each at most once per call. An empty result and an ineligible error never trigger fallback. When every source fails, the researcher receives one explicit failure that lists each source and its error and cannot be mistaken for an empty result. Only configured Tavily and MCP sources are used.
+- **Statement:** When a search fails with an eligible error, the configured fallback sources are tried in their configured order, each at most once per call. An empty result and an ineligible error of the called tool never trigger fallback. When every source fails, the researcher receives one explicit failure that lists each source and its error and cannot be mistaken for an empty result. Only configured Tavily and MCP sources are used.
 - **Module:** search
 - **Source:** REQ-008
 - **Status:** Proposed

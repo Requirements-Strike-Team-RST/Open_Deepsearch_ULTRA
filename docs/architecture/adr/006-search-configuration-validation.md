@@ -113,7 +113,7 @@ Cases in `verification-constraints.md` §7 (search). They build configurations a
 ## 8. Consequences
 
 - **Positive:** invalid set-ups and runs without any search source stop at the start with a clear message instead of in the middle of research; bare model names keep working with native search.
-- **Negative:** each run assembles the researcher tools once more at the start, which loads the MCP tool list. Provider and search combinations that might work but are not verified (Azure OpenAI, Bedrock, OpenRouter) are rejected until added to the allowlist (RISK-009).
+- **Negative:** each run assembles the researcher tools once more at the start, which loads the MCP tool list. Provider and search combinations that might work but are not verified (Azure OpenAI, Bedrock, OpenRouter) are rejected until added to the allowlist (RISK-009). With `task_contract_enabled`, native search cannot be used at all (RISK-010).
 - **Neutral:** valid configurations, tool assembly and the graph topology are unchanged. The replaced guard in `researcher` is a recorded change to baseline code (`structural-constraints.md` §10, search).
 
 ## 9. Implementation Steps

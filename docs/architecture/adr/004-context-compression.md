@@ -43,7 +43,7 @@ Use EVAL-004 option B: a `context` module with a pure trimming function and one 
 
 The two counters are separate, so transient errors never use up the trimming that a long history needs, and every removable turn can be tried.
 
-**Failure mapping** (in `compress_research`, ADR-001 §3.3): with `task_contract_enabled` on, `CompressionFailed` becomes `TaskResult.failed(spec, e.category, e.reason)` and `compressed_research` is empty, so nothing reaches `notes`. With `task_contract_enabled` off there is no task result, so the node returns the baseline placeholder; REQ-005 C-004 is verified with both flags on.
+**Failure mapping** (in `compress_research`, ADR-001 §3.3): with `task_contract_enabled` on, `CompressionFailed` becomes `TaskResult.failed(spec, e.category, e.reason, tool_calls=tool_calls_spent)` and `compressed_research` is empty, so nothing reaches `notes`. With `task_contract_enabled` off there is no task result, so the node returns the baseline placeholder; REQ-005 C-004 is verified with both flags on.
 
 The module does not change `supervisor_tools`, `prompts.py` or `utils.py` behaviour. Only the docstring of `remove_up_to_last_ai_message` is corrected.
 
@@ -64,7 +64,7 @@ The full comparison is in EVAL-004.
 | `context/trimming.py` | Split turns and remove the oldest one | `split_turns(messages) -> tuple[list, list[list], BaseMessage]` (preamble, turns, instruction); `trim_oldest_turn(messages) -> list \| None` | `context/recovery.py`, tests |
 | `context/recovery.py` | Retry loop | `async compress_with_recovery(model, system_prompt, messages, model_name, max_transient_attempts=3) -> str`; `class CompressionFailed(Exception)` with `category`, `reason`, `removed_turns` | `compress_research` |
 
-Shared contracts used: `TaskResult.failed` (ADR-001). No shared contract is added.
+No shared contract is added. The module itself does not use `TaskResult`; `compress_research` maps `CompressionFailed` to `TaskResult.failed` (ADR-001).
 
 ## 6. State, Failure Handling and Deterministic Boundary
 
@@ -80,7 +80,7 @@ The cases for REQ-005 are in `verification-constraints.md` §7 (context). `trim_
 ## 8. Consequences
 
 - **Positive:** the newest research survives every retry; orphan tool messages cannot appear; a mixed-provider setup recovers correctly; an unreducible history is an explicit failure.
-- **Negative:** a very long newest turn can still be too large, and then the task fails (RISK-008); errors that do not match the provider patterns are retried as transient (RISK-007).
+- **Negative:** a very long newest turn can still be too large, and then the task fails (RISK-008); errors that do not match the provider patterns are retried as transient (RISK-007); the preamble is found from message types, which a new message type could break (RISK-006); no input size is checked before a call (RISK-012).
 - **Neutral:** with the flag off, the baseline loop runs unchanged, including its placeholder.
 
 ## 9. Implementation Steps

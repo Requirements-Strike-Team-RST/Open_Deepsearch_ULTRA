@@ -34,11 +34,11 @@ Use EVAL-007 option B: a small package `test/evaluation/` holds the logic; `test
 
 **Metric results.** `MetricResult(metric, status, score, reason)`, where `status` is `scored` or `not_evaluable`. `score` is a float in `[0, 1]` when `scored` and `None` otherwise. The metric names stay the baseline LangSmith keys (`research_depth_score`, ..., `correctness_score`, `groundedness_score`, `completeness_score`).
 
-**Rating validation.** The judge's structured output keeps the rating as a raw value (typed `Any`), because a Pydantic `int` field would silently turn `4.0` or `"4"` into `4`. `validate_rating(raw)` accepts only `type(raw) is int` and `1 <= raw <= 5` and returns `raw / 5`. Booleans, floats (including `4.0`), strings, `None`, `NaN` and infinities make the metric `not_evaluable`. Scores are never clamped or defaulted to zero.
+**Rating validation.** The judge schemas keep their types (`score: int`, `grounded: bool`) so that the JSON schema sent to the judge stays typed, but they use Pydantic strict mode (`model_config = ConfigDict(strict=True)`). In lax mode Pydantic would silently turn `4.0` or `"4"` into `4` and `"true"` into `True`; in strict mode these values fail to parse, and a parse failure makes the metric `not_evaluable`. `validate_rating(raw)` then accepts only `type(raw) is int` and `1 <= raw <= 5` and returns `raw / 5`; otherwise it raises `InvalidMetricInput` (a `ValueError`). Booleans, floats (including `4.0`), strings, `None`, `NaN` and infinities make the metric `not_evaluable`. Scores are never clamped or defaulted to zero.
 
-**Groundedness.** The claim list must be non-empty and each `grounded` value must be a real boolean; the score is grounded claims / all claims. Otherwise the metric is `not_evaluable`.
+**Groundedness.** The claim list must be non-empty and each `grounded` value must be a real boolean; the score is grounded claims / all claims. Otherwise `groundedness_ratio` raises `InvalidMetricInput` and the metric is `not_evaluable`.
 
-**Inputs.** Each prompt receives exactly the inputs of its metric: question and report for all metrics except groundedness; plus the reference answer for correctness, the research brief for completeness, and the evidence (raw notes) for groundedness. `CORRECTNESS_PROMPT` gains `{user_question}`, `{report}`, `{answer}` and `{today}`. A missing or blank optional input makes only the metrics that need it `not_evaluable`.
+**Inputs.** Each prompt receives exactly the inputs of its metric: the question and the report for every metric (REQ-009 names both for each evaluator, so groundedness gets the question too); plus the reference answer for correctness, the research brief for completeness, and the evidence (raw notes) for groundedness. `CORRECTNESS_PROMPT` gains `{user_question}`, `{report}`, `{answer}` and `{today}`; `{today}` comes from a small standard-library date helper in `metrics.py`, because the module must not import `utils.get_today_str`. A missing or blank optional input makes only the metrics that need it `not_evaluable`.
 
 **Failure isolation.** Each judge call (one metric group) runs in its own `try/except Exception`. An exception makes only that group's metrics `not_evaluable`; the other groups still run.
 
@@ -64,9 +64,9 @@ The full comparison is in EVAL-007.
 
 | Component | Responsibility | Interface | Called by |
 |---|---|---|---|
-| `test/evaluation/metrics.py` | Result type, validation, metric groups, default judge | `MetricResult`; `validate_rating(raw) -> float`; `groundedness_ratio(claims) -> float`; `evaluate_metrics(question, report, *, reference_answer, research_brief, evidence, judge) -> list[MetricResult]`; `default_judge()` | `entry.py`, `test/evaluators.py` |
+| `test/evaluation/metrics.py` | Result type, validation, metric groups, default judge | `MetricResult`; `InvalidMetricInput(ValueError)`; `validate_rating(raw) -> float`; `groundedness_ratio(claims) -> float` (both raise `InvalidMetricInput`, which `evaluate_metrics` turns into `not_evaluable`); `evaluate_metrics(question, report, *, reference_answer, research_brief, evidence, judge) -> list[MetricResult]`; `default_judge()` | `entry.py`, `test/evaluators.py` |
 | `test/evaluation/entry.py` | Evaluation-only entry and command line | `evaluate_existing_report(...) -> EvaluationResult`; `EvaluationInputError`; `main(argv=None) -> int` | users, scripts |
-| `test/evaluators.py` | LangSmith adapter | the six baseline functions; a `not_evaluable` metric is returned with `score=None` and the reason in `comment` | `test/run_evaluate.py` |
+| `test/evaluators.py` | LangSmith adapter | the six baseline functions; every result's `comment` starts with its status (`scored:` or `not_evaluable:`); a `not_evaluable` metric has `score=None` and the reason in `comment` | `test/run_evaluate.py` |
 | `test/prompts.py` | Judge templates | `CORRECTNESS_PROMPT` gains its placeholders | `metrics.py` |
 
 Exceptions to the general rules, recorded in blueprint §6: new code under `test/evaluation/` (`structural-constraints.md` §1), and one evaluation-only judge client created in `metrics.py` (§4), because the shared model lives in `deep_researcher.py`, which this module must not import.

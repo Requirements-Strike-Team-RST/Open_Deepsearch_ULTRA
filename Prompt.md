@@ -3,7 +3,7 @@
 > **Purpose:** The order in which work happens once a requirement is approved: software architecture, review, tests, implementation and verification, with the human gates between them.
 > **Authoritative for:** workflow and gates only. Permissions, structure and verification rules live in the documents referenced below and are not repeated here.
 > **Maintained by:** humans.
-> **Last updated:** 2026-11-17
+> **Last updated:** 2026-11-18
 
 ## 0. Golden Rule
 
@@ -125,7 +125,7 @@ Artifacts that change in the same PR:
 | `docs/test-reports/<RID>.md` | Test Author (Baseline), Verify (Verification) |
 | `trace-matrix.md` row: code and test evidence | Module owner |
 | `docs/ai-use-log.yaml`, `docs/review-memo.md` | Humans, from the drafts in the build report |
-| Prompt or model change: `prompts/` version bump and semantic evaluation | Build (prompt), Verify (evaluation) |
+| Prompt or model change: semantic evaluation, and a `prompts/` version bump once that scheme is decided (blueprint §11, #3) | Build (prompt), Verify (evaluation) |
 
 ## 10. Architecture Rework
 

@@ -23,7 +23,7 @@ Baseline (`deep_researcher.py`, line numbers at commit `daf6947`):
 - L289-342: the fan-out runs inside one `try` block whose handler tests `is_token_limit_exceeded(...) or True`, so every researcher exception ends the research phase as if it had finished.
 - L305: `asyncio.gather` re-raises the first exception; the findings of siblings that succeeded are lost while those siblings keep running.
 - L291-292, L315-321: delegations above `max_concurrent_research_units` are never run; each gets an error string.
-- L310, L582-585: the overflow string and the compression placeholder become `ToolMessage`s and are read into `notes` by `get_notes_from_tool_calls` (`utils.py` L599-601).
+- L316-321 (the overflow string), L310 (the placeholder used when `compressed_research` is missing) and L582-585 (the compression placeholder): these texts become `ToolMessage`s and are read into `notes` by `get_notes_from_tool_calls` (`utils.py` L599-601).
 
 The task contract (`TaskSpec`, `TaskResult`) comes from ADR-001 and lives in `state.py`, so this module does not import `orchestration/`.
 
@@ -71,7 +71,7 @@ Shared contracts used: `TaskSpec`, `TaskResult`, `TaskResult.failed` (ADR-001, `
 ## 6. State, Failure Handling and Deterministic Boundary
 
 - **State:** none of its own. The results are written to `task_results` by `supervisor_tools` (ADR-001).
-- **Runtime policies:** POL-001, POL-002, POL-003, POL-005.
+- **Runtime policies:** POL-001, POL-002, POL-003, POL-005; POL-007 for a missing `task_result`.
 - **Invariants:** INV-007; INV-002 for the research phase.
 - **Deterministic boundary:** whether a task failed, and with which category, is decided from exceptions and the output shape, never from model text.
 

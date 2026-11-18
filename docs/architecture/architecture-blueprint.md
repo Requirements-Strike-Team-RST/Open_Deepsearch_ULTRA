@@ -60,7 +60,7 @@ Interfaces that cross a module boundary. All are *Proposed*.
 
 | Interface | Provided by | Used by | Signature or type | Defined in |
 |---|---|---|---|---|
-| Task contract types | orchestration (in `state.py`) | delivery, context, evaluation, callers | `TaskSpec`, `Finding`, `TaskResult`, `TaskResult.failed(...)`, `unanswered_questions(results)` | ADR-001 §5 |
+| Task contract types | orchestration (in `state.py`) | delivery, `compress_research`, evaluation, callers | `TaskSpec`, `Source`, `Finding`, `TaskResult`, `TaskResult.failed(...)`, `unanswered_questions(results)` | ADR-001 §5 |
 | Fan-out | delivery | `supervisor_tools` (orchestration's flag-on branch) | `run_delegations(specs, run_one, *, max_concurrent, research_model) -> (list[TaskResult], list[str])` | ADR-002 §3 |
 | Researcher output | orchestration (`compress_research`) | delivery (`run_delegations`) | `ResearcherOutputState.task_result: TaskResult \| None` | ADR-001 §3.3 |
 | Loop result | orchestration | delivery | `AgentState.task_results`, `exit_reason`, `exit_detail` | ADR-001 §6 |
@@ -69,7 +69,7 @@ Interfaces that cross a module boundary. All are *Proposed*.
 | Citation format | citations | `prompts.py`; the findings block of ADR-001 | `CITATION_RULES_BLOCK` and two pointer constants | ADR-005 §5 |
 | Configuration check | search | `clarify_with_user`, `researcher` | `load_search_config(config) -> Configuration` | ADR-006 §5 |
 | Search fallback | search | `researcher_tools` | `apply_search_fallback(tools, configurable) -> list`; raises `AllSourcesFailedError` | ADR-008 §5 |
-| Evaluation entry | evaluation | users, `test/evaluators.py` | `evaluate_existing_report(question, report, ...) -> EvaluationResult` | ADR-007 §3 |
+| Evaluation entry | evaluation | users, scripts | `evaluate_existing_report(question, report, ...) -> EvaluationResult` | ADR-007 §3 |
 
 ## 6. Dependencies
 
@@ -79,6 +79,7 @@ Dependency direction: `structural-constraints.md` §5. Exceptions, each justifie
 |---|---|---|---|
 | `prompts.py` | `citations/contract.py` | `prompts.py` inserts the citation text constants at module load; the constants hold text only | ADR-005 |
 | `test/evaluation/metrics.py` | a judge model created there | The module must not import `deep_researcher.py` or `utils.py`, so it cannot reuse the shared model (`structural-constraints.md` §4) | ADR-007 |
+| `deep_researcher.researcher_tools` | `search/fallback.py` | The node passes the assembled tools through `apply_search_fallback`; it adds no tool (exception to `structural-constraints.md` §3) | ADR-008 |
 | `test/evaluation/` | location under `test/` | New code under `test/` is allowed only here (`structural-constraints.md` §1) | ADR-007 |
 
 ## 7. Data Flow
@@ -117,8 +118,9 @@ Decisions where the model's output is input and deterministic code decides (`str
 | `task_contract_enabled` | `False` | REQ-001 to REQ-004 | REQ-002 and REQ-004 consume the REQ-001 result and the REQ-003 exit reason, so the four cannot run apart |
 | `coverage_threshold` | `0.8` | REQ-003 | A setting, not a switch |
 | `context_trimming` | `False` | REQ-005 | Works on its own; its failure result (C-004) needs `task_contract_enabled` |
+| `search_fallback` | `[]` | REQ-008 | A list, not a switch: the empty list keeps the baseline |
 
-Search validation, the citation prompts and the evaluation module have no flag.
+Search validation, the citation prompts and the evaluation module have no flag. Only the safety-relevant decisions are in the table above; search is not safety-relevant.
 
 ## 9. State and Data
 
@@ -129,13 +131,15 @@ New state fields, their owning module, the nodes that write them and their lifec
 | Situation | Handling | Policies | Invariant |
 |---|---|---|---|
 | A researcher fails, is over the concurrency limit or is left at loop exit | Only that task fails; extra tasks are queued; tasks left at the cap end `not_run` | POL-001 to POL-005 | INV-007 |
-| A delegation or a researcher result breaks the contract | Rejected delegation or `failed/invalid_result`; unsourced findings dropped | POL-006 to POL-009 | INV-006 |
+| A delegation or a researcher result breaks the contract | Rejected delegation or `failed/invalid_result`; unsourced findings dropped | POL-006 to POL-008 | INV-006 |
+| A researcher reaches its tool-call budget | Extra calls are not run; the researcher goes to compression | POL-009 | INV-003 |
 | The supervisor claims completion early or its model fails | Request refused below the threshold; exit through `select_exit` | POL-010, POL-011 | INV-003 |
 | Compression hits a token limit or another error | Oldest turns removed; explicit `token_limit` or `runtime` failure | POL-012 to POL-014 | INV-001 |
 | Nothing found, report fails or findings were cut | Outcome `failed` or `partial`, never `complete` | POL-015 to POL-017 | INV-002 |
 | Invalid search configuration, or no search tool available | Rejected before any model call; a researcher without a search tool fails its task | POL-018, POL-019 | INV-005 |
 | A search call fails | Configured fallback sources are tried in order; otherwise an explicit failure | POL-024 | INV-010 |
-| Invalid judge output, missing input or evaluator error | Only that metric is `not_evaluable` | POL-020 to POL-023 | INV-009 |
+| Invalid judge output, missing input or evaluator error | Only that metric is `not_evaluable` | POL-020 to POL-022 | INV-009 |
+| Blank input to the evaluation entry | Rejected before any judge call | POL-023 | — |
 
 Details: `runtime-policy-catalog.md`, `invariants.md`; design risks: `risk-list.md`.
 
@@ -155,7 +159,7 @@ Details: `runtime-policy-catalog.md`, `invariants.md`; design risks: `risk-list.
 
 | Topic | Before (module drafts) | Integrated design | Modules |
 |---|---|---|---|
-| Numbering | ADR-001 used by four modules; EVAL-001/002, INV-006/007, POL-001… and test IDs used twice or more | ADR and EVAL 001–007 in requirement order; INV-001–009; POL-001–022; test IDs `TC-<MODULE>-NN` | all |
+| Numbering | ADR-001 used by four modules; EVAL-001/002, INV-006/007, POL-001… and test IDs used twice or more | ADR and EVAL 001–007 in requirement order; INV-001–009; POL-001–023; test IDs `TC-<MODULE>-NN` (extended for REQ-008 by decision 7) | all |
 | Flags | `orchestration_enabled`, `enforce_delivery_outcome` and `context_trimming`, with a four-way flag matrix | One `task_contract_enabled` for REQ-001–004; `context_trimming` stays | orchestration, delivery, context |
 | Task result out of the researcher | Orchestration: `task_result`; context: a second field `research_outcome` (clashing with delivery's run outcome) plus a guard in `supervisor_tools` | One field, `ResearcherOutputState.task_result`; context raises `CompressionFailed` and `compress_research` maps it | orchestration, context, delivery |
 | Failure categories | Context added `provider_transient` | Requirement categories only: `token_limit`, `runtime`, `not_run`, `invalid_result`, plus `unanswered` for coverage | context |
