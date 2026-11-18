@@ -3,7 +3,7 @@
 > **Purpose:** Entry point for every coding agent: project context, reading order, document authority, environment, collaboration rules.
 > **Authoritative for:** environment, coding practices, Git and PR rules, feedback format, and the document map below.
 > **Maintained by:** humans. Agents propose changes; see `docs/architecture/permission-model.md` §3.
-> **Last updated:** 2026-11-11
+> **Last updated:** 2026-11-17
 
 ## 1. Project Overview
 
@@ -39,6 +39,7 @@ Each concern has exactly one authoritative document. Other documents refer to it
 | State and memory design | `docs/architecture/memory-design.md` | module owners, integrated before SA Review |
 | Runtime exception, degradation and failure policies | `docs/architecture/runtime-policy-catalog.md` | module owners, integrated before SA Review |
 | ADD: candidate solutions and their comparison | `docs/architecture/evaluation-table.md` | module owners |
+| Design risks and re-evaluation triggers | `docs/architecture/risk-list.md` | module owners |
 | Code structure and change rules | `docs/code-governance/structural-constraints.md` | humans; module owners add their module sections |
 | Verification layers, test conventions, CI gates, Definition of Done | `docs/code-governance/verification-constraints.md` | humans; module owners add their module sections |
 | Tools available to coding agents | `docs/code-governance/mcp-tool-manifest.md` | humans |

@@ -1,0 +1,94 @@
+{
+  "kind": "offline source-function experiment",
+  "at_utc": "2026-11-14T22:40:40.533831+00:00",
+  "source": "/Users/e1bae/src/homework/5351/project/sa-centay-2026-11-14/src/open_deep_research/deep_researcher.py",
+  "source_sha256": "af128d5d8773008d021b6ef7562e9fb90a45f7eb5e886483d1e6e835223275e0",
+  "functions": {
+    "supervisor_tools": {
+      "start": 225,
+      "end": 349
+    },
+    "compress_research": {
+      "start": 511,
+      "end": 585
+    },
+    "final_report_generation": {
+      "start": 607,
+      "end": 697
+    }
+  },
+  "scope": "actual extracted function bodies with fake model/messages/config; not full graph or Proposed implementation",
+  "verdict": "CONFIRMED baseline ignores finish_reason on these paths",
+  "observations": [
+    {
+      "function": "compress_research",
+      "finish_reason_in": "stop",
+      "model_calls": 1,
+      "returned_text": "<task_findings_v1>\n```json\n{\"schema_version\": 1, \"findings\": [{\"claim\": \"demo\", \"answers\": [\"Q1\"], \"source_numbers\": [1]}]}\n```\n</task_findings_v1>\n### Sources\n[1] Demo: https://example.org",
+      "metadata_in_returned_message": false,
+      "finish_reason_in_result_fields": false,
+      "observation": "returned without truncation rejection"
+    },
+    {
+      "function": "compress_research",
+      "finish_reason_in": "length",
+      "model_calls": 1,
+      "returned_text": "<task_findings_v1>\n```json\n{\"schema_version\": 1, \"findings\": [{\"claim\": \"demo\", \"answers\": [\"Q1\"], \"source_numbers\": [1]}]}\n```\n</task_findings_v1>\n### Sources\n[1] Demo: https://example.org",
+      "metadata_in_returned_message": false,
+      "finish_reason_in_result_fields": false,
+      "observation": "returned without truncation rejection"
+    },
+    {
+      "function": "final_report_generation",
+      "finish_reason_in": "stop",
+      "model_calls": 1,
+      "returned_text": "# Report\nA valid-looking report.\n",
+      "metadata_in_returned_message": true,
+      "finish_reason_in_result_fields": false,
+      "observation": "returned without truncation rejection"
+    },
+    {
+      "function": "final_report_generation",
+      "finish_reason_in": "length",
+      "model_calls": 1,
+      "returned_text": "# Report\nA valid-looking report.\n",
+      "metadata_in_returned_message": true,
+      "finish_reason_in_result_fields": false,
+      "observation": "returned without truncation rejection"
+    },
+    {
+      "function": "supervisor_tools",
+      "finish_reason_in": "stop",
+      "tool_calls": [],
+      "goto": "__end__",
+      "observation": "no-tool exit does not distinguish length from stop"
+    },
+    {
+      "function": "supervisor_tools",
+      "finish_reason_in": "length",
+      "tool_calls": [],
+      "goto": "__end__",
+      "observation": "no-tool exit does not distinguish length from stop"
+    },
+    {
+      "function": "supervisor_tools",
+      "finish_reason_in": "stop",
+      "tool_calls": [
+        "ConductResearch"
+      ],
+      "fake_child_starts": 1,
+      "goto": "supervisor",
+      "observation": "well-shaped intent dispatched despite length marker; child mocked, no network"
+    },
+    {
+      "function": "supervisor_tools",
+      "finish_reason_in": "length",
+      "tool_calls": [
+        "ConductResearch"
+      ],
+      "fake_child_starts": 1,
+      "goto": "supervisor",
+      "observation": "well-shaped intent dispatched despite length marker; child mocked, no network"
+    }
+  ]
+}

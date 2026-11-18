@@ -1,5 +1,5 @@
 schema_version: "1.0.0"
-updated_at: "2026-11-11"
+updated_at: "2026-11-17"
 notes: >-
   Consolidated team requirements, revision of 2026-11-11. All requirements are approved. Code
   line references are to commit f4a016e. Verification paths name planned tests under
@@ -665,7 +665,8 @@ requirements:
         - id: C-004
           description: >-
             Given search_api tavily with a Tavily key, when the researcher tools are assembled,
-            then they include the web_search tool and no validation error is raised.
+            then they include the Tavily search tool (tavily_search) and no validation
+            error is raised.
           verification: test/offline/test_search_configuration.py::test_valid_tavily_configuration_accepted
           automated: true
         - id: C-005
@@ -678,11 +679,12 @@ requirements:
     depends_on: []
     safety_relevant: false
     status: approved
-    version: "1.1"
-    updated_at: "2026-11-11"
+    version: "1.2"
+    updated_at: "2026-11-17"
     notes: >-
       Source: upstream issue #250, still open. The supported provider set is the existing
-      SearchAPI enum.
+      SearchAPI enum. Version 1.2 (2026-11-17): C-004 names the Tavily tool by its tool name,
+      tavily_search; web_search is only its metadata name.
 
   - id: REQ-008
     title: Search shall fall back to configured alternative sources on failure

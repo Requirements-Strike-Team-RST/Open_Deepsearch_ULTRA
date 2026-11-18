@@ -1,0 +1,14 @@
+# Current context head: output truncation and input-budget check
+
+Pinned revision: [`cea3c21`](https://github.com/Requirements-Strike-Team-RST/Open_Deepsearch_ULTRA/commit/cea3c2170f663d43788a71cc21a8a97ecfe32ddd), committed 2026-11-14 12:53:08 by BroZhai. This is current remote [PR #14](https://github.com/Requirements-Strike-Team-RST/Open_Deepsearch_ULTRA/pull/14), not merely the previous downloaded snapshot.
+
+Read-only result: the latest context ADR, verification inventory, and runtime catalog still describe **reactive input/context token-limit exceptions**, oldest-whole-turn trimming and at most three attempts. They do not define successful-response `finish_reason=length` / output truncation handling.
+
+- [ADR-005 implementation steps, lines 204–216](https://github.com/Requirements-Strike-Team-RST/Open_Deepsearch_ULTRA/blob/cea3c2170f663d43788a71cc21a8a97ecfe32ddd/docs/architecture/adr/005-context-adr.md#L204): success returns `str(response.content)`; no finish-reason check is specified before accepting the summary. Exception classification/retry covers token-limit errors, not a successful response cut off by its output-token limit.
+- [Verification inventory, lines 85–96](https://github.com/Requirements-Strike-Team-RST/Open_Deepsearch_ULTRA/blob/cea3c2170f663d43788a71cc21a8a97ecfe32ddd/docs/code-governance/verification-constraints.md#L85): cases cover preserved turns, orphan messages, provider-specific input-limit errors, unreducible history, non-token exceptions and placeholder removal. No length/truncation success case is listed.
+- [ADR-005 rejected proactive-budget option, line 101](https://github.com/Requirements-Strike-Team-RST/Open_Deepsearch_ULTRA/blob/cea3c2170f663d43788a71cc21a8a97ecfe32ddd/docs/architecture/adr/005-context-adr.md#L101): proactive token budgeting is explicitly deferred/out of this requirement scope. No numeric input-token cap or proactive compaction threshold is established by the checked head.
+- [Runtime policies, lines 30–34](https://github.com/Requirements-Strike-Team-RST/Open_Deepsearch_ULTRA/blob/cea3c2170f663d43788a71cc21a8a97ecfe32ddd/docs/architecture/runtime-policy-catalog.md#L30): three-attempt reactive retry and failure propagation are defined; this is not a proactive input cap.
+
+Byte comparison with prior context snapshot `2f74868a0dc4719c7cf1023f00f45cd0ed6359e1`: ADR-005, verification constraints and runtime catalog are identical; memory-design differs. Thus the new remote commit is real, but it has not added the requested truncation/input-budget policies to those three authoritative proposal sections.
+
+No `docs/sa-delivery` branch or delivery PR appears in the current branch/PR inventory. Therefore no current delivery proposal on report-output truncation / REQ-004 mapping was found in these published locations. This says nothing about unpushed work or other locations.
