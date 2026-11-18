@@ -219,3 +219,163 @@ It made both changes, repaired one line it had broken while editing, and committ
 > - **Missed:** cross-module ownership, state transport across the subgraph and the pass marker. The independent review found these.
 
 > **[Note] Open for SA Review:** the exact `TaskResult` contract and `task_results` field, to be agreed with centay (RISK-002).
+
+---
+
+# Agent Transcript — SA integration of all modules, REQ-007 decisions, REQ-008 review and full SA review
+
+## Annotation block
+
+| Field | Value |
+|---|---|
+| **AI-use log entries** | `AIU-020`, `AIU-021`, `AIU-023`, `AIU-024` (`docs/ai-use-log.yaml`) |
+| **Member** | AlchemyHAN (student 60705556, HAN Peilin), acting as the SA integrator |
+| **Session** | Claude Code session in VS Code, 2026-11-17 14:30 – 2026-11-18 11:40 (UTC+8), with breaks |
+| **Agents** | Claude Code (claude-opus-5-5) as the main agent; four independent review sub-agents it started (one on 2026-11-17, three in parallel on 2026-11-18) |
+| **Requirements** | REQ-001 to REQ-010 |
+| **Modules** | All six: orchestration, delivery, context, citations, search, evaluation |
+| **Branch / PRs** | `docs/sa-integration` (local); module draft PRs #12–#16, #18, #20; Discussion #19 |
+
+### Record scope
+
+- **My messages** are translated from Chinese and lightly edited. Repeated text is removed.
+- **The agent's replies** are summarised from its messages; tool calls are omitted, but every commit, GitHub post and check result is named.
+- **Sub-agent reports** are summarised by their main findings.
+- **Annotations** are marked **[Note]**. Each human intervention has an ID H-09…H-16, continuing from the delivery session above.
+- My own commits on the branch between the turns (adding this transcript, a reverted clean-up of raw transcript exports) are not part of this session.
+
+### How the work was split
+
+- **Claude Code** read the governance documents and every module branch, merged the branches, rewrote the shared documents into one design, posted on GitHub when asked, and applied fixes.
+- **The review sub-agents** checked the merged documents independently, without being told the main agent's conclusions: against the requirements, the source code and the installed libraries, for cross-document consistency, and for governance and course deliverables.
+- **I** set the scope and writing rules, pointed out what the agent had missed (the team vote in Discussion #19, PR #20), decided what to post, and accepted or declined each change.
+
+### Artifacts produced or changed
+
+| Path or link | Change |
+|---|---|
+| `docs/architecture/adr/001`–`008` | Module ADRs renumbered in requirement order and rewritten into one consistent design; ADR-008 added from PR #20 |
+| `docs/architecture/architecture-blueprint.md` | Written from the ADRs: components, interfaces, dependency exceptions, data flow, deterministic boundaries, flags, integration decisions |
+| `docs/architecture/evaluation-table.md`, `invariants.md`, `memory-design.md`, `runtime-policy-catalog.md`, `trace-matrix.md`, `risk-list.md` | Integrated: EVAL-001–008, INV-001–010, POL-001–024, RISK-001–014, one row per requirement |
+| `docs/architecture/option-ledger.md` | Removed; its only open item moved to EVAL-004 and RISK-012 |
+| `docs/code-governance/structural-constraints.md`, `verification-constraints.md` | Module sections §10 and §7 integrated; 68 test cases `TC-<MODULE>-NN` |
+| `docs/req/requirements.yaml` | REQ-007 C-004 names the Tavily tool `tavily_search` (version 1.2) |
+| `docs/ai-use-log.yaml` | Entries renumbered AIU-008–019, fixed YAML, AIU-020–024 added |
+| `docs/review-memo.md`, `AGENTS.md`, `Prompt.md` | AI preparation note removed from the memo; `risk-list.md` added to the document maps; check commands referenced in the right place |
+| Discussion #19, PR #20 | One reply each, posted in my name |
+
+## Session record
+
+### Turn 1 — Me
+
+> Look at the project and the existing documents first; they have format and deliverable rules. Then merge our team's architecture and governance documents into one new branch. Everyone opened their own branch and PR with independent commits; I will merge the new branch into `main` later. The documents will conflict, and the design has problems: module conflicts, documents that do not match the code, and some writing that is not standard or not clear. Revise all of that so the whole design is consistent and follows common practice. Do not make simple things complex, do not over-engineer or over-abstract. Keep the language uniform, plain and logical, without heavy formal wording. These documents are for future coding agents.
+
+> **[Note] H-09 — Scope and writing rules.** I asked for one integration branch that keeps everyone's commits, and set the rules: no over-engineering, plain language, written for coding agents.
+
+### Turn 1 — Agent
+
+It read the governance documents, the templates, `requirements.yaml`, the six module branches and the baseline code, then:
+
+- **Merged** the six branches (`docs/sa-orchestration`, `-delivery`, `-context`, `-citations`, `-search-provider`, `-evaluation`) into `docs/sa-integration` with `git merge`, keeping both sides of each conflict (`7354544`–`5062980`), and committed the ADR renames on their own so that `git log --follow` still works (`8db3076`).
+- **Renumbered** everything: four modules had used ADR-001, and EVAL, INV, POL and test IDs collided.
+- **Resolved module conflicts:**
+  - one shared task contract in `state.py`;
+  - one `task_result` output field instead of a second field that clashed with the run outcome;
+  - one writer of `task_results`;
+  - only the failure categories named in the requirements;
+  - one `task_contract_enabled` flag for REQ-001–004, which depend on each other.
+- **Replaced** my own delivery design's double-pass `finalize` node with a `check_research_outcome` node before the report.
+- **Removed design that no requirement asked for:** response-completion tracking, private config keys and crash-safe receipts in orchestration; environment snapshots and an MCP load adapter in search; HTTP 401/403 exit codes in evaluation.
+- **Wrote** the blueprint from the ADRs and listed every integration decision in its §11.
+- **Started an independent review sub-agent.** It found 11 problems. The main one was that `notes` had been built from task summaries, which breaks REQ-002 C-007; the agent changed `notes` back to validated findings only and recorded the thinner-report risk as RISK-013. Committed as `aa58aa2`.
+- **Reported** the open items: REQ-008 had no design, REQ-007 C-004 named the wrong tool, and my AIU-014 pointed to a missing transcript.
+
+> **[Note] H-10 — Integration decisions.** I accepted the changes to my own delivery design (one node instead of a node that runs twice). The agent made the `notes` mistake itself; its own review sub-agent caught it before the commit.
+
+### Turn 2 — Me
+
+> 1. Where is it missing? 2. Please fix it. 3. I have created it. 4. Look at Discussion #19 (REQ-007 U-1 to U-4). The decisions the team voted for and ADR-006 in the integration branch are opposite in three places. Post in the discussion in my voice, announce the final decision, and change the documents to match. 5. Nice work.
+
+> **[Note] H-11 — The missed team vote.** The agent had read the module branches but not GitHub Discussions, so the integrated ADR-006 contradicted three team decisions. I caught this.
+
+### Turn 2 — Agent
+
+- **REQ-008:** no branch had a design for it at that time; the search branch scoped it out explicitly.
+- **REQ-007 C-004:** changed "web_search tool" to the real tool name `tavily_search`, and raised the requirement version to 1.2.
+- **Transcript:** confirmed that `transcripts/60705556-HAN_Peilin.md` exists and AIU-014 points to it.
+- **Discussion #19:** counted the replies of BroZhai, sszfot and NoPumpkinz (U-1 A, U-2 reword, U-3 B by 2:1, U-4 B), then posted the final decisions in my name ([comment](https://github.com/Requirements-Strike-Team-RST/Open_Deepsearch_ULTRA/discussions/19#discussioncomment-19675193)). Before writing U-3, it read `init_chat_model`'s provider rules in the installed LangChain 1.3.9.
+- **ADR-006 rewritten to match the vote:**
+  - a run with no search tool stops before any model call;
+  - the model provider is resolved like `init_chat_model` and checked against an allowlist;
+  - the dead `len(tools) == 0` guard is replaced by a search-tool check.
+- **Synced** INV-005, the policies, the test cases, RISK-009 and the blueprint, and committed `8cfe8b9`.
+
+> **[Note] H-12 — Posting in my name.** I asked for the announcement to be posted under my account; the agent counted only members who replied and said so in the post.
+
+### Turn 3 — Me
+
+> Review #20. If it has big problems, fix them for him and post a reply. Then merge it into the current documents.
+
+> **[Note] H-13 — REQ-008 appears.** sszfot opened PR #20 with the REQ-008 design after the agent's first check, so its answer in turn 2 was right at the time but out of date by now.
+
+### Turn 3 — Agent
+
+It reviewed PR #20 against the code, the installed Tavily client and the Discussion #19 decisions. The core held up: fallback in the search module, typed errors classified before they become text, and empty results counted as success. It found four major problems:
+
+1. **It depended on a contract the team did not adopt.** It relied on the structured MCP load result (REQ-007 U-5). A listed MCP tool that did not load is now recorded as `not available` and never stops the run.
+2. **It had no rule for passing a Tavily query to an MCP tool with an arbitrary schema.** Rule added: an MCP fallback tool takes one required string argument.
+3. **Its numbers collided with the integrated documents.** They are now ADR-008, EVAL-008, INV-010, POL-024, TC-SRC-11–17 and AIU-022.
+4. **It had more structure than C-001 to C-005 need.** It is now one file, `search/fallback.py`, and D-1 to D-8 are decided in the ADR.
+
+It merged the branch with `git merge` (`f0b7536`), restored the integrated shared documents, renamed the ADR, wrote the REQ-008 sections (`88af6ac`, `17786eb`) and posted a review reply in my name ([comment](https://github.com/Requirements-Strike-Team-RST/Open_Deepsearch_ULTRA/pull/20#issuecomment-6967892566)).
+
+### Turn 4 — Me
+
+> Check all our SA documents as a whole: are they right, will they work, are there problems?
+
+> **[Note] H-14 — Full review.** I asked for a review of everything, not only the latest changes.
+
+### Turn 4 — Agent
+
+It started three review sub-agents in parallel, without giving them its own conclusions:
+
+- **Design correctness.** This sub-agent checked the ADRs against the requirements, the source and the library source, and ran a small LangGraph script to test state propagation.
+- **Cross-document consistency.**
+- **Governance and course deliverables.**
+
+It confirmed the two key library claims itself: MCP raises `McpError` with codes 408 and -32000 for timeouts and closed connections, and the baseline evaluators call `with_structured_output` on Pydantic models. It then fixed the design problems:
+
+- a finding with no source no longer counts as sourced;
+- MCP timeouts and lost connections now fall back;
+- judge schemas use strict Pydantic types instead of `Any`, which OpenAI's strict mode would reject;
+- rejected delegations get a failed result;
+- stalls count answered questions, not the coverage ratio;
+- `notes` keep source titles;
+- only the called tool's ineligible error stops fallback.
+
+It also fixed 14 consistency problems and the stale artifact paths in `ai-use-log.yaml`, and committed `928025d`.
+
+It reported, but did not change, the problems outside the SA documents:
+
+- **Permission rules:** the agent may not edit `.opencode/`.
+- **CI gates:** a skipped offline-test job still shows green.
+- **Course deliverables:** the upstream README, an empty `Report.md` and prompt files, and a missing transcript for one member.
+- **Before Gate 1:** no SA Review record yet, and the integration PR is not open.
+
+> **[Note] H-15 — Findings the review caught.** Three of the design problems would have failed at runtime or against a requirement: the empty-source finding, the MCP error codes and the `Any` judge schema. They were found only because the sub-agents read the library source instead of trusting the documents.
+
+### Turn 5 — Me
+
+> Continue.
+
+> **[Note] H-16 — Approval to apply the fixes.** The agent applied the SA-document fixes and left the permission configuration, CI and course deliverables for my decision.
+
+## After the session
+
+- **Commits on `docs/sa-integration`:** `7354544`–`5062980` (merges of the six modules), `8db3076` (renames), `aa58aa2` (integration), `8cfe8b9` (REQ-007 decisions), `f0b7536`, `88af6ac` and `17786eb` (REQ-008), `928025d` (full-review fixes).
+- **Checks run:** `scripts/validate_requirements.py` PASS; every C-/M- of REQ-001 to REQ-010 has a test case; 68 unique test case IDs; every AI-use transcript and artifact path exists. No code or tests were written in this phase.
+- **Not yet done:** pushing the branch, opening the integration PR, the SA Review record, and the decisions on permissions, CI and course deliverables.
+
+> **[Note] What the agent did well and what it missed.**
+> - **Did well:** it kept every member's commits in the history, checked claims against the code and library source, and used independent sub-agents rather than reviewing its own work.
+> - **Missed:** the team vote in Discussion #19 during integration, which I had to point out; the `notes` rule of REQ-002 C-007 in its first draft; and several runtime details (empty sources, MCP error codes, strict schemas) until the full review.

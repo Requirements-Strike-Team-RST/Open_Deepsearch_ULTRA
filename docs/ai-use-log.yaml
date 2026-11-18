@@ -524,15 +524,15 @@ entries:
     date: "2026-11-17"
     member: AlchemyHAN
     purpose: >-
-      Integrate the six module SA branches into one branch and make the architecture and
-      governance documents consistent.
+      Integrate the six module SA branches into one branch and turn the architecture and
+      governance documents into one consistent design.
     prompt: >-
-      Read the project and the existing documents and their format rules, then merge the team's
-      architecture and governance documents (each member's own branch and PR) into one new
-      branch. Resolve conflicts between them, module conflicts, statements that do not match the
-      code, and unclear or non-standard writing, so that the whole design is consistent and
-      follows common practice. Do not make simple things complex, do not over-engineer or
-      over-abstract, and keep the language plain and clear for future coding agents.
+      Read the project and its documents, including their format and deliverable rules, then merge
+      the team's architecture and governance documents from each member's branch into one new
+      branch. Resolve the conflicts between documents and modules, statements that do not match
+      the code, and unclear or non-standard writing, so that the whole design is consistent and
+      follows common practice. Do not make simple things complex, over-engineer or over-abstract;
+      keep the language plain and uniform for future coding agents.
     requirements: [REQ-001, REQ-002, REQ-003, REQ-004, REQ-005, REQ-006, REQ-007, REQ-009, REQ-010]
     artifacts:
       - docs/architecture/
@@ -543,24 +543,24 @@ entries:
       - AGENTS.md
       - Prompt.md
     supervision: >-
-      The AI merged every module branch with git merge, renumbered ADR, EVAL, INV, POL, test and
-      AIU IDs, and rewrote the module designs into one design; the integration decisions are
-      listed in architecture-blueprint.md section 11. The member reviews the result before the
-      integration pull request is opened; module owners confirm the points that touch their
-      module at SA Review.
-    transcript: null
+      Claude Code merged every module branch with git merge, renumbered the ADR, EVAL, INV, POL,
+      test and AIU IDs, and rewrote the module designs into one design; the integration decisions
+      are listed in architecture-blueprint.md section 11. An independent review sub-agent found
+      11 problems before the commit, including notes built from task summaries against REQ-002
+      C-007, which was corrected. The member accepted the changes to their own delivery design;
+      module owners confirm the points that touch their module at SA Review.
+    transcript: transcripts/60705556-HAN_Peilin.md
 
   - id: AIU-021
     date: "2026-11-17"
     member: AlchemyHAN
     purpose: >-
-      Announce the team's decisions on the REQ-007 open questions U-1 to U-4 and apply them to
-      the integrated architecture.
+      Announce the team's decisions on the REQ-007 open questions U-1 to U-4, apply them to the
+      integrated architecture, and correct the tool name in REQ-007 C-004.
     prompt: >-
-      Read Discussion #19 (REQ-007 U-1 to U-4). The decisions the team voted for and ADR-006 in
-      the integration branch disagree in three places. Post a reply in my voice announcing the
-      final decision, then update the documents to match it. Also correct the tool name in
-      REQ-007 C-004.
+      Read Discussion #19 on REQ-007 U-1 to U-4. The decisions the team voted for and ADR-006 in
+      the integration branch are opposite in three places. Post the final decision in the
+      discussion in my voice, then change the documents to match. Also fix the REQ-007 wording.
     requirements: [REQ-007]
     artifacts:
       - https://github.com/Requirements-Strike-Team-RST/Open_Deepsearch_ULTRA/discussions/19
@@ -570,10 +570,11 @@ entries:
       - docs/code-governance/verification-constraints.md
       - docs/req/requirements.yaml
     supervision: >-
-      The AI counted the votes of the three members who replied (U-1 A, U-2 reword, U-3 B, U-4 B)
-      and drafted the announcement; the member asked for it to be posted. The member reviews the
-      document changes before the integration pull request is opened.
-    transcript: null
+      The member noticed that the integration had missed the team vote. Claude Code counted the
+      replies of the three members who answered (U-1 A, U-2 reword, U-3 B, U-4 B), checked the
+      LangChain 1.3.9 provider rules for U-3, and posted the announcement under the member's
+      account at the member's request. The member reviewed the document changes.
+    transcript: transcripts/60705556-HAN_Peilin.md
 
   - id: AIU-022
     date: "2026-11-17"
@@ -626,8 +627,8 @@ entries:
       Review PR #20 (REQ-008 search fallback), fix its major problems and merge it into the SA
       integration branch.
     prompt: >-
-      Review #20. If it has major problems, fix them for the author and post a reply, then merge
-      it into the current integrated documents.
+      Review PR #20. If it has major problems, fix them for the author and post a reply, then
+      merge it into the integrated documents.
     requirements: [REQ-008]
     artifacts:
       - https://github.com/Requirements-Strike-Team-RST/Open_Deepsearch_ULTRA/pull/20
@@ -637,8 +638,33 @@ entries:
       - docs/architecture/runtime-policy-catalog.md
       - docs/code-governance/verification-constraints.md
     supervision: >-
-      The AI checked the proposal against the code (Tavily and httpx error types) and the
-      Discussion #19 decisions, merged the branch with git merge, renumbered it to ADR-008 and
-      narrowed it; the changes are listed in architecture-blueprint.md section 11, decision 7.
-      The member reviews the result and the PR reply before SA Review.
-    transcript: null
+      Claude Code checked the proposal against the code, the installed Tavily client and the
+      Discussion #19 decisions, merged the branch with git merge so that the author's commits stay
+      in the history, renumbered it to ADR-008 and narrowed it; the changes are listed in
+      architecture-blueprint.md section 11, decision 7. The review reply was posted in the
+      member's name at the member's request.
+    transcript: transcripts/60705556-HAN_Peilin.md
+
+  - id: AIU-024
+    date: "2026-11-18"
+    member: AlchemyHAN
+    purpose: >-
+      Review all SA documents as a whole for correctness, feasibility and consistency, and fix the
+      problems found.
+    prompt: >-
+      Check all our SA documents as a whole: are they right, will they work, and are there any
+      problems?
+    requirements: [REQ-001, REQ-002, REQ-003, REQ-004, REQ-005, REQ-006, REQ-007, REQ-008, REQ-009, REQ-010]
+    artifacts:
+      - docs/architecture/
+      - docs/code-governance/structural-constraints.md
+      - docs/code-governance/verification-constraints.md
+      - docs/ai-use-log.yaml
+      - Prompt.md
+    supervision: >-
+      Claude Code ran three independent review sub-agents in parallel (design correctness against
+      the requirements, code and library source; cross-document consistency; governance and course
+      deliverables) and confirmed the key library claims itself before fixing. The member approved
+      applying the SA-document fixes; permission configuration, CI gates and course deliverables
+      were reported for the member's decision and not changed.
+    transcript: transcripts/60705556-HAN_Peilin.md
