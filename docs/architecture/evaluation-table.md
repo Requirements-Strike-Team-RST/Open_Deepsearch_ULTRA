@@ -17,7 +17,7 @@
 - **Module:** orchestration
 - **Owner:** centay
 - **Decision recorded in:** ADR-001
-- **Status:** Decided (Proposed until SA Review)
+- **Status:** Decided
 
 **ASR**
 
@@ -43,7 +43,7 @@
 - **Module:** delivery
 - **Owner:** AlchemyHAN
 - **Decision recorded in:** ADR-002
-- **Status:** Decided (Proposed until SA Review)
+- **Status:** Decided
 
 **ASR**
 
@@ -68,7 +68,7 @@
 - **Module:** delivery
 - **Owner:** AlchemyHAN
 - **Decision recorded in:** ADR-003
-- **Status:** Decided (Proposed until SA Review)
+- **Status:** Decided
 
 **ASR**
 
@@ -95,7 +95,7 @@ The decision needs facts from two moments: the exit reason and task results (bef
 - **Module:** context
 - **Owner:** BroZhai
 - **Decision recorded in:** ADR-004
-- **Status:** Decided (Proposed until SA Review)
+- **Status:** Decided
 
 **ASR**
 
@@ -122,7 +122,7 @@ The decision needs facts from two moments: the exit reason and task results (bef
 - **Module:** citations
 - **Owner:** NoPumpkinz
 - **Decision recorded in:** ADR-005
-- **Status:** Decided (Proposed until SA Review)
+- **Status:** Decided
 
 **ASR**
 
@@ -148,7 +148,7 @@ The decision needs facts from two moments: the exit reason and task results (bef
 - **Module:** search
 - **Owner:** sszfot
 - **Decision recorded in:** ADR-006
-- **Status:** Decided (Proposed until SA Review)
+- **Status:** Decided
 
 **ASR**
 
@@ -173,7 +173,7 @@ The decision needs facts from two moments: the exit reason and task results (bef
 - **Module:** evaluation
 - **Owner:** DopplerXD
 - **Decision recorded in:** ADR-007
-- **Status:** Decided (Proposed until SA Review)
+- **Status:** Decided
 
 **ASR**
 
@@ -199,7 +199,7 @@ The decision needs facts from two moments: the exit reason and task results (bef
 - **Module:** search
 - **Owner:** sszfot
 - **Decision recorded in:** ADR-008
-- **Status:** Decided (Proposed until SA Review)
+- **Status:** Decided
 
 **ASR**
 

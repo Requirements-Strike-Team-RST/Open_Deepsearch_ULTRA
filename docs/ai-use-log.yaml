@@ -668,3 +668,94 @@ entries:
       applying the SA-document fixes; permission configuration, CI gates and course deliverables
       were reported for the member's decision and not changed.
     transcript: transcripts/60705556-HAN_Peilin.md
+
+  - id: AIU-025
+    date: "2026-11-20"
+    member: AlchemyHAN
+    purpose: >-
+      Write the offline and live tests for every module test case of REQ-001 to REQ-010.
+    prompt: >-
+      Read the project requirements, the ADD, the ADRs and the governance documents, then write
+      every test that these documents call for. Do not contradict the documents and do not change
+      their content on your own.
+    requirements: [REQ-001, REQ-002, REQ-003, REQ-004, REQ-005, REQ-006, REQ-007, REQ-008, REQ-009, REQ-010]
+    artifacts:
+      - test/offline/
+      - test/live/
+    supervision: >-
+      OpenCode, in the test-author role (session ses_e0a20505cffefE1DcP3eJRI5kc), wrote 166
+      offline cases and 2 live cases. It reworked the tests so that the baseline failed for
+      missing behaviour and not for import errors (163 failed, 3 passed). It reported three
+      document conflicts instead of resolving them. It also edited the SA document
+      runtime-policy-catalog.md, and that edit was reverted in AIU-027. The correction pass
+      (AIU-027) later found tests that could never pass and tests that checked less than their
+      case required.
+    transcript: transcripts/60705556-HAN_Peilin.md
+
+  - id: AIU-026
+    date: "2026-11-20"
+    member: AlchemyHAN
+    purpose: >-
+      Implement ADR-001 to ADR-008 so that the written tests pass.
+    prompt: >-
+      Read the project requirements, the ADD, the ADRs, the governance documents and the tests
+      already written, then implement all the code these documents call for. Do not contradict
+      the documents and do not change their content or the tests on your own.
+    requirements: [REQ-001, REQ-002, REQ-003, REQ-004, REQ-005, REQ-006, REQ-007, REQ-008, REQ-009, REQ-010]
+    artifacts:
+      - src/open_deep_research/
+      - test/evaluation/
+      - test/evaluators.py
+      - test/prompts.py
+      - pyproject.toml
+      - README.md
+      - docs/build-reports/REQ-001-010-build.md
+      - docs/build-reports/REQ-008-test-defects.md
+    supervision: >-
+      OpenCode, in the build role (session ses_e0a0623f5ffehwyZvyUqwSRAv7), asked three questions
+      first: scope, the pyproject.toml change and the branch. The member chose all modules at once,
+      allowed the six package names, and approved the branch feat/implement-adr-001-008. When the
+      agent found broken tests, the member told it to fix them. It re-read the permission file and
+      refused, because Build may not edit test/offline. It ended with 153 passed and 13 failed and
+      reported all 13 as test defects. Part of the implementation had been shaped around a broken
+      test harness; this was found and fixed in AIU-027. It added only one of the six approved
+      package names. Nothing was committed or pushed.
+    transcript: transcripts/60705556-HAN_Peilin.md
+
+  - id: AIU-027
+    date: "2026-11-20"
+    member: AlchemyHAN
+    purpose: >-
+      Check the OpenCode tests and implementation against the documents, then correct the tests
+      first and the code second until the offline suite passes.
+    prompt: >-
+      Following the project documents, the ADD, the ADRs and the governance documents, fix the
+      problems in OpenCode's work: correct the tests first, then the code, and finally make
+      everything run without errors.
+    requirements: [REQ-001, REQ-002, REQ-003, REQ-004, REQ-005, REQ-006, REQ-007, REQ-008, REQ-009, REQ-010]
+    artifacts:
+      - test/offline/
+      - src/open_deep_research/
+      - test/evaluation/
+      - pyproject.toml
+      - README.md
+      - docs/architecture/
+      - docs/build-reports/REQ-001-010-build.md
+      - docs/build-reports/REQ-008-test-defects.md
+      - docs/debt-register.md
+      - docs/ai-use-log.yaml
+      - transcripts/60705556-HAN_Peilin.md
+    supervision: >-
+      A Claude agent in the Cursor IDE compared each test and each code path with the ADRs, the
+      verification table and the baseline source. After the tests were corrected, 29 cases
+      failed on the OpenCode code, each on a missing or wrong behaviour; after the code was
+      corrected, all 172 passed. The worst code defect was a static graph edge that called the
+      report model for a failed run, against REQ-004 C-004. Fake-model smoke runs of the compiled
+      graph checked three cases: the flag-on path, a run with no findings, and a second run on
+      the same thread. The flag-off code was regenerated from the baseline text. The member asked
+      for both roles in one session, so another member should review the test changes listed in
+      the build report. On the member's instructions the agent also updated the trace matrix,
+      marked the ADRs as accepted in SA Review (PR #22), cleaned up the debt register and wrote
+      these records. The live tests and the two README reviews are NOT_RUN. Nothing was
+      committed or pushed.
+    transcript: transcripts/60705556-HAN_Peilin.md

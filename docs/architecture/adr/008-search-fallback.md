@@ -1,11 +1,11 @@
 # ADR-008: Ordered search fallback inside the search module
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-18
 - **Module:** search
 - **Owner:** sszfot
 - **Evaluation:** EVAL-008 (`docs/architecture/evaluation-table.md`)
-- **SA Review:** SA-NNN (`docs/review-memo.md`), at acceptance
+- **SA Review:** passed in the SA integration PR [#22](https://github.com/Requirements-Strike-Team-RST/Open_Deepsearch_ULTRA/pull/22) (approved by BroZhai and DopplerXD, merged 2026-11-18)
 - **History:** proposed in PR #20 as ADR-002; renumbered and narrowed at integration (blueprint §11, decision 7)
 
 ## 1. Architecturally Significant Requirements

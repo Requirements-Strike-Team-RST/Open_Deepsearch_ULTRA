@@ -3,11 +3,11 @@
 > **Purpose:** What the research agent does at runtime when something goes wrong: exceptions, retries, degradation and failure paths.
 > **Authoritative for:** runtime handling policies. Each policy traces to a requirement or invariant.
 > **Maintained by:** owners of modules with exception, retry, degradation or failure handling add rows to §1 for their module; rows are integrated and renumbered before SA Review.
-> **Last updated:** 2026-11-18
+> **Last updated:** 2026-11-20
 
 ## 1. Policies
 
-All policies are *Proposed* until SA Review. A policy applies when the flag of its module is on (`structural-constraints.md` §8); search validation and evaluation have no flag; search fallback applies when `search_fallback` is not empty. "Outcome effect" refers to the run outcome of REQ-004 (`complete`, `partial`, `failed`).
+All policies were accepted in SA Review (PR #22, 2026-11-18). A policy applies when the flag of its module is on (`structural-constraints.md` §8); search validation and evaluation have no flag; search fallback applies when `search_fallback` is not empty. "Outcome effect" refers to the run outcome of REQ-004 (`complete`, `partial`, `failed`).
 
 | Policy ID | Trigger | Detection | Behaviour | Retry / degradation | Outcome effect | Module | Source | Test |
 |---|---|---|---|---|---|---|---|---|
