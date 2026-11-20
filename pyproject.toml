@@ -54,7 +54,16 @@ requires = ["setuptools>=73.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["open_deep_research", "test"]
+packages = [
+    "open_deep_research",
+    "open_deep_research.orchestration",
+    "open_deep_research.delivery",
+    "open_deep_research.context",
+    "open_deep_research.citations",
+    "open_deep_research.search",
+    "test",
+    "test.evaluation",
+]
 
 [tool.setuptools.package-dir]
 "open_deep_research" = "src/open_deep_research"

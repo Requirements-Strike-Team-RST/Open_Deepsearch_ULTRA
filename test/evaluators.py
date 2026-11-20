@@ -1,10 +1,26 @@
-from typing import cast
+"""LangSmith adapters for the evaluation metric groups (REQ-009, ADR-007 §3, §5).
 
-from langchain_anthropic import ChatAnthropic
-from langchain_openai import ChatOpenAI
-from pydantic import BaseModel, Field
+A thin adapter over ``test.evaluation.metrics``: it keeps the baseline function
+names, signatures and return shapes so that ``test/run_evaluate.py`` does not
+change, and creates no model client at import (POL-020). Every result's
+``comment`` starts with its status: ``scored:`` or ``not_evaluable:``. A
+``not_evaluable`` metric has ``score=None`` and its reason in the comment.
+"""
 
-from open_deep_research.utils import get_today_str
+from typing import Optional
+
+from test.evaluation import metrics
+from test.evaluation.metrics import (
+    CompletenessScore,
+    CorrectnessScore,
+    GroundednessClaim,
+    GroundednessScore,
+    MetricResult,
+    OverallQualityScore,
+    RelevanceScore,
+    StructureScore,
+    evaluate_metrics,
+)
 from test.prompts import (
     COMPLETENESS_PROMPT,
     CORRECTNESS_PROMPT,
@@ -14,13 +30,42 @@ from test.prompts import (
     STRUCTURE_PROMPT,
 )
 
-eval_model = ChatOpenAI(
-    model="gpt-4.1",
+__all__ = [
+    "COMPLETENESS_PROMPT",
+    "CORRECTNESS_PROMPT",
+    "GROUNDEDNESS_PROMPT",
+    "OVERALL_QUALITY_PROMPT",
+    "RELEVANCE_PROMPT",
+    "STRUCTURE_PROMPT",
+    "eval_completeness",
+    "eval_correctness",
+    "eval_groundedness",
+    "eval_overall_quality",
+    "eval_relevance",
+    "eval_structure",
+    # The strict judge schemas stay importable from the adapter (ADR-007 §5).
+    "CompletenessScore",
+    "CorrectnessScore",
+    "GroundednessClaim",
+    "GroundednessScore",
+    "OverallQualityScore",
+    "RelevanceScore",
+    "StructureScore",
+]
+
+QUALITY_KEYS = (
+    "research_depth_score",
+    "source_quality_score",
+    "analytical_rigor_score",
+    "practical_value_score",
+    "balance_and_objectivity_score",
+    "writing_quality_score",
 )
 
 
 def _format_input_query(inputs: dict) -> str:
-    messages = inputs["messages"]
+    """Return the user input of the baseline LangSmith example."""
+    messages = inputs.get("messages", [])
     if len(messages) == 1:
         return messages[0]["content"]
 
@@ -30,285 +75,68 @@ def _format_input_query(inputs: dict) -> str:
     }
 
     return "\n\n".join(
-        [
-            role_to_string_format_map[message["role"]].format(
-                content=message["content"]
-            )
-            for message in messages
-        ]
+        role_to_string_format_map[message["role"]].format(content=message["content"])
+        for message in messages
     )
 
 
-class OverallQualityScore(BaseModel):
-    """Score the overall quality of the report against specific criteria."""
+def _evidence(outputs: dict) -> Optional[str]:
+    """Return the raw notes of the example as the evidence a task run produced."""
+    notes = outputs.get("raw_notes")
+    if not notes:
+        return None
+    return "\n".join(str(note) for note in notes)
 
-    research_depth: int = Field(
-        description="Integer score 1-5 showing whether the report meets the provided criteria (1 = doesn't meet at all, 5 = meets all criteria)."
+
+def _metrics(inputs: dict, outputs: dict, reference_outputs: dict | None) -> dict:
+    """Score one LangSmith example and index the results by metric name."""
+    reference = reference_outputs or {}
+    results = evaluate_metrics(
+        _format_input_query(inputs),
+        outputs.get("final_report", ""),
+        reference_answer=reference.get("answer"),
+        research_brief=outputs.get("research_brief"),
+        evidence=_evidence(outputs),
+        judge=metrics.default_judge(),
     )
-    source_quality: int = Field(
-        description="Integer score 1-5 showing whether the report meets the provided criteria (1 = doesn't meet at all, 5 = meets all criteria)."
-    )
-    analytical_rigor: int = Field(
-        description="Integer score 1-5 showing whether the report meets the provided criteria (1 = doesn't meet at all, 5 = meets all criteria)."
-    )
-    practical_value: int = Field(
-        description="Integer score 1-5 showing whether the report meets the provided criteria (1 = doesn't meet at all, 5 = meets all criteria)."
-    )
-    balance_and_objectivity: int = Field(
-        description="Integer score 1-5 showing whether the report meets the provided criteria (1 = doesn't meet at all, 5 = meets all criteria)."
-    )
-    writing_quality: int = Field(
-        description="Integer score 1-5 showing whether the report meets the provided criteria (1 = doesn't meet at all, 5 = meets all criteria)."
-    )
+    return {result.metric: result for result in results}
+
+
+def _entry(result: MetricResult) -> dict:
+    """Return the baseline ``{key, score, comment}`` shape of one metric."""
+    return {
+        "key": result.metric,
+        "score": result.score,
+        "comment": f"{result.status}:{result.reason}",
+    }
 
 
 def eval_overall_quality(inputs: dict, outputs: dict):
-    query = _format_input_query(inputs)
-    final_report = outputs["final_report"]
-    user_input_content = f"""User input: {query}\n\nReport: \n\n{final_report}\n\nEvaluate whether the report meets the criteria and provide detailed justification for your evaluation."""
-    if isinstance(eval_model, ChatAnthropic):
-        user_input_content = [
-            {
-                "type": "text",
-                "text": user_input_content,
-                "cache_control": {"type": "ephemeral", "ttl": "1h"},
-            }
-        ]
-    eval_result = cast(
-        OverallQualityScore,
-        eval_model.with_structured_output(OverallQualityScore).invoke(
-            [
-                {
-                    "role": "system",
-                    "content": OVERALL_QUALITY_PROMPT.format(today=get_today_str()),
-                },
-                {"role": "user", "content": user_input_content},
-            ]
-        ),
-    )
-    return [
-        {"key": "research_depth_score", "score": eval_result.research_depth / 5},
-        {"key": "source_quality_score", "score": eval_result.source_quality / 5},
-        {"key": "analytical_rigor_score", "score": eval_result.analytical_rigor / 5},
-        {"key": "practical_value_score", "score": eval_result.practical_value / 5},
-        {
-            "key": "balance_and_objectivity_score",
-            "score": eval_result.balance_and_objectivity / 5,
-        },
-        {"key": "writing_quality_score", "score": eval_result.writing_quality / 5},
-    ]
-
-
-class RelevanceScore(BaseModel):
-    """Score the report relevance against specific criteria."""
-
-    reasoning: str = Field(
-        description="The reason for the score, including specific examples from the report."
-    )
-    score: int = Field(
-        description="Integer score 1-5 showing whether the report meets the provided criteria for relevance (1 = doesn't meet at all, 5 = meets all criteria)."
-    )
+    """Return the six overall-quality scores of the baseline evaluator."""
+    results = _metrics(inputs, outputs, None)
+    return [_entry(results[metric]) for metric in QUALITY_KEYS]
 
 
 def eval_relevance(inputs: dict, outputs: dict):
-    query = _format_input_query(inputs)
-    final_report = outputs["final_report"]
-    user_input_content = f"""User input: {query}\n\nReport: \n\n{final_report}\n\nEvaluate whether the report meets the criteria and provide detailed justification for your evaluation."""
-    if isinstance(eval_model, ChatAnthropic):
-        user_input_content = [
-            {
-                "type": "text",
-                "text": user_input_content,
-                "cache_control": {"type": "ephemeral", "ttl": "1h"},
-            }
-        ]
-
-    eval_result = cast(
-        RelevanceScore,
-        eval_model.with_structured_output(RelevanceScore).invoke(
-            [
-                {
-                    "role": "system",
-                    "content": RELEVANCE_PROMPT.format(today=get_today_str()),
-                },
-                {"role": "user", "content": user_input_content},
-            ]
-        ),
-    )
-    return {
-        "key": "relevance_score",
-        "score": eval_result.score / 5,
-        "comment": eval_result.reasoning,
-    }
-
-
-class StructureScore(BaseModel):
-    """Score the report structure against specific criteria."""
-
-    reasoning: str = Field(
-        description="The reason for the score, including specific examples from the report."
-    )
-    score: int = Field(
-        description="Integer score 1-5 showing whether the report meets the provided criteria for structure and flow (1 = doesn't meet at all, 5 = meets all criteria)."
-    )
+    """Return the relevance score of the baseline evaluator."""
+    return _entry(_metrics(inputs, outputs, None)["relevance_score"])
 
 
 def eval_structure(inputs: dict, outputs: dict):
-    query = _format_input_query(inputs)
-    final_report = outputs["final_report"]
-    user_input_content = STRUCTURE_PROMPT.format(
-        user_question=query, report=final_report, today=get_today_str()
-    )
-    if isinstance(eval_model, ChatAnthropic):
-        user_input_content = [
-            {
-                "type": "text",
-                "text": user_input_content,
-                "cache_control": {"type": "ephemeral", "ttl": "1h"},
-            }
-        ]
-
-    eval_result = cast(
-        StructureScore,
-        eval_model.with_structured_output(StructureScore).invoke(
-            [{"role": "user", "content": user_input_content}]
-        ),
-    )
-    return {
-        "key": "structure_and_cohesiveness_score",
-        "score": eval_result.score / 5,
-        "comment": eval_result.reasoning,
-    }
-
-
-class CorrectnessScore(BaseModel):
-    """Score the report correctness against specific criteria."""
-
-    reasoning: str = Field(
-        description="The reason for the score, including specific examples from the report."
-    )
-    score: int = Field(
-        description="Integer score 1-5 showing whether the report meets the provided criteria for correctness (1 = doesn't meet at all, 5 = meets all criteria)."
-    )
+    """Return the structure and cohesiveness score of the baseline evaluator."""
+    return _entry(_metrics(inputs, outputs, None)["structure_and_cohesiveness_score"])
 
 
 def eval_correctness(inputs: dict, outputs: dict, reference_outputs: dict):
-    query = _format_input_query(inputs)
-    final_report = outputs["final_report"]
-    answer = reference_outputs["answer"]
-    user_input_content = CORRECTNESS_PROMPT.format(
-        user_question=query, report=final_report, answer=answer, today=get_today_str()
-    )
-    if isinstance(eval_model, ChatAnthropic):
-        user_input_content = [
-            {
-                "type": "text",
-                "text": user_input_content,
-                "cache_control": {"type": "ephemeral", "ttl": "1h"},
-            }
-        ]
-
-    eval_result = cast(
-        CorrectnessScore,
-        eval_model.with_structured_output(CorrectnessScore).invoke(
-            [{"role": "user", "content": user_input_content}]
-        ),
-    )
-    return {
-        "key": "correctness_score",
-        "score": eval_result.score / 5,
-        "comment": eval_result.reasoning,
-    }
-
-
-class GroundednessClaim(BaseModel):
-    """A claim from the report, and whether or not it is grounded in the context"""
-
-    claim: str = Field(description="The claim extracted from the report.")
-    grounded: bool = Field(description="Whether the claim is grounded in the context.")
-
-
-class GroundednessScore(BaseModel):
-    """Extract the claims and whether they are grounded in the context"""
-
-    claims: list[GroundednessClaim] = Field(
-        description="All claims extracted from the report, and whether or not they are grounded in the context."
-    )
+    """Return the correctness score of the baseline evaluator."""
+    return _entry(_metrics(inputs, outputs, reference_outputs)["correctness_score"])
 
 
 def eval_groundedness(inputs: dict, outputs: dict):
-    final_report = outputs["final_report"]
-    context = str(outputs["raw_notes"])
-
-    user_input_content = GROUNDEDNESS_PROMPT.format(
-        context=context, report=final_report, today=get_today_str()
-    )
-    if isinstance(eval_model, ChatAnthropic):
-        user_input_content = [
-            {
-                "type": "text",
-                "text": user_input_content,
-                "cache_control": {"type": "ephemeral", "ttl": "1h"},
-            }
-        ]
-
-    eval_result = cast(
-        GroundednessScore,
-        eval_model.with_structured_output(GroundednessScore)
-        .with_retry(stop_after_attempt=3)
-        .invoke(
-            [
-                {"role": "user", "content": user_input_content},
-            ]
-        ),
-    )
-    # normalize to 0-1
-    grounded_claims = [claim for claim in eval_result.claims if claim.grounded]
-    return {
-        "key": "groundedness_score",
-        "score": len(grounded_claims) / len(eval_result.claims),
-        "comment": str(eval_result.claims),
-    }
-
-
-class CompletenessScore(BaseModel):
-    """Score the report completeness against specific criteria."""
-
-    reasoning: str = Field(
-        description="The reason for the score, including specific examples from the report."
-    )
-    score: int = Field(
-        description="Integer score 1-5 showing whether the report meets the provided criteria for completeness (1 = doesn't meet at all, 5 = meets all criteria)."
-    )
+    """Return the groundedness score of the baseline evaluator."""
+    return _entry(_metrics(inputs, outputs, None)["groundedness_score"])
 
 
 def eval_completeness(inputs: dict, outputs: dict):
-    query = _format_input_query(inputs)
-    final_report = outputs["final_report"]
-    research_brief = outputs["research_brief"]
-    user_input_content = COMPLETENESS_PROMPT.format(
-        user_question=query,
-        research_brief=research_brief,
-        report=final_report,
-        today=get_today_str(),
-    )
-    if isinstance(eval_model, ChatAnthropic):
-        user_input_content = [
-            {
-                "type": "text",
-                "text": user_input_content,
-                "cache_control": {"type": "ephemeral", "ttl": "1h"},
-            }
-        ]
-
-    eval_result = cast(
-        CompletenessScore,
-        eval_model.with_structured_output(CompletenessScore).invoke(
-            [{"role": "user", "content": user_input_content}]
-        ),
-    )
-    return {
-        "key": "completeness_score",
-        "score": eval_result.score / 5,
-        "comment": eval_result.reasoning,
-    }
+    """Return the completeness score of the baseline evaluator."""
+    return _entry(_metrics(inputs, outputs, None)["completeness_score"])
