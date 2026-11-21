@@ -13,7 +13,7 @@ a partial run appends, because that section is not part of the cited body.
 import re
 
 import pytest
-from conftest import live_settings, run_config
+from conftest import live_settings, run_config, run_query
 
 BASELINE_QUERIES = (
     "Which regulation governs battery recycling in the EU and when was it replaced?",
@@ -55,18 +55,7 @@ def citation_numbers(text: str) -> tuple[set[int], set[int]]:
 def test_reports_use_numbered_citations():
     """TC-CIT-05 / C-004: every inline [n] has exactly one matching ### Sources entry."""
     settings = live_settings()
-    from open_deep_research.deep_researcher import deep_researcher
-
-    runs = []
-    for query in BASELINE_QUERIES:
-        final_state = {}
-        for chunk in deep_researcher.stream(
-            {"messages": [("user", query)]},
-            run_config(settings),
-            stream_mode="values",
-        ):
-            final_state = chunk
-        runs.append(final_state)
+    runs = [run_query(query, run_config(settings)) for query in BASELINE_QUERIES]
 
     truncated = [
         index

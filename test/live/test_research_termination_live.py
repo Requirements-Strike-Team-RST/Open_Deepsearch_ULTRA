@@ -11,7 +11,7 @@ graph execution over the real model and the chosen search source.
 """
 
 import pytest
-from conftest import live_settings, run_config
+from conftest import live_settings, run_config, run_query
 
 BASELINE_QUERIES = (
     "Which regulation governs battery recycling in the EU and when was it replaced?",
@@ -24,18 +24,7 @@ pytestmark = pytest.mark.live
 def test_baseline_queries_exit_reasons():
     """TC-ORC-13 / C-006: at least one baseline query exits covered and at most one hits the cap."""
     settings = live_settings()
-    from open_deep_research.deep_researcher import deep_researcher
-
-    states = []
-    for query in BASELINE_QUERIES:
-        final_state = {}
-        for chunk in deep_researcher.stream(
-            {"messages": [("user", query)]},
-            run_config(settings),
-            stream_mode="values",
-        ):
-            final_state = chunk
-        states.append(final_state)
+    states = [run_query(query, run_config(settings)) for query in BASELINE_QUERIES]
 
     exit_reasons = [state.get("exit_reason") for state in states]
     outcomes = [state.get("research_outcome") for state in states]

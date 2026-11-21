@@ -12,6 +12,7 @@ environment variables below and runs the files; when a variable is missing the
 test reports which one, instead of guessing a provider.
 """
 
+import asyncio
 import os
 
 import pytest
@@ -44,8 +45,13 @@ def live_settings() -> dict:
 
 
 def run_config(settings: dict, **overrides) -> dict:
-    """Runtime configuration for a live run, with the task contract and its flags on."""
+    """Runtime configuration for a live run, with the task contract and its flags on.
+
+    Clarification is off: an unattended run cannot answer a clarifying question,
+    and a run that stops there never researches.
+    """
     configurable = {
+        "allow_clarification": False,
         "task_contract_enabled": True,
         "context_trimming": True,
         "search_api": settings["OPEN_DEEP_RESEARCH_LIVE_SEARCH_API"],
@@ -56,3 +62,21 @@ def run_config(settings: dict, **overrides) -> dict:
         configurable["mcp_config"] = settings["mcp_config"]
     configurable.update(overrides)
     return {"configurable": configurable}
+
+
+def run_query(query: str, config: dict) -> dict:
+    """Run the research graph on one query and return its final state.
+
+    Every graph node is ``async``, so the graph is streamed with ``astream``.
+    """
+    from open_deep_research.deep_researcher import deep_researcher
+
+    async def stream() -> dict:
+        final_state: dict = {}
+        async for chunk in deep_researcher.astream(
+            {"messages": [("user", query)]}, config, stream_mode="values"
+        ):
+            final_state = chunk
+        return final_state
+
+    return asyncio.run(stream())
