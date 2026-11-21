@@ -379,3 +379,187 @@ It reported, but did not change, the problems outside the SA documents:
 > **[Note] What the agent did well and what it missed.**
 > - **Did well:** it kept every member's commits in the history, checked claims against the code and library source, and used independent sub-agents rather than reviewing its own work.
 > - **Missed:** the team vote in Discussion #19 during integration, which I had to point out; the `notes` rule of REQ-002 C-007 in its first draft; and several runtime details (empty sources, MCP error codes, strict schemas) until the full review.
+
+---
+
+# Agent Transcript — Tests, implementation and correction for REQ-001 to REQ-010
+
+## Annotation block
+
+| Field | Value |
+|---|---|
+| **AI-use log entries** | `AIU-025`, `AIU-026`, `AIU-027` (`docs/ai-use-log.yaml`) |
+| **Member** | AlchemyHAN (student 60705556, HAN Peilin) |
+| **Sessions** | A: OpenCode session `ses_e0a20505cffefE1DcP3eJRI5kc`, `test-author` role, 2026-11-20 06:13–06:40. B: OpenCode session `ses_e0a0623f5ffehwyZvyUqwSRAv7`, `build` role, 06:42–07:26. C: a Claude agent in the Cursor IDE, about 07:30–08:45. All times UTC+8. |
+| **Agents** | OpenCode in the `test-author` and `build` roles of `.opencode/permissions.jsonc` (model not recorded in the exports); a Claude agent in the Cursor IDE for the check and correction |
+| **Requirements** | REQ-001 to REQ-010; ADR-001 to ADR-008, accepted in SA Review (PR #22, 2026-11-18) |
+| **Sources** | The OpenCode Markdown exports `session-27eebf85-74fc-4700-ad3d-01e4814fc2da.md` (A) and `session-e5cd31d4-19f3-4221-b0ac-b905ef407ef6.md` (B), and session C itself |
+| **Branch** | `feat/implement-adr-001-008`, created in session B from `main` at `c03ce4f`; nothing committed or pushed |
+
+### Record scope
+
+- **My messages** are translated from Chinese and shortened. Only the instructions that shaped the work are kept. Short confirmations, "continue", and requests to update records or draft prompts are left out.
+- **The agents' replies** are summarised from their messages and closing reports. Tool calls are omitted, but every check result and permission event is named.
+- **Annotations** are marked **[Note]**. Human interventions continue from the sessions above as H-17 to H-21.
+
+### How the work was split
+
+- **OpenCode, `test-author` (A):** wrote the tests from `verification-constraints.md` §7 and ran them on the baseline.
+- **OpenCode, `build` (B):** implemented ADR-001 to ADR-008 and reported the tests it could not pass.
+- **Claude in Cursor (C):** checked tests and code against the documents, then corrected the tests first and the code second.
+- **I** set each task, answered the agents' design questions, rejected B's claim that every failure was a test defect, and asked for the independent check.
+
+### Artifacts produced or changed
+
+| Path | Session | Change |
+|---|---|---|
+| `test/offline/` (11 test modules, `helpers.py`), `test/live/` (2 cases, `conftest.py`) | A, corrected in C | Offline tests for TC-ORC, TC-DLV, TC-CTX, TC-CIT, TC-SRC and TC-EVA; live tests for TC-ORC-13 and TC-CIT-05 |
+| `src/open_deep_research/orchestration/`, `delivery/`, `context/`, `citations/`, `search/`; `state.py`, `configuration.py`, `prompts.py`, `deep_researcher.py`, `utils.py` (docstring) | B, corrected in C | Implementation of ADR-001 to ADR-008 behind the flags |
+| `test/evaluation/`, `test/evaluators.py`, `test/prompts.py` | B, corrected in C | Evaluation module (ADR-007) |
+| `pyproject.toml`, `README.md` | B, completed in C | Package list; README sections for search set-up, search fallback and scoring an existing report |
+| `docs/build-reports/REQ-001-010-build.md`, `REQ-008-test-defects.md` | B, rewritten in C | Build report with a correction-pass section; verdict on each reported defect |
+| `docs/architecture/runtime-policy-catalog.md` | A, restored in C | A's edit to four rows reverted |
+| `docs/architecture/` (ADR statuses, `trace-matrix.md`), `docs/debt-register.md`, `docs/ai-use-log.yaml`, this transcript | C | ADRs marked accepted; code and test evidence per requirement; DEBT-005 to DEBT-007; AIU-025 to AIU-027 |
+
+## Session record — A: tests (OpenCode, `test-author`)
+
+### Turn A1 — Me
+
+> Look at our project requirements, then at our current ADD, ADRs and governance documents, and implement every test that is consistent with these documents. Do not contradict the documents and do not change their content on your own.
+
+> **[Note] H-17 — Scope.** Tests only, from the documents as they stand.
+
+### Turn A1 — Agent
+
+- **Role.** It read the governance documents in the `AGENTS.md` order and took the Test Author role: §7 lists every case, and it may write tests but not the implementation.
+- **Permissions.** Its first shell command was a chain ending in a `2>/dev/null` redirection, which the permission model makes an "ask" command, and it was denied. It read `.opencode/permissions.jsonc` to see what its role may do, then carried on with the commands its role allows.
+- **Writing.** It wrote `helpers.py` and one test module per module. It threw away several of its own drafts that did not match the ADRs, for example invented helpers and a wrong `McpError` construction.
+- **Baseline run.** The first run failed with import and collection errors. `Prompt.md` §5 requires baseline failures to come from missing behaviour, so it moved the contract imports into the test bodies. It also fixed fixture bugs of its own: an illegal `__class__` assignment and a JSON-schema call on an injected argument.
+- **Model stub.** It moved the fake model to the `init_chat_model` boundary as well, so that the tests would not dictate implementation internals.
+- **Names.** It renamed the tests to the names in §7 and `requirements.yaml`. TC-SRC-07 it split into `_accepts` and `_rejects`.
+- **An SA document.** It changed four rows of `runtime-policy-catalog.md` to its own test names, and told me so.
+- **Report.** 166 offline cases collected with no collection error; baseline 163 failed and 3 passed, all for missing modules, types or nodes; lint PASS; the 2 live cases skipped and `NOT_RUN`. It reported three document conflicts and left them for me.
+
+> **[Note]** For a Test Author, editing an SA document is an "ask" action. Session C reverted the edit. Of the three reported conflicts, two did not exist, and the third needed only one parametrised test.
+
+## Session record — B: implementation (OpenCode, `build`)
+
+### Turn B1 — Me
+
+> Look at our project requirements, then at our current ADD, ADRs, governance documents and the tests already written, and implement all the code consistent with these documents. Do not contradict the documents and do not change their content or the tests on your own.
+
+### Turn B1 — Agent
+
+It read the documents and the tests, then asked three questions:
+
+| Question | My answer |
+|---|---|
+| All modules at once (about 30 files), or in batches with a test run after each? | All at once |
+| May it add `open_deep_research.orchestration`, `.delivery`, `.context`, `.citations`, `.search` and `test.evaluation` to `pyproject.toml` (package names only)? | Yes |
+| Create the branch `feat/implement-adr-001-008` instead of working on `main`? | Yes |
+
+> **[Note] H-18 — Answers.** The `pyproject.toml` approval covered six package names; the agent added only `test.evaluation`, and session C added the other five.
+
+It created the branch and implemented the shared types, the configuration, citations and search. During REQ-008 it found that `test_search_fallback.py` could not run:
+
+- the fake tool awaited a plain string;
+- `MissingAPIKeyError` takes no argument.
+
+It also questioned one identity assertion. It tried to correct the test file, and the permission configuration blocked the edit. It stopped and offered three options, recommending that it fix only these faults.
+
+### Turn B2 — Me
+
+> Go ahead and change them.
+
+### Turn B2 — Agent
+
+It re-read `.opencode/permissions.jsonc`, confirmed that the `build` role is denied `test/offline/*`, and declined. It said my approval covered the behaviour, but the permission file is a human-owned rule it could not bypass. It went on with the implementation and recorded the test faults for the Test Author.
+
+> **[Note] H-19 — My instruction contradicted the role split.** Role separation held because of the permission configuration, not because of my instruction.
+
+It then rewrote `deep_researcher.py`. When the termination and loop cases failed, it changed the code to fit the test harness:
+
+- It removed `research_brief` from the exit update because the test's `dict.update` merge overwrote it.
+- It added a helper that unwraps `override` dicts.
+- It redefined which results count as "before" the turn.
+
+It also gave the baseline `ConductResearch` two extra fields, made `delivery` import `orchestration`, and added a static edge `check_research_outcome → final_report_generation`.
+
+At the end it wrote the build report and `REQ-008-test-defects.md`, and reported:
+
+- `ruff check`: PASS.
+- `pytest test/offline`: 153 passed, 13 failed, all 13 called test defects.
+- Live tests: not run.
+
+> **[Note]** Its tool budget, task contract and most helpers matched the ADRs, and it was right about the two `test_search_fallback.py` faults. But "all 13 are test defects" was only partly true. Part of the code had been bent to fit a broken harness, and part of it broke the ADRs in ways no test caught at the time.
+
+## Session record — C: check and correction (Claude, Cursor IDE)
+
+### Turn C1 — Me
+
+> Look at our project requirements. These are our current ADD, ADRs and governance documents. OpenCode followed them strictly for the tests and the code, but its work still has some problems. Correct them according to these documents: first the tests, then the code, and finally make everything run. Here is OpenCode's feedback: *(B's closing report, pasted in full)*.
+
+> **[Note] H-20 — Independent check, tests first.** I did not accept B's verdict and asked a different agent to check it against the documents. I kept the order "tests, then code" so that the tests would follow the documents and not the implementation.
+
+### Turn C1 — Agent
+
+It read the governance documents in the `AGENTS.md` order, all eight ADRs, the invariants, the policies and the memory design. It ran the suite (13 failed), compared every test with its §7 row and ADR, and compared the code with the ADR steps.
+
+**Tests corrected first:**
+
+- **The real test faults:**
+  - the awaited plain value;
+  - `MissingAPIKeyError()`;
+  - the "out of order" history, which repeated one AI message, replaced by a real id-paired history;
+  - the stall-reset input, which had already reached full coverage;
+  - the loop helper, which bypassed the reducers and now runs the compiled supervisor subgraph.
+- **Gaps that no report had named:**
+  - `test_invalid_delegation_is_rejected` (TC-ORC-05) was missing although §7 names it;
+  - TC-DLV-07 never checked `notes`;
+  - no test caught an empty `tool_call_id` on later turns;
+  - ADR-003 §7 requires graph-level runs for C-002, C-004 and C-005;
+  - nothing checked that the researcher receives the run's configuration, that the baseline `ConductResearch` is unchanged, or that the command creates no judge on blank input.
+- **Aligned with §7:** TC-SRC-07 as one parametrised test; TC-SRC-09 through the `researcher` node; TC-EVA-01 checked per judge request.
+
+Run on B's code, the corrected tests failed in 29 cases, each on a missing or wrong behaviour.
+
+**Then the code:**
+
+- **Graph:** it removed the static edge. It had made a failed run call the report model, against REQ-004 C-004.
+- **`supervisor_tools`:** it now passes the run's configuration to the researcher, answers every delegation with exactly one message carrying its call id, applies the stall rule as written, and writes `notes` from the whole run.
+- **Supervisor failure and loop reset:** a supervisor model failure now ends through `select_exit`, and `write_research_brief` resets the loop result.
+- **Baseline and module rules:** it restored the baseline `ConductResearch` and removed the `delivery → orchestration` import.
+- **`context` and `search`:** trimming now pairs tool results by id, recovery sends the system prompt again, and `search/fallback.py` was rewritten to ADR-008 §3.2–§3.4.
+- **Evaluation:** the relevance rubric is back, groundedness sees the question, and blank input is rejected before a judge exists.
+- **Packaging and README:** the five missing package names; the README search section required by ADR-006 and ADR-008.
+- **SA document:** it restored `runtime-policy-catalog.md`.
+
+`deep_researcher.py` was regenerated from the baseline text by a one-off script outside the repository, so every flag-off line stays identical to the baseline.
+
+**Checks:**
+
+- `scripts/validate_requirements.py`: PASS.
+- `ruff check` on the gated paths and the evaluation code: PASS.
+- `pytest test/offline`: 172 passed, also without API keys and with each file run alone.
+- Every test name cited in the documents exists.
+- Fake-model runs of the compiled graph confirmed:
+  - a run without findings never calls the report model;
+  - a second run on the same thread starts again from T1.
+
+> **[Note] H-21 — Both roles in one session.** I asked one agent to correct both tests and code, which `Prompt.md` keeps apart. The agent said so in its report, and the test changes are listed in the build report §5 for another member to review.
+
+## After the sessions
+
+- **State:** branch `feat/implement-adr-001-008`, all changes uncommitted.
+- **Checks:**
+  - `scripts/validate_requirements.py`: PASS.
+  - `ruff check`: PASS.
+  - `uv run pytest test/offline`: PASS, 172 passed.
+  - `uv run pytest test/live`: `NOT_RUN`.
+  - README reviews TC-SRC-10 and TC-EVA-08: `NOT_RUN`.
+- **Still open:** the live search configuration and the README reviews (DEBT-005), the CI lint scope (DEBT-006), checkpoint serialisation (DEBT-007), and committing the work in reviewable PRs.
+
+> **[Note] What the agents did well and what they missed.**
+> - **Test author (A).** *Did well:* it insisted that baseline failures come from missing behaviour, and reported document conflicts instead of deciding them. *Missed:* it wrote helpers that could never run (an awaited plain value, a wrong exception call), checked a few cases less strictly than their §7 row, and edited an SA document.
+> - **Build (B).** *Did well:* it asked before touching `pyproject.toml` and `main`, and kept to the role split when I told it to break it. *Missed:* it reported every failure as a test defect, bent code to fit broken tests, and broke several ADR rules no test caught at the time (the static edge, the cross-module import, the changed baseline class).
+> - **Corrector (C).** *Did well:* it judged each disputed case by the documents, not by which side was easier to change. That found real code defects behind "test defects". *Not resolved:* it wrote both tests and code in one session, so another member has to review the test changes.

@@ -1,11 +1,11 @@
 # ADR-004: Token-limit recovery in compression removes the oldest whole turns
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-17
 - **Module:** context
 - **Owner:** BroZhai
 - **Evaluation:** EVAL-004 (`docs/architecture/evaluation-table.md`)
-- **SA Review:** SA-NNN (`docs/review-memo.md`), at acceptance
+- **SA Review:** passed in the SA integration PR [#22](https://github.com/Requirements-Strike-Team-RST/Open_Deepsearch_ULTRA/pull/22) (approved by BroZhai and DopplerXD, merged 2026-11-18)
 
 ## 1. Architecturally Significant Requirements
 

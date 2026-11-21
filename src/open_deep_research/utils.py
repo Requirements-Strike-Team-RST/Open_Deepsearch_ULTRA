@@ -846,9 +846,12 @@ def get_model_token_limit(model_string):
     return None
 
 def remove_up_to_last_ai_message(messages: list[MessageLikeRepresentation]) -> list[MessageLikeRepresentation]:
-    """Truncate message history by removing up to the last AI message.
+    """Truncate message history by removing the last AI message and everything after it.
     
-    This is useful for handling token limit exceeded errors by removing recent context.
+    This removes the most recent context, not the oldest: the newest AI turn, its
+    tool results and any later message (such as an appended compression
+    instruction) are dropped. ``context/trimming.py`` removes the oldest whole
+    turns instead when ``context_trimming`` is on (REQ-005, ADR-004).
     
     Args:
         messages: List of message objects to truncate

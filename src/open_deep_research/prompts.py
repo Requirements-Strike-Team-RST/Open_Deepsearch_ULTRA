@@ -1,5 +1,11 @@
 """System prompts and prompt templates for the Deep Research agent."""
 
+from open_deep_research.citations.contract import (
+    CITATION_RULES_BLOCK,
+    RENUMBER_ACROSS_FINDINGS_INSTRUCTION,
+    SOURCES_SECTION_POINTER,
+)
+
 clarify_with_user_instructions="""
 These are the messages that have been exchanged so far from the user asking for the report:
 <Messages>
@@ -197,7 +203,7 @@ Only these fully comprehensive cleaned findings are going to be returned to the 
 1. Your output findings should be fully comprehensive and include ALL of the information and sources that the researcher has gathered from tool calls and web searches. It is expected that you repeat key information verbatim.
 2. This report can be as long as necessary to return ALL of the information that the researcher has gathered.
 3. In your report, you should return inline citations for each source that the researcher found.
-4. You should include a "Sources" section at the end of the report that lists all of the sources the researcher found with corresponding citations, cited against statements in the report.
+4. {sources_section_pointer}
 5. Make sure to include ALL of the sources that the researcher gathered in the report, and how they were used to answer the question!
 6. It's really important not to lose any sources. A later LLM will be used to merge this report with others, so having all of the sources is critical.
 </Guidelines>
@@ -206,17 +212,9 @@ Only these fully comprehensive cleaned findings are going to be returned to the 
 The report should be structured like this:
 **List of Queries and Tool Calls Made**
 **Fully Comprehensive Findings**
-**List of All Relevant Sources (with citations in the report)**
 </Output Format>
 
-<Citation Rules>
-- Assign each unique URL a single citation number in your text
-- End with ### Sources that lists each source with corresponding numbers
-- IMPORTANT: Number sources sequentially without gaps (1,2,3,4...) in the final list regardless of which sources you choose
-- Example format:
-  [1] Source Title: URL
-  [2] Source Title: URL
-</Citation Rules>
+{citation_rules}
 
 Critical Reminder: It is extremely important that any information that is even remotely relevant to the user's research topic is preserved verbatim (e.g. don't rewrite it, don't summarize it, don't paraphrase it).
 """
@@ -248,9 +246,9 @@ Here are the findings from the research that you conducted:
 Please create a detailed answer to the overall research brief that:
 1. Is well-organized with proper headings (# for title, ## for sections, ### for subsections)
 2. Includes specific facts and insights from the research
-3. References relevant sources using [Title](URL) format
+3. Cites every fact with a numbered inline citation [n] that matches an entry in the Sources section
 4. Provides a balanced, thorough analysis. Be as comprehensive as possible, and include all information that is relevant to the overall research question. People are using you for deep research and will expect detailed, comprehensive answers.
-5. Includes a "Sources" section at the end with all referenced links
+5. Ends with the Sources section collected from the findings
 
 You can structure your report in a number of different ways. Here are some examples:
 
@@ -295,17 +293,58 @@ Make sure the final answer report is in the SAME language as the human messages 
 
 Format the report in clear markdown with proper structure and include source references where appropriate.
 
-<Citation Rules>
-- Assign each unique URL a single citation number in your text
-- End with ### Sources that lists each source with corresponding numbers
-- IMPORTANT: Number sources sequentially without gaps (1,2,3,4...) in the final list regardless of which sources you choose
-- Each source should be a separate line item in a list, so that in markdown it is rendered as a list.
-- Example format:
-  [1] Source Title: URL
-  [2] Source Title: URL
-- Citations are extremely important. Make sure to include these, and pay a lot of attention to getting these right. Users will often use these citations to look into more information.
-</Citation Rules>
+{renumber_across_findings_instruction}
+
+{citation_rules}
+
+Citations are extremely important. Make sure to include these, and pay a lot of attention to getting these right. Users will often use these citations to look into more information.
 """
+
+
+task_findings_instruction = """This research was delegated as a typed task. Put exactly one task findings block in your output, right before the ### Sources section of the Citation Rules:
+
+<task_findings>
+{{"findings": [{{"claim": "...", "answers": ["<one required question, copied exactly>"], "sources": [1, 2]}}]}}
+</task_findings>
+### Sources
+[1] Title: https://example.org/a
+[2] Title: https://example.org/b
+
+Rules for the block:
+- One entry per finding; every entry has a claim, at least one of the required questions below and at least one source number.
+- A source number is the citation number of that source in your Sources section, and its URL must be one that a tool call of this task returned.
+- The required questions of this task are:
+{must_answer}
+"""
+
+
+# REQ-001, ADR-001 §9 step 4: the flag-on variant of the supervisor prompt adds
+# one line about the typed delegation; the baseline prompt stays unchanged.
+task_contract_delegation_note = """**Typed delegations**: every "ConductResearch" call states `research_topic`, a list of `must_answer` questions (1 to 5, each answerable from web sources) and a `scope` that says what the task covers and what it leaves to other tasks. Research ends only when the required questions are answered by sourced findings; a "ResearchComplete" call below that coverage is refused and the unanswered questions are sent back to you."""
+
+
+def _assemble(prompt: str, **replacements: str) -> str:
+    """Replace the assembly placeholders once, at module load (ADR-005 §3)."""
+    for placeholder, value in replacements.items():
+        prompt = prompt.replace("{" + placeholder + "}", value)
+    return prompt
+
+
+# Both prompts receive the same rules block, so their text between the
+# <Citation Rules> tags is identical (REQ-006, ADR-005, INV-008).
+compress_research_system_prompt = _assemble(
+    compress_research_system_prompt,
+    citation_rules=CITATION_RULES_BLOCK,
+    sources_section_pointer=SOURCES_SECTION_POINTER,
+)
+final_report_generation_prompt = _assemble(
+    final_report_generation_prompt,
+    citation_rules=CITATION_RULES_BLOCK,
+    renumber_across_findings_instruction=RENUMBER_ACROSS_FINDINGS_INSTRUCTION,
+)
+lead_researcher_task_contract_prompt = lead_researcher_prompt.replace(
+    "</Hard Limits>", task_contract_delegation_note + "\n</Hard Limits>", 1
+)
 
 
 summarize_webpage_prompt = """You are tasked with summarizing the raw content of a webpage retrieved from a web search. Your goal is to create a summary that preserves the most important information from the original web page. This summary will be used by a downstream research agent, so it's crucial to maintain the key details without losing essential information.

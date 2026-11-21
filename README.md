@@ -76,6 +76,27 @@ Open Deep Research supports a wide range of LLM providers via the [init_chat_mod
 
 Open Deep Research supports a wide range of search tools. By default it uses the [Tavily](https://www.tavily.com/) search API. Has full MCP compatibility and work native web search for Anthropic and OpenAI. See the `search_api` and `mcp_config` fields in the [configuration.py](https://github.com/langchain-ai/open_deep_research/blob/main/src/open_deep_research/configuration.py) file for more details. This can be accessed via the LangGraph Studio UI. 
 
+The research model decides when to search: each researcher gets the configured search tool and calls it as often as its tool budget allows. Set `search_api` in the configuration (or `SEARCH_API` in `.env`, which takes precedence) to one of:
+
+| `search_api` | What it uses | Research models it accepts | Key needed |
+|---|---|---|---|
+| `tavily` (default) | The Tavily search tool `tavily_search` | any | `TAVILY_API_KEY`, plus the key of the `summarization_model` |
+| `openai` | OpenAI's native web search inside the model call | OpenAI models only: `openai:...`, or a bare name starting with `gpt-`, `o1`, `o3`, `chatgpt` or `text-davinci` | `OPENAI_API_KEY` |
+| `anthropic` | Anthropic's native web search inside the model call | Anthropic models only: `anthropic:...`, or a bare name starting with `claude` | `ANTHROPIC_API_KEY` |
+| `none` | Only the tools of an MCP search server (`mcp_config`) | any | whatever the MCP server needs |
+
+The configuration is checked when a run starts, before any model or search call, and an invalid one stops the run with an error that names the setting to change: an unknown `search_api`, native search with a research model of another provider (Azure OpenAI, Bedrock, OpenRouter and unrecognised names are rejected too, because their native search is not verified), `search_api: none` without a usable `mcp_config`, `task_contract_enabled` with native search (native search returns no tool results whose URLs could be checked), or an unknown `search_fallback` entry. A run whose tools contain no search tool at all, for example because the MCP server returned none of the listed tools, also stops with a "no search tool is available" error.
+
+**Custom or self-hosted search (MCP).** Set `search_api` to `none` (or keep a provider and add MCP tools next to it) and configure `mcp_config`:
+
+```json
+{"url": "https://search.example.org", "tools": ["self_hosted_search"], "auth_required": false}
+```
+
+`url` is the server's base URL (the agent connects to `<url>/mcp` over streamable HTTP), `tools` lists the tool names the researchers may use, and `auth_required: true` exchanges the Open Agent Platform user token for an MCP access token. `mcp_prompt` can tell the researchers how to use the tools.
+
+**Search fallback.** `search_fallback` (or `SEARCH_FALLBACK`, comma-separated) lists the sources to try, in order, when a search call fails. Each entry is `tavily` or the name of a tool listed in `mcp_config.tools`; native search cannot be a fallback, and the empty list (the default) keeps the behaviour without fallback. For example, with `search_api: tavily`, `mcp_config.tools: ["self_hosted_search"]` and `search_fallback: ["self_hosted_search"]`, a Tavily call that times out is retried once on `self_hosted_search`. Only failures that another source could avoid fall back: timeouts, connection errors, rate limits (HTTP 429), server errors (HTTP 5xx) and rejected credentials (HTTP 401/403). A malformed query (HTTP 400), a missing API key and any other error are returned as they are, and an empty result is a result, not a failure. When every source fails, the researcher receives one `All search sources failed: ...` message that lists each source with its error. An MCP tool can be a fallback only if it takes exactly one required string argument (the query); a listed tool that did not load, or has another shape, is reported as `not available`.
+
 #### Other 
 
 See the fields in the [configuration.py](https://github.com/langchain-ai/open_deep_research/blob/main/src/open_deep_research/configuration.py) for various other settings to customize the behavior of Open Deep Research. 
@@ -102,6 +123,44 @@ python test/extract_langsmith_data.py --project-name "YOUR_EXPERIMENT_NAME" --mo
 ```
 
 This creates `test/expt_results/deep_research_bench_model-name.jsonl` with the required format. Move the generated JSONL file to a local clone of the Deep Research Bench repository and follow their [Quick Start guide](https://github.com/Ayanami0730/deep_research_bench?tab=readme-ov-file#quick-start) for evaluation submission.
+
+#### Scoring an existing report
+
+A report that already exists can be scored without running research or search, so
+evaluating a report costs one judge call per metric group and no research budget:
+
+```bash
+uv run python -m test.evaluation.entry \
+  --question "Which regulation governs battery recycling?" \
+  --report path/to/report.md \
+  [--reference-answer "text of the reference answer"] \
+  [--research-brief "text of the research brief"] \
+  [--evidence "text of the raw notes"]
+```
+
+`--report` is a file path; the optional inputs are passed as text. The judge
+is the baseline `openai:gpt-4.1` model, so `OPENAI_API_KEY` must be set.
+
+The command prints one JSON object on standard output:
+
+```json
+{"report_id": "<sha256 of the report text>",
+ "metrics": [{"metric": "relevance_score", "status": "scored", "score": 0.8, "reason": "..."}]}
+```
+
+`report_id` names exactly the report that was scored. Each metric is either
+`scored`, with a score between 0 and 1, or `not_evaluable`, with `score: null`
+and a `reason`: a judge rating outside 1-5, a groundedness answer with no claim,
+or a missing input (the reference answer for `correctness_score`, the research
+brief for `completeness_score`, the evidence for `groundedness_score`). A
+`not_evaluable` metric never stops the others, and scores are never clamped or
+defaulted to zero.
+
+Exit codes: `0` when the report was scored, `2` when the question or the report
+is blank or cannot be read (no judge call is made in that case). The same
+functions back the LangSmith evaluators in `test/evaluators.py`, so an experiment
+and a single scored report use one set of rules.
+
 
 #### Results 
 
