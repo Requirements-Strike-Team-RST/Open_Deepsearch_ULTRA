@@ -988,6 +988,47 @@ entries:
     transcript: transcripts/61061965-XIE_Shentai.md
 
   - id: AIU-037
+    date: "2026-11-20"
+    member: sszfot
+    purpose: >-
+      Verify the REQ-007 and REQ-008 implementation and conduct
+      an AI-assisted pre-merge review of PR #24.
+    prompt: >-
+      Review the implemented search configuration validation and
+      ordered search fallback against their requirements and tests.
+      Identify and correct Ruff UP045 issues, add an integration test
+      confirming that all-source failures reach the researcher tool
+      message, check the README and trace matrix, and prepare a
+      human-review checklist for REQ-007 C-005.
+    requirements: [REQ-007, REQ-008]
+    artifacts:
+      - README.md
+      - docs/architecture/trace-matrix.md
+      - docs/reviews/REQ-007-C005-review.md
+      - src/open_deep_research/configuration.py
+      - src/open_deep_research/delivery/outcome.py
+      - src/open_deep_research/orchestration/termination.py
+      - src/open_deep_research/search/fallback.py
+      - src/open_deep_research/search/validation.py
+      - src/open_deep_research/state.py
+      - src/open_deep_research/utils.py
+      - test/offline/test_search_fallback.py
+    supervision: >-
+      The member initially requested read-only verification and then
+      authorized limited local corrections. OpenCode reported 173
+      passing offline tests, 60 passing focused search tests, and
+      clean Ruff checks after the corrections. These are historical
+      session reports, not independently rerun results. The resulting
+      source, test, and documentation changes remain uncommitted in
+      the original worktree. The REQ-007 C-005 human-review checklist
+      was prepared but not performed; its status remains NOT_RUN.
+      No merge or final acceptance of these corrections is claimed.
+      The transcript covers session messages 326 through 378 in an
+      abbreviated format with tool arguments and outputs omitted;
+      human completeness and redaction review remain required.
+    transcript: transcripts/60725623-ChensihanLIU-AIU037.md
+
+  - id: AIU-040
     date: "2026-11-23"
     member: AlchemyHAN
     purpose: Prepare the remaining runtime, CI and documentation changes for review.
