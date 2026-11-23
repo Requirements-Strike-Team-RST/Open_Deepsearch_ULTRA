@@ -2,9 +2,7 @@
 name = "open_deep_research"
 version = "0.0.16"
 description = "Planning, research, and report generation."
-authors = [
-    { name = "Lance Martin" }
-]
+authors = [{ name = "Lance Martin" }]
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
@@ -28,6 +26,7 @@ dependencies = [
     "requests>=2.32.3",
     "beautifulsoup4==4.14.3",
     "python-dotenv>=1.0.1",
+    "PyYAML",
     "pytest",
     "httpx>=0.24.0",
     "markdownify>=0.11.6",
@@ -61,16 +60,19 @@ packages = [
     "open_deep_research.context",
     "open_deep_research.citations",
     "open_deep_research.search",
+    "open_deep_research_prompt_data",
     "test",
     "test.evaluation",
 ]
 
 [tool.setuptools.package-dir]
 "open_deep_research" = "src/open_deep_research"
+"open_deep_research_prompt_data" = "prompts"
 "test" = "test"
 
 [tool.setuptools.package-data]
 "*" = ["py.typed"]
+"open_deep_research_prompt_data" = ["prompt_v1.0.yaml"]
 
 [tool.ruff]
 lint.select = [
@@ -82,13 +84,7 @@ lint.select = [
     "T201",
     "UP",
 ]
-lint.ignore = [
-    "UP006",
-    "UP007",
-    "UP035",
-    "D417",
-    "E501",
-]
+lint.ignore = ["UP006", "UP007", "UP035", "D417", "E501"]
 
 [tool.ruff.lint.per-file-ignores]
 "test/*" = ["D", "UP"]

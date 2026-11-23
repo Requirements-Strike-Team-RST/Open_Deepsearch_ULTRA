@@ -986,3 +986,20 @@ entries:
       in the REQ-003 stall rule was noted; the ADR already states its reading, so the member
       kept requirements.yaml unchanged and retained the decision about what to post in the Discussion.
     transcript: transcripts/61061965-XIE_Shentai.md
+
+  - id: AIU-037
+    date: "2026-11-23"
+    member: AlchemyHAN
+    purpose: Prepare the remaining runtime, CI and documentation changes for review.
+    prompt: Submit the remaining changes in a follow-up pull request.
+    requirements: []
+    artifacts:
+      - .github/workflows/ci.yml
+      - prompts/prompt_v1.0.yaml
+      - src/open_deep_research/configuration.py
+      - README.md
+    supervision: >-
+      The member requested a separate follow-up after the AI-use records were submitted in
+      PR #26. The agent checked the diff, the dependency lock and the offline suite before
+      publication. Raw session exports and local agent settings were excluded.
+    transcript: null

@@ -18,6 +18,7 @@ from typing import Any, Mapping, Sequence
 from langchain_core.messages import ToolMessage
 
 from open_deep_research.configuration import Configuration
+from open_deep_research.prompts import task_brief, task_brief_unspecified_scope
 from open_deep_research.state import (
     Finding,
     Source,
@@ -188,31 +189,16 @@ def build_task_specs(
 
 def render_task_brief(spec: TaskSpec) -> str:
     """Render the first message a researcher receives for ``spec`` (ADR-001 §3.1)."""
-    lines = [
-        f"Research task {spec.task_id}",
-        "",
-        "Topic:",
-        spec.research_topic,
-        "",
-        "Scope:",
-        spec.scope if spec.scope.strip() else "(not specified)",
-        "",
-        "Required questions (every one must be answered with sourced findings):",
-    ]
-    lines.extend(
-        f"{index}. {question}" for index, question in enumerate(spec.must_answer, 1)
+    questions_and_break = "".join(
+        f"{index}. {question}\n" for index, question in enumerate(spec.must_answer, 1)
     )
-    lines.extend(
-        [
-            "",
-            f"Tool-call budget: at most {spec.max_tool_calls} tool calls.",
-            "",
-            "Report each finding in the task findings block described in your "
-            "compression instructions, and cite only URLs your own tool calls "
-            "returned.",
-        ]
+    return task_brief.format(
+        task_id=spec.task_id,
+        research_topic=spec.research_topic,
+        scope=spec.scope if spec.scope.strip() else task_brief_unspecified_scope,
+        questions_and_break=questions_and_break,
+        max_tool_calls=spec.max_tool_calls,
     )
-    return "\n".join(lines)
 
 
 def extract_urls(tool_messages: Sequence[Any]) -> list[str]:
