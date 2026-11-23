@@ -1028,6 +1028,74 @@ entries:
       human completeness and redaction review remain required.
     transcript: transcripts/60725623-ChensihanLIU-AIU037.md
 
+  - id: AIU-038
+    date: "2026-11-13"
+    member: NoPumpkinz
+    purpose: >-
+      Draft the REQ-006 software architecture: the ASR analysis, one ADD iteration, and the
+      derived artifacts for the unified citation format (later renumbered ADR-005, EVAL-005
+      and INV-008 at integration).
+    prompt: >-
+      For approved REQ-006 (upstream issue #232), run the ASR litmus test on the requirement,
+      compare candidate designs (inline prompt fixes, a shared citation contract in
+      citations/contract.py, a deterministic post-processor) against C-001 to C-004, and
+      after the human selected the shared contract, write ADR-001, EVAL-001, INV-006, the
+      REQ-006 trace-matrix row and the citations sections of structural-constraints and
+      verification-constraints. Change no source or tests and mark every decision Proposed.
+    requirements: [REQ-006]
+    artifacts:
+      - docs/architecture/adr/005-citation-format.md
+      - docs/architecture/evaluation-table.md
+      - docs/architecture/invariants.md
+      - docs/architecture/trace-matrix.md
+      - docs/code-governance/structural-constraints.md
+      - docs/code-governance/verification-constraints.md
+    supervision: >-
+      The OpenCode Plan role drafted; the member decided. Interventions: the agent applied a
+      fabricated ASR litmus test (wrong definitions of the State and Evidence dimensions) and
+      reached a non-ASR verdict; the member supplied the course definitions (Structure,
+      Quality Attributes, Governance, State, Evidence; architectural if two or more dimensions
+      change) and required a redo, which reached ASR. The member rejected the agent's
+      suggestion to skip the ADD/ADR step, selected Option B over A and C, and decided the
+      INV-006 fallback. When the built-in read-only plan mode blocked file writes, the member
+      diagnosed the missing .opencode/opencode.jsonc symlink and switched to the custom plan
+      role. The agent stopped and asked before committing on main; the member created the
+      docs/sa-citations branch. The member moved test writing out of the ADR's Build steps to
+      the Test Author role (rule R3), verified the deny-listed ADR template was untouched
+      after the agent attempted to edit it, and supplied the missing
+      verification-constraints §7 section the ADR referenced. A second AI assistant
+      cross-reviewed every agent output against the code before the member accepted it.
+    transcript: transcripts/60860519-ShiDeming.md
+
+  - id: AIU-039
+    date: "2026-11-16"
+    member: NoPumpkinz
+    purpose: >-
+      Apply the six findings of the REQ-006 module review to the citations SA documents.
+    prompt: >-
+      Apply the six review findings: add Option A2 (shared constants inside prompts.py) to
+      EVAL-001 with the governance rationale for choosing B; de-duplicate the contract so
+      CITATION_RULES_BLOCK states the format exactly once and SOURCES_SECTION_SPEC becomes a
+      pointer; give every offline test a deterministic pass/fail rule, including a
+      byte-identical Citation Rules comparison and a negative test proving the checks are not
+      vacuous; correct the report prompt's .format arguments; record the decisions on the
+      L296/L302/L306 instructions; and record the findings-truncation risk to C-004. Commit
+      without pushing.
+    requirements: [REQ-006]
+    artifacts:
+      - docs/architecture/adr/005-citation-format.md
+      - docs/architecture/evaluation-table.md
+      - docs/architecture/invariants.md
+      - docs/code-governance/structural-constraints.md
+      - docs/code-governance/verification-constraints.md
+    supervision: >-
+      The member reviewed the resulting diff finding by finding. The agent's first commit
+      swept an untracked transcript file in via git add -A; the agent detected this itself
+      with git show --stat, reset softly and recommitted only the five intended documents
+      (ee9e4ee); the member verified the final commit contents. A second AI assistant
+      cross-reviewed the amendments and confirmed all six findings were addressed.
+    transcript: transcripts/60860519-ShiDeming.md
+
   - id: AIU-040
     date: "2026-11-23"
     member: AlchemyHAN
