@@ -83,7 +83,7 @@ Those later stages must add their own genuine evidence after their gates.
 The local proposal contains EVAL-002, ADR-002, INV-003/006/007, POL-002–010,
 46 planned cases, the module state/structural sections and REQ-001/003 trace rows.
 OpenCode supplied the original analysis/EVAL and two reviews; Codex and its audit
-assistants authored/corrected the final ADR and module tables. AIU-008/009/010 and the
+assistants authored/corrected the final ADR and module tables. AIU-011/012/013 and the
 AI preparation memo reflect this division.
 
 The existing requirements validator reported PASS for 10 requirements. A final
@@ -130,7 +130,7 @@ reader review; it is never mislabeled proven length exhaustion. The Codex audit
 also caught and corrected stale registration/parse/exit wording during revision.
 Those corrections are AI assistance, not the student's approval.
 
-D1 entries AIU-011/012 distinguish this investigation and SA authoring from the
+D1 entries AIU-015/016 distinguish this investigation and SA authoring from the
 11/14 OpenCode work. No new human review memo or approval was fabricated. The
 11/14 release package remains intact; the 11/15 version has dated checks and a
 separate manifest/package. Human review, Gate 1, product tests, Gate 2, Build and
@@ -153,7 +153,7 @@ A deterministic gzip storage mapping
 recorded their original hashes and verified decompressed-byte equality. Original OpenCode
 captures are unchanged. This storage correction is not a rewrite of source evidence.
 
-AIU-013 records this preparation. Publication uses the module branch and a Draft
+AIU-017 records this preparation. Publication uses the module branch and a Draft
 PR for review only; later revisions use new commits on that branch. All human
 architecture/test approvals remain pending, and no product implementation or
 Claude request is part of publication.
