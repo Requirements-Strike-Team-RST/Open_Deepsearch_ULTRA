@@ -4,6 +4,7 @@ name: CI
 
 on:
   pull_request:
+    types: [opened, reopened, synchronize, edited]
   push:
     branches:
       - main
@@ -69,8 +70,24 @@ jobs:
             uv run pytest test/offline -q
           fi
 
+  ai-use-log:
+    name: AI-use log
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.12"
+
+      - name: Check the PR declaration and log
+        run: uv run --no-project --with pyyaml python .github/check_ai_use_log.py
+
   # Planned course gates, not active yet:
   #   - Test approval: an approval record exists for PRs that change src/ or test/.
-  #   - AI-use log: docs/ai-use-log.yaml is valid and has an entry for the PR.
   #   - Semantic evaluation: live evaluation of fit criteria for prompt or model changes.
   #   - mypy in static analysis.
