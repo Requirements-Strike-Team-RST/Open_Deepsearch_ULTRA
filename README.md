@@ -1,6 +1,46 @@
 # Open Deep Research ULTRA
 
-Open Deep Research ULTRA is the Requirements Strike Team's CS5351 fork of [Open Deep Research](https://github.com/langchain-ai/open_deep_research). A supervisor delegates research, researchers gather and compress evidence, and a report writer synthesizes the findings. This fork makes it easier to tell what was researched, why the run stopped, and whether the result is complete.
+Open Deep Research ULTRA is the Requirements Strike Team's CS5351 fork of [Open Deep Research](https://github.com/langchain-ai/open_deep_research) ([GitHub repository](https://github.com/Requirements-Strike-Team-RST/Open_Deepsearch_ULTRA)). A supervisor delegates research, researchers gather and compress evidence, and a report writer synthesizes the findings. This fork makes it easier to tell what was researched, why the run stopped, and whether the result is complete.
+
+## Project organization
+
+```text
+Open_Deepsearch_ULTRA/
+├── README.md                                  # Project overview, setup, tests, and blocking gates
+├── AGENTS.md                                  # Coding-agent entry point and governance map (D3)
+├── architecture-blueprint.md                  # System-level architecture blueprint (D2.1)
+├── Prompt.md                                  # Static coding-agent startup workflow prompt (D9)
+├── Report.md                                  # Process summary report and member reflections (D6)
+├── langgraph.json                             # LangGraph server and auth entry configuration
+├── pyproject.toml / uv.lock                   # Python 3.12 dependencies and Ruff/pytest config
+├── .opencode/                                 # Machine-readable role permissions & behavioral rules (D3)
+├── .agent/rules.md                            # Project covenant entry point (D3)
+├── .github/workflows/ci.yml                   # Blocking CI gates (D4/D7)
+├── prompts/prompt_v1.0.yaml                   # Versioned runtime research prompts
+├── scripts/validate_requirements.py           # Requirements schema and ID validator
+├── docs/
+│   ├── req/                                   # Machine-readable requirements.yaml & req-schema.json (D1)
+│   ├── architecture/                          # ADRs (001–008), invariants, trace matrix, policies, risks (D2)
+│   ├── code-governance/                       # Structural, verification, and MCP tool constraints (D3/D4)
+│   ├── build-reports/                         # Implementation build and live test reports
+│   ├── ai-use-log.yaml                        # Auditable AI-use log (D1)
+│   ├── review-memo.md                         # PR and SA review records (D4)
+│   ├── debt-register.md                       # Technical debt register (D4)
+│   └── bug-diary.md                           # Significant bug diary (D4)
+├── src/
+│   ├── open_deep_research/                    # Research graph and extension modules (D8)
+│   │   ├── orchestration/                     # REQ-001, REQ-003 (task contracts & termination)
+│   │   ├── delivery/                          # REQ-002, REQ-004 (failure isolation & run outcome)
+│   │   ├── context/                           # REQ-005 (turn-aware compression recovery)
+│   │   ├── citations/                         # REQ-006 (shared citation format contract)
+│   │   └── search/                            # REQ-007, REQ-008 (search validation & fallback)
+│   └── security/auth.py                       # Upstream LangGraph server auth middleware
+├── test/
+│   ├── offline/                               # Deterministic offline tests (172 cases, no API keys) (D4/D8)
+│   ├── live/                                  # Opt-in live API tests (D8)
+│   └── evaluation/                            # REQ-009, REQ-010 standalone report evaluation module
+└── transcripts/                               # Annotated student agent-session transcripts (D5)
+```
 
 ## What we improved
 
@@ -117,9 +157,28 @@ export OPEN_DEEP_RESEARCH_LIVE_RESEARCH_MODEL=deepseek:deepseek-flash
 uv run pytest test/live -v
 ```
 
+To run the full pytest suite (offline and live tests together, with provider credentials set):
+
+```bash
+uv run pytest test/offline test/live -v
+```
+
+### Blocking gates and branch protection
+
+The repository enforces branch protection on `main` (pull requests required, at least two teammate approvals, and passing CI checks) together with the six course blocking gates defined in [`docs/code-governance/verification-constraints.md`](docs/code-governance/verification-constraints.md) §5 and [`.github/workflows/ci.yml`](.github/workflows/ci.yml):
+
+| Gate | Mechanism | What it checks |
+|---|---|---|
+| **Schema gate** | CI (`requirements-schema`) | Validates `docs/req/requirements.yaml` against `docs/req/req-schema.json` and checks unique/resolvable IDs. |
+| **Static analysis gate** | CI (`static-analysis`) | Runs `ruff check` on `src/open_deep_research`, `test/offline`, and `scripts` (with `mypy` available locally via `uv run mypy src/open_deep_research`). |
+| **Regression gate** | CI (`offline-tests`) | Runs the full deterministic offline suite (`uv run pytest test/offline -q`, 172 cases); any regression blocks merge. |
+| **AI-use log gate** | CI (`ai-use-log`) | Runs `.github/check_ai_use_log.py` on pull requests to validate `docs/ai-use-log.yaml` and enforce explicit PR declarations (`AI use: yes/no` and new `AIU-NNN` IDs). |
+| **Test approval gate** | Workflow & PR review (`Prompt.md` §6) | Separates Test Author and Build roles via `.opencode/permissions.jsonc` and requires human review of test cases before merging implementation changes. |
+| **Semantic evaluation gate** | Live evaluation (`test/live/`, `test/evaluation/entry.py`) | Evaluates prompt or model changes against live research queries and report-scoring metrics when credentials are available. |
+
 Pull requests declare `AI use: yes` or `AI use: no`. For `yes`, add a new entry to [`docs/ai-use-log.yaml`](docs/ai-use-log.yaml) and list its ID in the PR description, for example `AI-use log: AIU-028` (use the actual new ID). The CI check validates the declaration and log; it cannot infer AI use from the diff. Follow the [PR template](.github/pull_request_template.md) and the [project workflow](Prompt.md).
 
-For the engineering process and team contributions, see the [project report](Report.md). For implementation details, start with the [architecture blueprint](docs/architecture/architecture-blueprint.md) and [traceability matrix](docs/architecture/trace-matrix.md).
+For the engineering process and team contributions, see the [project report](Report.md). For implementation details, start with the [architecture blueprint](architecture-blueprint.md) and [traceability matrix](docs/architecture/trace-matrix.md).
 
 ## Credits and license
 

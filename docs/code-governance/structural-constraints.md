@@ -1,7 +1,7 @@
 # Structural Constraints
 
 > **Purpose:** The rules every member follows when changing code structure, so that parallel work by six people can be merged.
-> **Authoritative for:** source layout, change rules, dependency direction and code-level traceability. *Which* modules exist is decided in `docs/architecture/architecture-blueprint.md` §4; where a specific requirement lands is decided in its ADR.
+> **Authoritative for:** source layout, change rules, dependency direction and code-level traceability. *Which* modules exist is decided in `architecture-blueprint.md` §4; where a specific requirement lands is decided in its ADR.
 > **Maintained by:** humans for §1–§9; each module owner writes their module's section in §10, integrated before SA Review.
 > **Last updated:** 2026-11-18
 
