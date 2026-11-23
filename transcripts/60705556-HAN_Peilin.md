@@ -2,15 +2,15 @@
 
 ## Annotation block
 
-| Field | Value |
-|---|---|
-| **AI-use log entry** | `AIU-008` (`docs/ai-use-log.yaml`; renumbered at integration) |
-| **Member** | AlchemyHAN (student 60705556, HAN Peilin) |
-| **Session** | OpenCode session `ses_e20a7a837ffe9GpV4meno9q7n5`, 2026-11-15 21:14–22:16 (UTC+8) |
-| **Agents** | Drafting: OpenCode, `plan` and then `architect` role, model DeepSeek-V4-Flash (as configured by me). Independent review: Claude Code (claude-opus-5-5), run by me outside the OpenCode session. |
-| **Requirements** | REQ-002 — no delegated research task is lost or silently treated as completed; REQ-004 — run output states whether research was complete, partial or failed (both `must`, `safety_relevant: true`, status `approved`) |
-| **Module** | `delivery` (`docs/architecture/architecture-blueprint.md` §4) |
-| **Branch / PR** | `docs/sa-delivery`, draft PR #18; governance fix in PR #17; follow-up commit on 2026-11-16 |
+| Field                | Value                                                                                                                                                                                                                 |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **AI-use log entry** | `AIU-008` (`docs/ai-use-log.yaml`; renumbered at integration)                                                                                                                                                         |
+| **Member**           | AlchemyHAN (student 60705556, HAN Peilin)                                                                                                                                                                             |
+| **Session**          | OpenCode session `ses_e20a7a837ffe9GpV4meno9q7n5`, 2026-11-15 21:14–22:16 (UTC+8)                                                                                                                                     |
+| **Agents**           | Drafting: OpenCode, `plan` and then `architect` role, model DeepSeek-V4-Flash (as configured by me). Independent review: Claude Code (claude-opus-5-5), run by me outside the OpenCode session.                       |
+| **Requirements**     | REQ-002 — no delegated research task is lost or silently treated as completed; REQ-004 — run output states whether research was complete, partial or failed (both `must`, `safety_relevant: true`, status `approved`) |
+| **Module**           | `delivery` (`docs/architecture/architecture-blueprint.md` §4)                                                                                                                                                         |
+| **Branch / PR**      | `docs/sa-delivery`, draft PR #18; governance fix in PR #17; follow-up commit on 2026-11-16                                                                                                                            |
 
 ### Record scope
 
@@ -27,19 +27,19 @@
 
 ### Artifacts produced or changed
 
-| Path | Change |
-|---|---|
-| `docs/architecture/evaluation-table.md` | EVAL entries for task execution and for the run outcome (three candidates each) |
-| `docs/architecture/adr/001-task-failure-isolation.md` | ADR for REQ-002 (renumbered at integration) |
-| `docs/architecture/adr/002-finalize-node-run-outcome.md` | ADR for REQ-004, including the module's only topology change (renumbered at integration) |
-| `docs/architecture/invariants.md` | INV-002 conditions S1–S6; new invariant "every delegated task ends with a terminal result" |
-| `docs/architecture/memory-design.md` §5 | `task_results`, `failed_tasks`, `research_outcome`, `run_finalized`, `report_truncated`, `report_error` |
-| `docs/architecture/runtime-policy-catalog.md` §2 | Delivery policies POL-001–POL-007 (POL-008 and POL-009 added on 2026-11-16) |
-| `docs/architecture/trace-matrix.md` | REQ-002 and REQ-004 rows |
-| `docs/architecture/risk-list.md` | RISK-001–RISK-005 |
-| `docs/code-governance/structural-constraints.md` §10 | Delivery module constraints |
-| `docs/code-governance/verification-constraints.md` §7 | TC-002-01–10, TC-004-01–14 (TC-004-15 added on 2026-11-16) |
-| `docs/ai-use-log.yaml` | AI-use entry for this session |
+| Path                                                     | Change                                                                                                  |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `docs/architecture/evaluation-table.md`                  | EVAL entries for task execution and for the run outcome (three candidates each)                         |
+| `docs/architecture/adr/001-task-failure-isolation.md`    | ADR for REQ-002 (renumbered at integration)                                                             |
+| `docs/architecture/adr/002-finalize-node-run-outcome.md` | ADR for REQ-004, including the module's only topology change (renumbered at integration)                |
+| `docs/architecture/invariants.md`                        | INV-002 conditions S1–S6; new invariant "every delegated task ends with a terminal result"              |
+| `docs/architecture/memory-design.md` §5                  | `task_results`, `failed_tasks`, `research_outcome`, `run_finalized`, `report_truncated`, `report_error` |
+| `docs/architecture/runtime-policy-catalog.md` §2         | Delivery policies POL-001–POL-007 (POL-008 and POL-009 added on 2026-11-16)                             |
+| `docs/architecture/trace-matrix.md`                      | REQ-002 and REQ-004 rows                                                                                |
+| `docs/architecture/risk-list.md`                         | RISK-001–RISK-005                                                                                       |
+| `docs/code-governance/structural-constraints.md` §10     | Delivery module constraints                                                                             |
+| `docs/code-governance/verification-constraints.md` §7    | TC-002-01–10, TC-004-01–14 (TC-004-15 added on 2026-11-16)                                              |
+| `docs/ai-use-log.yaml`                                   | AI-use entry for this session                                                                           |
 
 ## Session record
 
@@ -63,14 +63,14 @@
 
 It read the requirements, the blueprint, the templates, the constraint documents and the baseline code (`deep_researcher.py`, `state.py`, `configuration.py`, `prompts.py`). Before writing anything it asked six questions with the question tool:
 
-| Question | Options offered | My answer |
-|---|---|---|
-| Base branch: the SA templates are on `origin/main` but not on my local `main` | `origin/main`; local `main`; `chore/governance-and-sa-templates` | `origin/main` |
-| REQ-004 "no finding was left out of the report" versus REQ-006, which puts citation checking out of scope | count only findings the system itself withheld; parse the report body; both | count only findings the system withheld |
-| How much to deliver | required documents plus `risk-list.md`; required only; required plus all three optional | required plus `risk-list.md` |
-| `ai-use-log.yaml` and `review-memo.md` are human-owned | drafts at the end of the session; write the log; write both | drafts at the end |
-| The transcript | I export the session and annotate it; the agent drafts it with placeholders | I export and annotate |
-| Owner name and ADR number | `AlchemyHAN`, ADR-001; real name; a number I choose | `AlchemyHAN`, ADR-001, renumbered at integration |
+| Question                                                                                                  | Options offered                                                                         | My answer                                        |
+| --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| Base branch: the SA templates are on `origin/main` but not on my local `main`                             | `origin/main`; local `main`; `chore/governance-and-sa-templates`                        | `origin/main`                                    |
+| REQ-004 "no finding was left out of the report" versus REQ-006, which puts citation checking out of scope | count only findings the system itself withheld; parse the report body; both             | count only findings the system withheld          |
+| How much to deliver                                                                                       | required documents plus `risk-list.md`; required only; required plus all three optional | required plus `risk-list.md`                     |
+| `ai-use-log.yaml` and `review-memo.md` are human-owned                                                    | drafts at the end of the session; write the log; write both                             | drafts at the end                                |
+| The transcript                                                                                            | I export the session and annotate it; the agent drafts it with placeholders             | I export and annotate                            |
+| Owner name and ADR number                                                                                 | `AlchemyHAN`, ADR-001; real name; a number I choose                                     | `AlchemyHAN`, ADR-001, renumbered at integration |
 
 It then proposed a plan:
 
@@ -215,6 +215,7 @@ It made both changes, repaired one line it had broken while editing, and committ
   - TC-004-15.
 
 > **[Note] What the drafting agent did well and what it missed.**
+>
 > - **Did well:** it asked before choosing a base branch, a counting rule or a topology change. It never changed `src/` or `test/`, never marked an ADR `Accepted`, and left blueprint §5 and §8 to the integrator.
 > - **Missed:** cross-module ownership, state transport across the subgraph and the pass marker. The independent review found these.
 
@@ -226,15 +227,15 @@ It made both changes, repaired one line it had broken while editing, and committ
 
 ## Annotation block
 
-| Field | Value |
-|---|---|
-| **AI-use log entries** | `AIU-020`, `AIU-021`, `AIU-023`, `AIU-024` (`docs/ai-use-log.yaml`) |
-| **Member** | AlchemyHAN (student 60705556, HAN Peilin), acting as the SA integrator |
-| **Session** | Claude Code session in VS Code, 2026-11-17 14:30 – 2026-11-18 11:40 (UTC+8), with breaks |
-| **Agents** | Claude Code (claude-opus-5-5) as the main agent; four independent review sub-agents it started (one on 2026-11-17, three in parallel on 2026-11-18) |
-| **Requirements** | REQ-001 to REQ-010 |
-| **Modules** | All six: orchestration, delivery, context, citations, search, evaluation |
-| **Branch / PRs** | `docs/sa-integration` (local); module draft PRs #12–#16, #18, #20; Discussion #19 |
+| Field                  | Value                                                                                                                                               |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **AI-use log entries** | `AIU-020`, `AIU-021`, `AIU-023`, `AIU-024` (`docs/ai-use-log.yaml`)                                                                                 |
+| **Member**             | AlchemyHAN (student 60705556, HAN Peilin), acting as the SA integrator                                                                              |
+| **Session**            | Claude Code session in VS Code, 2026-11-17 14:30 – 2026-11-18 11:40 (UTC+8), with breaks                                                            |
+| **Agents**             | Claude Code (claude-opus-5-5) as the main agent; four independent review sub-agents it started (one on 2026-11-17, three in parallel on 2026-11-18) |
+| **Requirements**       | REQ-001 to REQ-010                                                                                                                                  |
+| **Modules**            | All six: orchestration, delivery, context, citations, search, evaluation                                                                            |
+| **Branch / PRs**       | `docs/sa-integration` (local); module draft PRs #12–#16, #18, #20; Discussion #19                                                                   |
 
 ### Record scope
 
@@ -252,17 +253,17 @@ It made both changes, repaired one line it had broken while editing, and committ
 
 ### Artifacts produced or changed
 
-| Path or link | Change |
-|---|---|
-| `docs/architecture/adr/001`–`008` | Module ADRs renumbered in requirement order and rewritten into one consistent design; ADR-008 added from PR #20 |
-| `docs/architecture/architecture-blueprint.md` | Written from the ADRs: components, interfaces, dependency exceptions, data flow, deterministic boundaries, flags, integration decisions |
-| `docs/architecture/evaluation-table.md`, `invariants.md`, `memory-design.md`, `runtime-policy-catalog.md`, `trace-matrix.md`, `risk-list.md` | Integrated: EVAL-001–008, INV-001–010, POL-001–024, RISK-001–014, one row per requirement |
-| `docs/architecture/option-ledger.md` | Removed; its only open item moved to EVAL-004 and RISK-012 |
-| `docs/code-governance/structural-constraints.md`, `verification-constraints.md` | Module sections §10 and §7 integrated; 68 test cases `TC-<MODULE>-NN` |
-| `docs/req/requirements.yaml` | REQ-007 C-004 names the Tavily tool `tavily_search` (version 1.2) |
-| `docs/ai-use-log.yaml` | Entries renumbered AIU-008–019, fixed YAML, AIU-020–024 added |
-| `docs/review-memo.md`, `AGENTS.md`, `Prompt.md` | AI preparation note removed from the memo; `risk-list.md` added to the document maps; check commands referenced in the right place |
-| Discussion #19, PR #20 | One reply each, posted in my name |
+| Path or link                                                                                                                                 | Change                                                                                                                                  |
+| -------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `docs/architecture/adr/001`–`008`                                                                                                            | Module ADRs renumbered in requirement order and rewritten into one consistent design; ADR-008 added from PR #20                         |
+| `docs/architecture/architecture-blueprint.md`                                                                                                | Written from the ADRs: components, interfaces, dependency exceptions, data flow, deterministic boundaries, flags, integration decisions |
+| `docs/architecture/evaluation-table.md`, `invariants.md`, `memory-design.md`, `runtime-policy-catalog.md`, `trace-matrix.md`, `risk-list.md` | Integrated: EVAL-001–008, INV-001–010, POL-001–024, RISK-001–014, one row per requirement                                               |
+| `docs/architecture/option-ledger.md`                                                                                                         | Removed; its only open item moved to EVAL-004 and RISK-012                                                                              |
+| `docs/code-governance/structural-constraints.md`, `verification-constraints.md`                                                              | Module sections §10 and §7 integrated; 68 test cases `TC-<MODULE>-NN`                                                                   |
+| `docs/req/requirements.yaml`                                                                                                                 | REQ-007 C-004 names the Tavily tool `tavily_search` (version 1.2)                                                                       |
+| `docs/ai-use-log.yaml`                                                                                                                       | Entries renumbered AIU-008–019, fixed YAML, AIU-020–024 added                                                                           |
+| `docs/review-memo.md`, `AGENTS.md`, `Prompt.md`                                                                                              | AI preparation note removed from the memo; `risk-list.md` added to the document maps; check commands referenced in the right place      |
+| Discussion #19, PR #20                                                                                                                       | One reply each, posted in my name                                                                                                       |
 
 ## Session record
 
@@ -359,7 +360,7 @@ It reported, but did not change, the problems outside the SA documents:
 
 - **Permission rules:** the agent may not edit `.opencode/`.
 - **CI gates:** a skipped offline-test job still shows green.
-- **Course deliverables:** the upstream README, an empty `Report.md` and prompt files, and a missing transcript for one member.
+- **Course deliverables:** the upstream README, empty prompt files, and a missing transcript for one member.
 - **Before Gate 1:** no SA Review record yet, and the integration PR is not open.
 
 > **[Note] H-15 — Findings the review caught.** Three of the design problems would have failed at runtime or against a requirement: the empty-source finding, the MCP error codes and the `Any` judge schema. They were found only because the sub-agents read the library source instead of trusting the documents.
@@ -377,6 +378,7 @@ It reported, but did not change, the problems outside the SA documents:
 - **Not yet done:** pushing the branch, opening the integration PR, the SA Review record, and the decisions on permissions, CI and course deliverables.
 
 > **[Note] What the agent did well and what it missed.**
+>
 > - **Did well:** it kept every member's commits in the history, checked claims against the code and library source, and used independent sub-agents rather than reviewing its own work.
 > - **Missed:** the team vote in Discussion #19 during integration, which I had to point out; the `notes` rule of REQ-002 C-007 in its first draft; and several runtime details (empty sources, MCP error codes, strict schemas) until the full review.
 
@@ -386,15 +388,15 @@ It reported, but did not change, the problems outside the SA documents:
 
 ## Annotation block
 
-| Field | Value |
-|---|---|
-| **AI-use log entries** | `AIU-025`, `AIU-026`, `AIU-027` (`docs/ai-use-log.yaml`) |
-| **Member** | AlchemyHAN (student 60705556, HAN Peilin) |
-| **Sessions** | A: OpenCode session `ses_e0a20505cffefE1DcP3eJRI5kc`, `test-author` role, 2026-11-20 06:13–06:40. B: OpenCode session `ses_e0a0623f5ffehwyZvyUqwSRAv7`, `build` role, 06:42–07:26. C: a Claude agent in the Cursor IDE, about 07:30–08:45. All times UTC+8. |
-| **Agents** | OpenCode in the `test-author` and `build` roles of `.opencode/permissions.jsonc` (model not recorded in the exports); a Claude agent in the Cursor IDE for the check and correction |
-| **Requirements** | REQ-001 to REQ-010; ADR-001 to ADR-008, accepted in SA Review (PR #22, 2026-11-18) |
-| **Sources** | The OpenCode Markdown exports `session-27eebf85-74fc-4700-ad3d-01e4814fc2da.md` (A) and `session-e5cd31d4-19f3-4221-b0ac-b905ef407ef6.md` (B), and session C itself |
-| **Branch** | `feat/implement-adr-001-008`, created in session B from `main` at `c03ce4f`; nothing committed or pushed |
+| Field                  | Value                                                                                                                                                                                                                                                       |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **AI-use log entries** | `AIU-025`, `AIU-026`, `AIU-027` (`docs/ai-use-log.yaml`)                                                                                                                                                                                                    |
+| **Member**             | AlchemyHAN (student 60705556, HAN Peilin)                                                                                                                                                                                                                   |
+| **Sessions**           | A: OpenCode session `ses_e0a20505cffefE1DcP3eJRI5kc`, `test-author` role, 2026-11-20 06:13–06:40. B: OpenCode session `ses_e0a0623f5ffehwyZvyUqwSRAv7`, `build` role, 06:42–07:26. C: a Claude agent in the Cursor IDE, about 07:30–08:45. All times UTC+8. |
+| **Agents**             | OpenCode in the `test-author` and `build` roles of `.opencode/permissions.jsonc` (model not recorded in the exports); a Claude agent in the Cursor IDE for the check and correction                                                                         |
+| **Requirements**       | REQ-001 to REQ-010; ADR-001 to ADR-008, accepted in SA Review (PR #22, 2026-11-18)                                                                                                                                                                          |
+| **Sources**            | The OpenCode Markdown exports `session-27eebf85-74fc-4700-ad3d-01e4814fc2da.md` (A) and `session-e5cd31d4-19f3-4221-b0ac-b905ef407ef6.md` (B), and session C itself                                                                                         |
+| **Branch**             | `feat/implement-adr-001-008`, created in session B from `main` at `c03ce4f`; nothing committed or pushed                                                                                                                                                    |
 
 ### Record scope
 
@@ -411,15 +413,15 @@ It reported, but did not change, the problems outside the SA documents:
 
 ### Artifacts produced or changed
 
-| Path | Session | Change |
-|---|---|---|
-| `test/offline/` (11 test modules, `helpers.py`), `test/live/` (2 cases, `conftest.py`) | A, corrected in C | Offline tests for TC-ORC, TC-DLV, TC-CTX, TC-CIT, TC-SRC and TC-EVA; live tests for TC-ORC-13 and TC-CIT-05 |
-| `src/open_deep_research/orchestration/`, `delivery/`, `context/`, `citations/`, `search/`; `state.py`, `configuration.py`, `prompts.py`, `deep_researcher.py`, `utils.py` (docstring) | B, corrected in C | Implementation of ADR-001 to ADR-008 behind the flags |
-| `test/evaluation/`, `test/evaluators.py`, `test/prompts.py` | B, corrected in C | Evaluation module (ADR-007) |
-| `pyproject.toml`, `README.md` | B, completed in C | Package list; README sections for search set-up, search fallback and scoring an existing report |
-| `docs/build-reports/REQ-001-010-build.md`, `REQ-008-test-defects.md` | B, rewritten in C | Build report with a correction-pass section; verdict on each reported defect |
-| `docs/architecture/runtime-policy-catalog.md` | A, restored in C | A's edit to four rows reverted |
-| `docs/architecture/` (ADR statuses, `trace-matrix.md`), `docs/debt-register.md`, `docs/ai-use-log.yaml`, this transcript | C | ADRs marked accepted; code and test evidence per requirement; DEBT-005 to DEBT-007; AIU-025 to AIU-027 |
+| Path                                                                                                                                                                                  | Session           | Change                                                                                                      |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ----------------------------------------------------------------------------------------------------------- |
+| `test/offline/` (11 test modules, `helpers.py`), `test/live/` (2 cases, `conftest.py`)                                                                                                | A, corrected in C | Offline tests for TC-ORC, TC-DLV, TC-CTX, TC-CIT, TC-SRC and TC-EVA; live tests for TC-ORC-13 and TC-CIT-05 |
+| `src/open_deep_research/orchestration/`, `delivery/`, `context/`, `citations/`, `search/`; `state.py`, `configuration.py`, `prompts.py`, `deep_researcher.py`, `utils.py` (docstring) | B, corrected in C | Implementation of ADR-001 to ADR-008 behind the flags                                                       |
+| `test/evaluation/`, `test/evaluators.py`, `test/prompts.py`                                                                                                                           | B, corrected in C | Evaluation module (ADR-007)                                                                                 |
+| `pyproject.toml`, `README.md`                                                                                                                                                         | B, completed in C | Package list; README sections for search set-up, search fallback and scoring an existing report             |
+| `docs/build-reports/REQ-001-010-build.md`, `REQ-008-test-defects.md`                                                                                                                  | B, rewritten in C | Build report with a correction-pass section; verdict on each reported defect                                |
+| `docs/architecture/runtime-policy-catalog.md`                                                                                                                                         | A, restored in C  | A's edit to four rows reverted                                                                              |
+| `docs/architecture/` (ADR statuses, `trace-matrix.md`), `docs/debt-register.md`, `docs/ai-use-log.yaml`, this transcript                                                              | C                 | ADRs marked accepted; code and test evidence per requirement; DEBT-005 to DEBT-007; AIU-025 to AIU-027      |
 
 ## Session record — A: tests (OpenCode, `test-author`)
 
@@ -452,11 +454,11 @@ It reported, but did not change, the problems outside the SA documents:
 
 It read the documents and the tests, then asked three questions:
 
-| Question | My answer |
-|---|---|
-| All modules at once (about 30 files), or in batches with a test run after each? | All at once |
-| May it add `open_deep_research.orchestration`, `.delivery`, `.context`, `.citations`, `.search` and `test.evaluation` to `pyproject.toml` (package names only)? | Yes |
-| Create the branch `feat/implement-adr-001-008` instead of working on `main`? | Yes |
+| Question                                                                                                                                                        | My answer   |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| All modules at once (about 30 files), or in batches with a test run after each?                                                                                 | All at once |
+| May it add `open_deep_research.orchestration`, `.delivery`, `.context`, `.citations`, `.search` and `test.evaluation` to `pyproject.toml` (package names only)? | Yes         |
+| Create the branch `feat/implement-adr-001-008` instead of working on `main`?                                                                                    | Yes         |
 
 > **[Note] H-18 — Answers.** The `pyproject.toml` approval covered six package names; the agent added only `test.evaluation`, and session C added the other five.
 
@@ -497,7 +499,7 @@ At the end it wrote the build report and `REQ-008-test-defects.md`, and reported
 
 ### Turn C1 — Me
 
-> Look at our project requirements. These are our current ADD, ADRs and governance documents. OpenCode followed them strictly for the tests and the code, but its work still has some problems. Correct them according to these documents: first the tests, then the code, and finally make everything run. Here is OpenCode's feedback: *(B's closing report, pasted in full)*.
+> Look at our project requirements. These are our current ADD, ADRs and governance documents. OpenCode followed them strictly for the tests and the code, but its work still has some problems. Correct them according to these documents: first the tests, then the code, and finally make everything run. Here is OpenCode's feedback: _(B's closing report, pasted in full)_.
 
 > **[Note] H-20 — Independent check, tests first.** I did not accept B's verdict and asked a different agent to check it against the documents. I kept the order "tests, then code" so that the tests would follow the documents and not the implementation.
 
@@ -560,6 +562,31 @@ Run on B's code, the corrected tests failed in 29 cases, each on a missing or wr
 - **Still open:** the live search configuration and the README reviews (DEBT-005), the CI lint scope (DEBT-006), checkpoint serialisation (DEBT-007), and committing the work in reviewable PRs.
 
 > **[Note] What the agents did well and what they missed.**
-> - **Test author (A).** *Did well:* it insisted that baseline failures come from missing behaviour, and reported document conflicts instead of deciding them. *Missed:* it wrote helpers that could never run (an awaited plain value, a wrong exception call), checked a few cases less strictly than their §7 row, and edited an SA document.
-> - **Build (B).** *Did well:* it asked before touching `pyproject.toml` and `main`, and kept to the role split when I told it to break it. *Missed:* it reported every failure as a test defect, bent code to fit broken tests, and broke several ADR rules no test caught at the time (the static edge, the cross-module import, the changed baseline class).
-> - **Corrector (C).** *Did well:* it judged each disputed case by the documents, not by which side was easier to change. That found real code defects behind "test defects". *Not resolved:* it wrote both tests and code in one session, so another member has to review the test changes.
+>
+> - **Test author (A).** _Did well:_ it insisted that baseline failures come from missing behaviour, and reported document conflicts instead of deciding them. _Missed:_ it wrote helpers that could never run (an awaited plain value, a wrong exception call), checked a few cases less strictly than their §7 row, and edited an SA document.
+> - **Build (B).** _Did well:_ it asked before touching `pyproject.toml` and `main`, and kept to the role split when I told it to break it. _Missed:_ it reported every failure as a test defect, bent code to fit broken tests, and broke several ADR rules no test caught at the time (the static edge, the cross-module import, the changed baseline class).
+> - **Corrector (C).** _Did well:_ it judged each disputed case by the documents, not by which side was easier to change. That found real code defects behind "test defects". _Not resolved:_ it wrote both tests and code in one session, so another member has to review the test changes.
+
+---
+
+# Agent Transcript — Live testing, prompt migration and CI improvements
+
+- **Member:** HAN Peilin (60705556), AlchemyHAN
+- **Period:** 2026-11-20 to 2026-11-23
+- **AI-use log:** `AIU-028`, `AIU-029`, and `AIU-031` to `AIU-034` in [`docs/ai-use-log.yaml`](../docs/ai-use-log.yaml)
+
+This section summarises the instructions that shaped the work, the evidence the agent collected, and the limits of that evidence.
+
+## Live testing and diagnosis (AIU-028, AIU-029)
+
+- **Compression and token usage.** I asked the agent to investigate an empty report and test a higher compression output limit. The reproduction showed that an 8,192-token cap could cut off the structured findings block. A repeat run at 32,768 tokens produced a complete report and exited with `covered`. I pointed out that the dashboard totals combined many calls and did not measure the context of a single call. The agent then inspected individual calls: both compression calls in the successful run finished without a trimming retry. I asked it to record the mitigation under [RISK-003](../docs/architecture/risk-list.md). The trial did not change the repository default or establish formal live acceptance.
+- **Live test harness.** [NoPumpkinz](https://github.com/NoPumpkinz) found that the citation test failed before research began. The agent traced the error to the live tests calling a synchronous API for an async graph. I authorised the follow-up and asked that the reporter be credited in the [PR explanation](https://github.com/Requirements-Strike-Team-RST/Open_Deepsearch_ULTRA/pull/24#issuecomment-7062017465). Both live tests now use the async helper. The follow-up reached a real model call, but an account balance error prevented the test from finishing. The existing schema, lint and offline CI checks passed on the fix.
+
+## Documentation and runtime configuration (AIU-031, AIU-033, AIU-034)
+
+- **Versioned prompts.** I asked for research prompts to have one source, while keeping evaluation prompts separate. The agent moved the runtime text into [`prompts/prompt_v1.0.yaml`](../prompts/prompt_v1.0.yaml), preserved the existing rendering behaviour, and checked the loaded text against the original templates. All 172 offline tests passed. Editable and wheel installations both loaded the resource outside the repository. Live semantic evaluation was not run for the migration.
+- **README and model defaults.** I asked for the README to describe our fork and selected DeepSeek Flash as the default for summarisation, research, compression and reporting. The evaluation judge stayed unchanged. The agent verified the four Flash request payloads and model overrides locally. Ruff and all 172 offline tests passed; this check did not call a provider.
+
+## AI-use log check (AIU-032)
+
+I asked for CI to warn reviewers when a PR declared AI use but did not add a log entry. The agent added a PR template and a check that compares declared IDs with the base revision. It rejects missing declarations, invalid logs and references that are not new to the PR. Thirteen local scenarios passed. Hosted execution and enforcement as a required merge check were not verified. CI checks the declaration and record, not whether the declaration is truthful; that remains a human review task.
