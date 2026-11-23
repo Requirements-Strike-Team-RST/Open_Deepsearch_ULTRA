@@ -41,7 +41,19 @@ entries:
       inconsistencies, formatting problems and uneven levels of detail; some parts are imprecise
       or incomplete and others are redundant. Revise it as a whole: remove redundancy, split or
       merge coupled requirements, resolve conflicts, and renumber the requirements from REQ-001.
-    requirements: [REQ-001, REQ-002, REQ-003, REQ-004, REQ-005, REQ-006, REQ-007, REQ-008, REQ-009, REQ-010]
+    requirements:
+      [
+        REQ-001,
+        REQ-002,
+        REQ-003,
+        REQ-004,
+        REQ-005,
+        REQ-006,
+        REQ-007,
+        REQ-008,
+        REQ-009,
+        REQ-010,
+      ]
     artifacts:
       - docs/req/requirements.yaml
       - docs/req/req-schema.json
@@ -467,7 +479,7 @@ entries:
       strengthen the search capability predicate, and expand the
       verification matrix. Keep all unresolved decisions open and
       make no implementation or test changes.
-    requirements: [ REQ-007 ]
+    requirements: [REQ-007]
     artifacts:
       - docs/architecture/adr/006-search-configuration-validation.md
       - docs/architecture/evaluation-table.md
@@ -533,7 +545,18 @@ entries:
       the code, and unclear or non-standard writing, so that the whole design is consistent and
       follows common practice. Do not make simple things complex, over-engineer or over-abstract;
       keep the language plain and uniform for future coding agents.
-    requirements: [REQ-001, REQ-002, REQ-003, REQ-004, REQ-005, REQ-006, REQ-007, REQ-009, REQ-010]
+    requirements:
+      [
+        REQ-001,
+        REQ-002,
+        REQ-003,
+        REQ-004,
+        REQ-005,
+        REQ-006,
+        REQ-007,
+        REQ-009,
+        REQ-010,
+      ]
     artifacts:
       - docs/architecture/
       - docs/code-governance/structural-constraints.md
@@ -594,7 +617,7 @@ entries:
       MCP load-stage from invocation-stage failures, and keep every
       decision Proposed/Open. Make no implementation or test changes and
       run only read-only validation.
-    requirements: [ REQ-008 ]
+    requirements: [REQ-008]
     artifacts:
       - docs/architecture/adr/008-search-fallback.md
       - docs/architecture/evaluation-table.md
@@ -654,7 +677,19 @@ entries:
     prompt: >-
       Check all our SA documents as a whole: are they right, will they work, and are there any
       problems?
-    requirements: [REQ-001, REQ-002, REQ-003, REQ-004, REQ-005, REQ-006, REQ-007, REQ-008, REQ-009, REQ-010]
+    requirements:
+      [
+        REQ-001,
+        REQ-002,
+        REQ-003,
+        REQ-004,
+        REQ-005,
+        REQ-006,
+        REQ-007,
+        REQ-008,
+        REQ-009,
+        REQ-010,
+      ]
     artifacts:
       - docs/architecture/
       - docs/code-governance/structural-constraints.md
@@ -678,7 +713,19 @@ entries:
       Read the project requirements, the ADD, the ADRs and the governance documents, then write
       every test that these documents call for. Do not contradict the documents and do not change
       their content on your own.
-    requirements: [REQ-001, REQ-002, REQ-003, REQ-004, REQ-005, REQ-006, REQ-007, REQ-008, REQ-009, REQ-010]
+    requirements:
+      [
+        REQ-001,
+        REQ-002,
+        REQ-003,
+        REQ-004,
+        REQ-005,
+        REQ-006,
+        REQ-007,
+        REQ-008,
+        REQ-009,
+        REQ-010,
+      ]
     artifacts:
       - test/offline/
       - test/live/
@@ -701,7 +748,19 @@ entries:
       Read the project requirements, the ADD, the ADRs, the governance documents and the tests
       already written, then implement all the code these documents call for. Do not contradict
       the documents and do not change their content or the tests on your own.
-    requirements: [REQ-001, REQ-002, REQ-003, REQ-004, REQ-005, REQ-006, REQ-007, REQ-008, REQ-009, REQ-010]
+    requirements:
+      [
+        REQ-001,
+        REQ-002,
+        REQ-003,
+        REQ-004,
+        REQ-005,
+        REQ-006,
+        REQ-007,
+        REQ-008,
+        REQ-009,
+        REQ-010,
+      ]
     artifacts:
       - src/open_deep_research/
       - test/evaluation/
@@ -732,7 +791,19 @@ entries:
       Following the project documents, the ADD, the ADRs and the governance documents, fix the
       problems in OpenCode's work: correct the tests first, then the code, and finally make
       everything run without errors.
-    requirements: [REQ-001, REQ-002, REQ-003, REQ-004, REQ-005, REQ-006, REQ-007, REQ-008, REQ-009, REQ-010]
+    requirements:
+      [
+        REQ-001,
+        REQ-002,
+        REQ-003,
+        REQ-004,
+        REQ-005,
+        REQ-006,
+        REQ-007,
+        REQ-008,
+        REQ-009,
+        REQ-010,
+      ]
     artifacts:
       - test/offline/
       - src/open_deep_research/
@@ -759,3 +830,159 @@ entries:
       these records. The live tests and the two README reviews are NOT_RUN. Nothing was
       committed or pushed.
     transcript: transcripts/60705556-HAN_Peilin.md
+
+  - id: AIU-028
+    date: "2026-11-20"
+    member: AlchemyHAN
+    purpose: Diagnose live compression failures and distinguish context use from total token usage.
+    prompt: Investigate the failed research run, check whether a higher compression output budget helps, and show per-call context use and whether trimming occurred.
+    requirements: [REQ-001, REQ-004, REQ-005]
+    artifacts:
+      - docs/architecture/risk-list.md
+    supervision: >-
+      The member asked the agent to test a larger output budget and corrected the distinction
+      between aggregate token usage and per-call context. A reproduction at 8,192 output tokens
+      cut off the findings block. A repeat at 32,768 returned a complete report with exit reason
+      covered. The trace showed two compression calls and no trimming retry in that successful
+      run. The member requested that the mitigation be recorded under RISK-003. This was a
+      manual trial, not a formal live acceptance result or a change to the repository default.
+    transcript: transcripts/60705556-HAN_Peilin.md
+
+  - id: AIU-029
+    date: "2026-11-21"
+    member: AlchemyHAN
+    purpose: Correct the live-test entry point reported by NoPumpkinz.
+    prompt: Diagnose the live citation test failure, push the fix to the implementation PR, and credit NoPumpkinz for finding it.
+    requirements: [REQ-003, REQ-006]
+    artifacts:
+      - test/live/conftest.py
+      - test/live/test_report_citations_live.py
+      - test/live/test_research_termination_live.py
+      - https://github.com/Requirements-Strike-Team-RST/Open_Deepsearch_ULTRA/pull/24#issuecomment-7062017465
+    supervision: >-
+      NoPumpkinz found the error by running the live citation test. The agent traced it to a
+      synchronous entry point calling an async graph. The member authorised the test-only
+      follow-up and asked that the PR explanation name the reporter. The follow-up reached
+      the model call, but an account balance error prevented a full live-test result. The
+      existing schema, lint and offline CI checks passed on the follow-up commit.
+    transcript: transcripts/60705556-HAN_Peilin.md
+
+  - id: AIU-031
+    date: "2026-11-23"
+    member: AlchemyHAN
+    purpose: Consolidate runtime research prompts in one versioned YAML resource.
+    prompt: Move the application prompts into prompts/prompt_v1.0.yaml without changing their text or behaviour; leave evaluation prompts separate.
+    requirements: []
+    artifacts:
+      - prompts/prompt_v1.0.yaml
+      - prompts/__init__.py
+      - src/open_deep_research/_prompt_loader.py
+      - src/open_deep_research/prompts.py
+      - src/open_deep_research/citations/contract.py
+      - src/open_deep_research/orchestration/contracts.py
+      - src/open_deep_research/deep_researcher.py
+      - pyproject.toml
+      - uv.lock
+    supervision: >-
+      The member set the scope: include shared citation rules, task briefs and completion
+      refusals, but leave evaluation prompts and ordinary tool output alone. The agent compared
+      the migrated text with the pre-change source, ran 172 offline tests, and checked that
+      editable and wheel installations could load the resource outside the repository. No live
+      semantic evaluation was run for this migration.
+    transcript: transcripts/60705556-HAN_Peilin.md
+
+  - id: AIU-032
+    date: "2026-11-23"
+    member: AlchemyHAN
+    purpose: Add a PR check that flags missing AI-use disclosures and log entries.
+    prompt: Add an AI-use log gate to CI that flags missing disclosures and records.
+    requirements: []
+    artifacts:
+      - .github/workflows/ci.yml
+      - .github/check_ai_use_log.py
+      - .github/pull_request_template.md
+      - docs/code-governance/verification-constraints.md
+    supervision: >-
+      The member asked for timely feedback on missing records. The check uses an explicit PR
+      declaration rather than inferring AI use from a diff. Thirteen local scenarios passed,
+      including missing disclosures, old IDs and malformed logs. Hosted execution and enforcement
+      as a required merge check were not verified. Reviewers still judge whether the disclosure
+      and its supervision record are accurate.
+    transcript: transcripts/60705556-HAN_Peilin.md
+
+  - id: AIU-033
+    date: "2026-11-23"
+    member: AlchemyHAN
+    purpose: Rewrite the README around the team's fork and its current workflow.
+    prompt: Update the README to describe our improved project rather than the upstream project.
+    requirements: [REQ-007, REQ-010]
+    artifacts:
+      - README.md
+    supervision: >-
+      The member asked for the fork's own setup and features to take priority. The agent checked
+      the documented startup and evaluation options, retained upstream attribution, and removed
+      upstream leaderboard and demo claims from the fork's description. These checks did not
+      replace the formal README reviews.
+    transcript: transcripts/60705556-HAN_Peilin.md
+
+  - id: AIU-034
+    date: "2026-11-23"
+    member: AlchemyHAN
+    purpose: Set DeepSeek Flash as the default for the four research stages.
+    prompt: Make DeepSeek Flash the default for summarisation, research, compression and final reporting.
+    requirements: []
+    artifacts:
+      - src/open_deep_research/configuration.py
+      - src/open_deep_research/deep_researcher.py
+      - src/open_deep_research/utils.py
+      - .env.example
+      - README.md
+    supervision: >-
+      The member selected DeepSeek Flash for the research workflow. The separate evaluation judge
+      was left unchanged. The agent checked that the four default request payloads disable
+      thinking mode for tool-call compatibility and that model overrides still work. Ruff and
+      all 172 offline tests passed; no provider request was made during this verification.
+    transcript: transcripts/60705556-HAN_Peilin.md
+
+  - id: AIU-035
+    date: "2026-11-18"
+    member: centay
+    purpose: >-
+      Catch up with the merged SA integration and remove the orchestration module's raw transcript
+      folder, as the PR #16 review asked.
+    prompt: >-
+      Check what happened to my PR #16 and the raw files after PR #22, then complete the reviewer's
+      request; I will push and open the PR myself.
+    requirements: [REQ-001, REQ-003]
+    artifacts:
+      - transcripts/61061965-XIE_Shentai.md
+      - docs/ai-use-log.yaml
+      - docs/architecture/architecture-blueprint.md
+      - https://github.com/Requirements-Strike-Team-RST/Open_Deepsearch_ULTRA/pull/23
+    supervision: >-
+      Claude Code read the PR #16 and #22 reviews and the integration commits, then prepared
+      the raw transcript removal and reference updates, which the member submitted in PR #23.
+      The removal itself remains in that PR.
+    transcript: transcripts/61061965-XIE_Shentai.md
+
+  - id: AIU-036
+    date: "2026-11-18/2026-11-19"
+    member: centay
+    purpose: >-
+      Review the orchestration part of the integrated SA (PR #22) as module owner and verify the
+      AI review's findings.
+    prompt: >-
+      Read-only review of ADR-001 against REQ-001/REQ-003, the integration decisions that touch
+      orchestration, cross-document consistency and the baseline anchors; report confirmed
+      findings with severity.
+    requirements: [REQ-001, REQ-003]
+    artifacts:
+      - transcripts/61061965-XIE_Shentai.md
+      - https://github.com/Requirements-Strike-Team-RST/Open_Deepsearch_ULTRA/pull/23
+    supervision: >-
+      OpenCode (architect, school CS5351/DeepSeek-V4-Flash) produced 13 findings. Claude Code
+      checked each against the files and with experiments on the locked langgraph and
+      langchain-core versions; both findings marked blocking were rejected. A wording difference
+      in the REQ-003 stall rule was noted; the ADR already states its reading, so the member
+      kept requirements.yaml unchanged and retained the decision about what to post in the Discussion.
+    transcript: transcripts/61061965-XIE_Shentai.md
