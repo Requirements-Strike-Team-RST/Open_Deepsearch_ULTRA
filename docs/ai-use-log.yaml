@@ -760,7 +760,7 @@ entries:
       committed or pushed.
     transcript: transcripts/60705556-HAN_Peilin.md
 
-  - id: AIU-027
+  - id: AIU-037
     date: "2026-11-13"
     member: NoPumpkinz
     purpose: >-
@@ -795,12 +795,11 @@ entries:
       docs/sa-citations branch. The member moved test writing out of the ADR's Build steps to
       the Test Author role (rule R3), verified the deny-listed ADR template was untouched
       after the agent attempted to edit it, and supplied the missing
-      verification-constraints §7 section the ADR referenced (a6feb74). A second AI assistant
+      verification-constraints §7 section the ADR referenced. A second AI assistant
       cross-reviewed every agent output against the code before the member accepted it.
-      The ADR remains Proposed pending SA Review.
     transcript: transcripts/60860519-ShiDeming.md
 
-  - id: AIU-028
+  - id: AIU-038
     date: "2026-11-16"
     member: NoPumpkinz
     purpose: >-
@@ -826,7 +825,25 @@ entries:
       swept an untracked transcript file in via git add -A; the agent detected this itself
       with git show --stat, reset softly and recommitted only the five intended documents
       (ee9e4ee); the member verified the final commit contents. A second AI assistant
-      cross-reviewed the amendments and confirmed all six findings were addressed; one
-      regression introduced later at integration (the dropped negative test) is tracked in
-      PR #22 review.
+      cross-reviewed the amendments and confirmed all six findings were addressed.
     transcript: transcripts/60860519-ShiDeming.md
+
+  - id: AIU-039
+    date: "2026-11-21"
+    member: NoPumpkinz
+    purpose: >-
+      Run the REQ-006 live verification (TC-CIT-05) and draft the test report.
+    prompt: >-
+      Run the live citation check against the two registered baseline queries with a
+      human-chosen configuration (deepseek:deepseek-chat, tavily), judge the reports against
+      C-004, and help draft docs/build-reports/REQ-006-test-report.md from the run evidence.
+    requirements: [REQ-006]
+    artifacts:
+      - docs/build-reports/REQ-006-test-report.md
+    supervision: >-
+      The member ran the tests and collected the reports; a second AI assistant checked the
+      reports against the TC-CIT-05 rules and drafted the report, which the member reviewed
+      and completed. The member found and reported the live-test sync/async defect (fixed in
+      150302f, "Reported by NoPumpkinz") and identified the output-token truncation of one
+      run, recorded separately per the case definition.
+    transcript: null
