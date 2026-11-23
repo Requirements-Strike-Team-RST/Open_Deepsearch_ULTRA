@@ -101,6 +101,20 @@ We expect the report to contain more information that is not in the answer, that
 They likely won't be perfectly the same, but they should have the same themes and ideas to get a high score.
 
 Use your best judgement when comparing the answer to the report!
+
+<user_question>
+{user_question}
+</user_question>
+
+<report>
+{report}
+</report>
+
+<answer>
+{answer}
+</answer>
+
+Today is {today}
 """
 
 RELEVANCE_PROMPT = """You are evaluating the relevance of a response to a user's input question. Please assess the answer against the following criteria, being especially strict about section relevance.
@@ -198,16 +212,7 @@ An ungrounded report:
 </report>
 
 <Output Format>
-Use the following format for your evaluation:
-{{
-   "claims": [
-      {{
-         "text": "string – the extracted claim",
-         "grounded": true | false
-      }},
-      ...
-   ]
-}}
+Extract every claim of the report and state for each one whether it is grounded in the context. Name each claim in a "text" field and its verdict in a "grounded" field, as a boolean.
 </Output Format>
 """
 

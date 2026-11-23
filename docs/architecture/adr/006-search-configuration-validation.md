@@ -1,11 +1,11 @@
 # ADR-006: Validate the search configuration before any model call
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-17
 - **Module:** search
 - **Owner:** sszfot
 - **Evaluation:** EVAL-006 (`docs/architecture/evaluation-table.md`)
-- **SA Review:** SA-NNN (`docs/review-memo.md`), at acceptance
+- **SA Review:** passed in the SA integration PR [#22](https://github.com/Requirements-Strike-Team-RST/Open_Deepsearch_ULTRA/pull/22) (approved by BroZhai and DopplerXD, merged 2026-11-18)
 - **Team decisions:** U-1 to U-4 decided in [Discussion #19](https://github.com/Requirements-Strike-Team-RST/Open_Deepsearch_ULTRA/discussions/19) on 2026-11-17 (U-1 A, U-2 reworded, U-3 B, U-4 B)
 
 ## 1. Architecturally Significant Requirements

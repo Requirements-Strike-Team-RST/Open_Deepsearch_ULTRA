@@ -3,8 +3,8 @@
 > **Purpose:** The system-level SA Blueprint (course deliverable D2.1): components and their responsibilities, interfaces, dependencies, data flow and deterministic boundaries.
 > **Authoritative for:** architecture, the module list (§4), dependency exceptions (§6) and deterministic boundaries (§8). Changed only through an accepted ADR.
 > **Maintained by:** the integrator, from the ADRs and module sections, before SA Review (`Prompt.md` §4).
-> **Status:** Integrated from ADR-001 to ADR-008 (ADR-008 added 2026-11-18). Everything marked *Proposed* becomes binding when SA Review accepts the ADRs.
-> **Last updated:** 2026-11-18
+> **Status:** Integrated from ADR-001 to ADR-008 and accepted in SA Review (PR #22, merged 2026-11-18).
+> **Last updated:** 2026-11-20
 
 ## 1. Goals and Non-Goals
 
@@ -32,7 +32,7 @@ Open Deep Research is three LangGraph graphs in `src/open_deep_research/deep_res
 
 Shared modules: `state.py` (graph state and structured outputs), `configuration.py` (runtime `Configuration`, `SearchAPI`, `MCPConfig`), `prompts.py` (prompt templates), `utils.py` (tools, search, MCP loading, model and key helpers).
 
-**Topology change (*Proposed*, ADR-003):** one node, `check_research_outcome`, is added between `research_supervisor` and `final_report_generation`. It routes with `Command` to `final_report_generation` or to `END`. No other node or edge changes.
+**Topology change (ADR-003):** one node, `check_research_outcome`, is added between `research_supervisor` and `final_report_generation`. It routes with `Command` to `final_report_generation` or to `END`. No other node or edge changes.
 
 ```text
 clarify_with_user → write_research_brief → research_supervisor → check_research_outcome → final_report_generation → END
@@ -56,7 +56,7 @@ Files, interfaces and allowed dependencies per module are in `structural-constra
 
 ## 5. Interfaces
 
-Interfaces that cross a module boundary. All are *Proposed*.
+Interfaces that cross a module boundary.
 
 | Interface | Provided by | Used by | Signature or type | Defined in |
 |---|---|---|---|---|
@@ -151,9 +151,9 @@ Details: `runtime-policy-catalog.md`, `invariants.md`; design risks: `risk-list.
 | 2 | Python version | Resolved 2026-11-11: Python 3.12 everywhere (`.python-version`, CI, `langgraph.json`) |
 | 3 | Move runtime prompts from `prompts.py` to versioned `prompts/*.yaml` loaded by `prompts.py` | Pending |
 | 4 | Remaining proposals of the earlier blueprint draft (v0.4) | Pending; not yet copied into this repository |
-| 5 | Integration of the six module branches (2026-11-17), see below | Proposed, for SA Review |
+| 5 | Integration of the six module branches (2026-11-17), see below | Accepted in SA Review (PR #22, 2026-11-18) |
 | 6 | REQ-007 open decisions U-1 to U-4: stop the run when no search tool is available (U-1 A); "rejected before the first model or search call of a run" (U-2); resolve the model provider like `init_chat_model` and check it against an explicit allowlist (U-3 B); replace the dead `len(tools) == 0` guard with a search-tool check (U-4 B) | Decided by the team in [Discussion #19](https://github.com/Requirements-Strike-Team-RST/Open_Deepsearch_ULTRA/discussions/19), 2026-11-17; written into ADR-006 |
-| 7 | REQ-008 search fallback from PR #20, integrated as ADR-008 / EVAL-008 / INV-010 / POL-024 / TC-SRC-11 to 17. Narrowed: no structured MCP load result (it depended on REQ-007 U-5, which was not adopted); a listed MCP tool that did not load is recorded as `not available` and never stops the run; a concrete rule for passing queries to MCP tools (one required string argument); one file instead of request, adapter and result layers; the four invariants merged into INV-010; D-1 to D-8 decided in ADR-008 | Proposed, for SA Review |
+| 7 | REQ-008 search fallback from PR #20, integrated as ADR-008 / EVAL-008 / INV-010 / POL-024 / TC-SRC-11 to 17. Narrowed: no structured MCP load result (it depended on REQ-007 U-5, which was not adopted); a listed MCP tool that did not load is recorded as `not available` and never stops the run; a concrete rule for passing queries to MCP tools (one required string argument); one file instead of request, adapter and result layers; the four invariants merged into INV-010; D-1 to D-8 decided in ADR-008 | Accepted in SA Review (PR #22, 2026-11-18) |
 
 **Integration decisions (#5).** Each point resolves a conflict between module drafts or removes design that no requirement asked for. Module owners should check the points that touch their module before SA Review.
 

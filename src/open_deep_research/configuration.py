@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Any, List, Optional
 
 from langchain_core.runnables import RunnableConfig
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class SearchAPI(Enum):
@@ -231,7 +231,69 @@ class Configuration(BaseModel):
             }
         }
     )
+    # Task contract and research termination (REQ-001 to REQ-004, ADR-001 to ADR-003)
+    task_contract_enabled: bool = Field(
+        default=False,
+        metadata={
+            "x_oap_ui_config": {
+                "type": "boolean",
+                "default": False,
+                "description": "Delegate typed research tasks, derive task status and the run outcome from validated findings, and end research through a coverage check."
+            }
+        }
+    )
+    coverage_threshold: float = Field(
+        default=0.8,
+        metadata={
+            "x_oap_ui_config": {
+                "type": "number",
+                "default": 0.8,
+                "min": 0.05,
+                "max": 1,
+                "description": "Share of the required questions that must have a sourced finding before research may exit as covered. Must be greater than 0 and at most 1."
+            }
+        }
+    )
+    # Compression recovery (REQ-005, ADR-004)
+    context_trimming: bool = Field(
+        default=False,
+        metadata={
+            "x_oap_ui_config": {
+                "type": "boolean",
+                "default": False,
+                "description": "On a compression token-limit error, remove whole research turns from the oldest end instead of the newest context."
+            }
+        }
+    )
+    # Search fallback (REQ-008, ADR-008)
+    search_fallback: List[str] = Field(
+        default_factory=list,
+        metadata={
+            "x_oap_ui_config": {
+                "type": "text",
+                "default": "",
+                "description": "Ordered fallback search sources, comma-separated: tavily or the name of an MCP tool listed in mcp_config.tools. Leave empty for no fallback."
+            }
+        }
+    )
 
+    @field_validator("search_fallback", mode="before")
+    @classmethod
+    def _split_search_fallback(cls, value: Any) -> Any:
+        """Accept the comma-separated environment form of ``SEARCH_FALLBACK`` (ADR-008 §3.1)."""
+        if isinstance(value, str):
+            return [entry.strip() for entry in value.split(",") if entry.strip()]
+        return value
+
+    @model_validator(mode="after")
+    def _check_coverage_threshold(self) -> "Configuration":
+        """Reject a coverage threshold outside ``(0, 1]`` (ADR-001 §3.4)."""
+        if not 0 < self.coverage_threshold <= 1:
+            raise ValueError(
+                "coverage_threshold must be greater than 0 and at most 1, "
+                f"got {self.coverage_threshold}"
+            )
+        return self
 
     @classmethod
     def from_runnable_config(
