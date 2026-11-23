@@ -149,7 +149,7 @@ Details: `runtime-policy-catalog.md`, `invariants.md`; design risks: `risk-list.
 |---|---|---|
 | 1 | Thin graph nodes, one extension module per owner | Accepted 2026-10-13 |
 | 2 | Python version | Resolved 2026-11-11: Python 3.12 everywhere (`.python-version`, CI, `langgraph.json`) |
-| 3 | Move runtime prompts from `prompts.py` to versioned `prompts/*.yaml` loaded by `prompts.py` | Pending |
+| 3 | Move runtime prompts from `prompts.py` to versioned `prompts/*.yaml` loaded by `prompts.py` | Resolved 2026-11-23: consolidated into `prompts/prompt_v1.0.yaml` via `src/open_deep_research/_prompt_loader.py` |
 | 4 | Remaining proposals of the earlier blueprint draft (v0.4) | Pending; not yet copied into this repository |
 | 5 | Integration of the six module branches (2026-11-17), see below | Accepted in SA Review (PR #22, 2026-11-18) |
 | 6 | REQ-007 open decisions U-1 to U-4: stop the run when no search tool is available (U-1 A); "rejected before the first model or search call of a run" (U-2); resolve the model provider like `init_chat_model` and check it against an explicit allowlist (U-3 B); replace the dead `len(tools) == 0` guard with a search-tool check (U-4 B) | Decided by the team in [Discussion #19](https://github.com/Requirements-Strike-Team-RST/Open_Deepsearch_ULTRA/discussions/19), 2026-11-17; written into ADR-006 |
@@ -169,7 +169,7 @@ Details: `runtime-policy-catalog.md`, `invariants.md`; design risks: `risk-list.
 | `notes` content | Orchestration: claims rendered by code; delivery: validated findings | Counted findings of `complete` and `partial` tasks, as REQ-002 C-007 requires; the full summary only goes back to the supervisor. Possible thinner reports are RISK-013 | orchestration, delivery |
 | Native search with the task contract | Orchestration rejected it inside the researcher | The search validator rejects the combination at start | orchestration, search |
 | Removed as beyond the requirements | Orchestration: `finish_reason` observation, private config keys and contextvar isolation, crash-safe receipts, token cost accounting. Search: environment snapshots, an MCP load adapter that tells each MCP failure apart, configured/bound/executed states. Evaluation: HTTP 401/403 mapping, four exit codes, six files. Context: a separate classification module | — | orchestration, search, evaluation, context |
-| Documents | Two risk lists in different formats; `option-ledger.md`; `orchestration-review-checklist.md` under `docs/architecture/`; an AI-preparation note in `review-memo.md` | One `risk-list.md`; the ledger's only open item moved to EVAL-004 and RISK-012; the checklist moved to `transcripts/raw/61061965-XIE_Shentai/`; the preparation note removed (its AI use is in `ai-use-log.yaml`) | all |
+| Documents | Two risk lists in different formats; `option-ledger.md`; `orchestration-review-checklist.md` under `docs/architecture/`; an AI-preparation note in `review-memo.md` | One `risk-list.md`; the ledger's only open item moved to EVAL-004 and RISK-012; the checklist removed (review evidence, not design); the preparation note removed (its AI use is in `ai-use-log.yaml`) | all |
 
 **Open for SA Review:**
 
@@ -177,4 +177,14 @@ Details: `runtime-policy-catalog.md`, `invariants.md`; design risks: `risk-list.
 2. Choose the search-capable configuration for the live checks REQ-003 C-006 and REQ-006 C-004.
 3. If live reports become too thin with findings-only `notes` (RISK-013), the fix is a change to REQ-002 C-007, not to the design.
 
-Decisions are recorded as ADRs in `adr/` (template: `adr/000-template.md`).
+## 12. Agent Workflow, Permissions, Verification, Observability and Change Policy
+
+Each operational concern is governed by one authoritative document (`AGENTS.md` §3):
+
+- **Coding-agent workflow:** `Prompt.md` enforces plan-before-code and role separation across Architect, Test Author, Build and Verify, with human review gates (SA Review, test approval and PR review).
+- **Permissions:** `docs/architecture/permission-model.md`, enforced mechanically in `.opencode/permissions.jsonc` and `.opencode/rules.md`, restricts each role to its whitelisted paths and commands (Test Author and Build cannot edit each other's files; human-only governance files and secrets are protected).
+- **Verification strategy:** `docs/code-governance/verification-constraints.md` defines three verification layers (structural, regression and behavioural) and the six blocking gates implemented through `.github/workflows/ci.yml` and PR review.
+- **Observability:** runtime runs expose `task_results`, `exit_reason`, `exit_detail`, `research_outcome`, `outcome_detail` and `failed_tasks` in graph state (`docs/architecture/memory-design.md`) alongside LangGraph / LangSmith execution traces. Development supervision is audited through `docs/ai-use-log.yaml`, `docs/review-memo.md`, `docs/bug-diary.md` and `transcripts/`.
+- **Change policy:** requirement changes update `docs/req/requirements.yaml` (validated by schema CI); architectural or boundary changes require a new or amended ADR (`docs/architecture/adr/`), updated module sections and human review; runtime prompt changes update `prompts/prompt_v1.0.yaml` with version tracking.
+
+Decisions are recorded as ADRs in `docs/architecture/adr/` (template: `docs/architecture/adr/000-template.md`).

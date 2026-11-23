@@ -14,12 +14,12 @@ Two kinds of agent appear in this repository and must not be confused:
 | Term | Meaning | Governed by |
 |---|---|---|
 | **Coding agent** | The Architect, Test Author, Build and Verify roles that change this repository | this file, `Prompt.md`, `.opencode/rules.md`, `docs/architecture/permission-model.md` |
-| **Research agent** | The runtime `supervisor` and `researcher` inside Open Deep Research, i.e. the product being improved | `docs/architecture/architecture-blueprint.md`, `docs/architecture/invariants.md`, `docs/architecture/runtime-policy-catalog.md` |
+| **Research agent** | The runtime `supervisor` and `researcher` inside Open Deep Research, i.e. the product being improved | `architecture-blueprint.md`, `docs/architecture/invariants.md`, `docs/architecture/runtime-policy-catalog.md` |
 
 ## 2. Reading Order
 
 1. **Always:** `README.md` → this file → `Prompt.md` → `.opencode/rules.md`.
-2. **For the task at hand:** `docs/req/requirements.yaml` (the assigned requirement) → `docs/architecture/architecture-blueprint.md` → `docs/architecture/invariants.md` → `docs/code-governance/structural-constraints.md` → the ADRs for the requirement.
+2. **For the task at hand:** `docs/req/requirements.yaml` (the assigned requirement) → `architecture-blueprint.md` → `docs/architecture/invariants.md` → `docs/code-governance/structural-constraints.md` → the ADRs for the requirement.
 3. **Before writing anything:** `docs/architecture/permission-model.md` and `docs/code-governance/verification-constraints.md`.
 4. **During tests and implementation:** the accepted ADR, the module's sections in `structural-constraints.md` §10 and `verification-constraints.md` §7, and the approval record for the requirement ID (RID).
 
@@ -33,7 +33,7 @@ Each concern has exactly one authoritative document. Other documents refer to it
 | Task workflow, phases, human gates | `Prompt.md` | humans |
 | Always-on agent behaviour rules | `.opencode/rules.md` (`.agent/rules.md` only points to it) | humans |
 | Roles, readable and writable paths, tools, approval delegation | `docs/architecture/permission-model.md`, enforced through `.opencode/permissions.jsonc` | humans |
-| Architecture, module list, deterministic boundaries | `docs/architecture/architecture-blueprint.md` and `docs/architecture/adr/` | module owners (ADRs), integrated before SA Review |
+| Architecture, module list, deterministic boundaries | `architecture-blueprint.md` and `docs/architecture/adr/` | module owners (ADRs), integrated before SA Review |
 | Invariants | `docs/architecture/invariants.md` | module owners, integrated before SA Review |
 | Requirement traceability | `docs/architecture/trace-matrix.md` | module owners |
 | State and memory design | `docs/architecture/memory-design.md` | module owners, integrated before SA Review |
