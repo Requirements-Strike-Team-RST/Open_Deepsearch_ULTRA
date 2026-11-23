@@ -827,23 +827,3 @@ entries:
       (ee9e4ee); the member verified the final commit contents. A second AI assistant
       cross-reviewed the amendments and confirmed all six findings were addressed.
     transcript: transcripts/60860519-ShiDeming.md
-
-  - id: AIU-039
-    date: "2026-11-21"
-    member: NoPumpkinz
-    purpose: >-
-      Run the REQ-006 live verification (TC-CIT-05) and draft the test report.
-    prompt: >-
-      Run the live citation check against the two registered baseline queries with a
-      human-chosen configuration (deepseek:deepseek-chat, tavily), judge the reports against
-      C-004, and help draft docs/build-reports/REQ-006-test-report.md from the run evidence.
-    requirements: [REQ-006]
-    artifacts:
-      - docs/build-reports/REQ-006-test-report.md
-    supervision: >-
-      The member ran the tests and collected the reports; a second AI assistant checked the
-      reports against the TC-CIT-05 rules and drafted the report, which the member reviewed
-      and completed. The member found and reported the live-test sync/async defect (fixed in
-      150302f, "Reported by NoPumpkinz") and identified the output-token truncation of one
-      run, recorded separately per the case definition.
-    transcript: null
